@@ -6,6 +6,9 @@
 # in this script, I will move all files that are required to run phyloscanner to
 # a separate directory.
 
+#start of script
+start_time <- Sys.time()
+
 library(DescTools)
 
 #prefix for path names
@@ -129,3 +132,8 @@ filename <- paste(pyloscanner_dir_fullPath, "BamsRefsAndIDs.csv", sep = "/")
 write.table(x =  input_files, file = filename, quote = FALSE, sep = ",",
             row.names = FALSE, col.names = FALSE)
 
+
+#end of script
+end_time <- Sys.time()
+print("Simulation took:")
+end_time - start_time

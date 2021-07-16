@@ -5,6 +5,9 @@
 # phyloscanner dependencies
 # https://github.com/BDI-pathogens/phyloscanner/blob/master/InfoAndInputs/InstallationNotesForMakingTrees.sh
 
+#start of script
+start_time <- Sys.time()
+
 library(DescTools)
 library(reticulate)
 
@@ -96,3 +99,8 @@ for(i in 1:length(output_dirs)){
 
 
 }
+
+#end of script
+end_time <- Sys.time()
+print("Simulation took:")
+end_time - start_time

@@ -1,5 +1,9 @@
 # Simulate sequence alignments
 # Seq-Gen MUST be installed in your computer
+
+#start of script
+start_time <- Sys.time()
+
 library(stringr)
 library(ape)
 
@@ -97,3 +101,8 @@ for(tree_name in vts_trees_years){
                                                          paste("ID_", str_split(names(x)[1], pattern = "_")[[1]][2], ".fasta", sep = ""), sep = "" )))
 
 }
+
+#end of script
+end_time <- Sys.time()
+print("Simulation took:")
+end_time - start_time

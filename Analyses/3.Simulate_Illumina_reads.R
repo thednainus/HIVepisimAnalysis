@@ -2,6 +2,9 @@
 # it requres ART installed in your computer
 # https://www.niehs.nih.gov/research/resources/software/biostatistics/art/index.cfm
 
+#start of script
+start_time <- Sys.time()
+
 library(DescTools)
 
 # parameters to use ART
@@ -85,6 +88,11 @@ for(i in 1:length(fasta_dirs)){
 
 
   }
+
+#end of script
+end_time <- Sys.time()
+print("Simulation took:")
+end_time - start_time
 
 
 }
