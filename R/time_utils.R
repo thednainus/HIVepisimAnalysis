@@ -48,6 +48,8 @@ sampleIDs <- function(sample_times, art_init, art_halt, art_reinit, departures,
 
   #from total IDPOP in TM
   #sample individuals that have been diagnosed
+  #but when sampling, I still need to check whether individual was diagnosed
+  #before or at the time of sampling
   newids <- IDs[match(diagnosis$IDs, IDs)]
   newids <- newids[!is.na(newids)]
 
@@ -58,50 +60,140 @@ sampleIDs <- function(sample_times, art_init, art_halt, art_reinit, departures,
     #sample ID from diagnosed individuals only
     sid <- sample(x = newids, size = 1)
 
-    # check whether sid was or ART at time of sampling
-    if(any(art_init$IDs == sid) == TRUE){
-      art_init_time <- art_init[art_init$IDs == sid,]
+    #this is just to create a loop
+    #when keep_sid == TRUE
+    keep_sid <- FALSE
 
-      if(nrow(art_init_time) == 1){
-        #check whether individual was on ART at time of sampling
-        if(sample_times[st] < art_init_time$time_decimal == TRUE){
+    while(keep_sid == FALSE){
 
-          # then keep ID and sampled id
-          sampledIDs_list[[st]] <- set_sampledIDs(sampled_ID = sid,
-                                                  sampled_time = sample_times[st])
+      if(any(art_init$IDs == sid) == TRUE){
 
-          #removed sampled id (sid) from vector of ids to sample from
-          index <- which(newids == sid)
-          newids <- newids[-index]
+        #check if individual was diagnosed before or at the time of sampling
+        if(diagnosis$time_decimal[diagnosis$IDs == sid] <= sample_times[st]){
+
+          #check if individual is on ART
+          onART <- is_onART (sid = sid, st = sample_times[st], art_init = art_init)
+
+          if(onART == "yes"){
+
+            # check whether is on halt
+
+            ART_or_halt <- is_onARThalt(sid = sid, st = sample_times[st], art_halt = art_halt)
+
+            if(ART_or_halt == "onART"){
+
+              #sampled another individual
+              #TO DO
+            }
+
+            if(ART_or_halt == "haltART"){
+
+              #check whether individual has initiated ART
+              #sampled another individual
+              #TO DO
+            }
+
+          }
+
+          if(onART == "no"){
+
+            # keep id if time of sampling was before individual started ART
+            # then keep ID and sampled id
+            sampledIDs_list[[st]] <- set_sampledIDs(sampled_ID = sid,
+                                                    sampled_time = sample_times[st])
+
+            #removed sampled id (sid) from vector of ids to sample from
+            index <- which(newids == sid)
+            newids <- newids[-index]
+
+            keep_sid <- TRUE
+
+          }
         }
-
-        if(nrow(art_init_time) > 1){
-          print("still have to do this part")
-        }
-
-        while(sample_times[st] < art_init_time$time_decimal == FALSE){
-
-          #remove id from newids and sample another sid
-          index <- which(newids == sid)
-          tmpnewids <- newids
-          tmpnewids <- tmpnewids[-index]
-
-          sid <- sample(x = tmpnewids, size = 1)
-
-
-        }
-
-
-
       }
-
     }
+  }
+}
 
 
+#' Check whether individual has re-initiated ART
+#'
+#' @param sid sampled id
+#' @param st sampled time
+#' @param art_reinit dataframe of art_reinit
+#'
+#' @return
+#' @export
+#'
+#' @examples
+is_ARTreinit <- function(sid, st, art_reinit){
+
+
+
+
+
+}
+
+
+
+#' Check whether individual has halt ART
+#'
+#' @param sid sampled id
+#' @param st sampled time
+#' @param art_halt dataframe with IDs and time that ART halt happened
+#'
+#' @return
+#' @export
+#'
+#' @examples
+is_onARThalt <- function(sid, st, art_halt){
+
+  art_halt_time <- art_halt[art_halt$IDs == sid,]$time_decimal
+  halt_index <- which(art_halt_time > st)
+
+  if(length(halt_index) == 0){
+
+    #in this condition individual is still on ART
+    #this function will only be called if individual has initiated ART
+
+    results <- "onART"
 
 
   }
 
+  if(length(halt_index) > 0){
+
+    halt_times <- art_halt_time[halt_index[1]]
+
+    results <- "haltART"
+  }
+
+  return(results)
+
+}
+
+#' Check whether an individual is on ART
+#'
+#' @param sid sampled ID number
+#' @param st sampled time
+#' @param art_init dataframe for ART dates
+#'
+#' @return
+#' @export
+#'
+#' @examples
+is_onART <- function(sid, st, art_init){
+
+  art_init_time <- art_init[art_init$IDs == sid,]
+
+  # keep id if time of sampling was before individual started ART
+  if(art_init_time$time_decimal < st){
+    onART <- "yes"
+  }else{
+    onART <- "no"
+  }
+
+  return(onART)
 }
 
 #' Get total number of individuals in network by region
