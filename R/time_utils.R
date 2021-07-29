@@ -27,12 +27,13 @@ days2years <- function(total_years, last_sample_time, sampleTimes, init_sim){
 
 #' Title
 #'
-#' @param sample_times time in which individuals were sampled
+#' @param n_sample_times number of time to sample individuals
+#'
 #' @param art_init dataframe of ID and time on ART init
-#' @param art_halt dataframe of ID and time on ART halt
-#' @param art_reinit dataframe of ID and time on ART reinit
+#' @param start_date start date for sampling times
+#' @param end_date end date for sampling times
 #' @param departures dataframe of ID and time of departures
-#' @param diagnosis dataframe of ID and time of diagnosis
+#' @param diag_info dataframe of ID and time of diagnosis
 #' @param tm transmission matrix
 #' @param stages track history for stage of HIV infection of infected nodes
 #' @param location location cab ne "region" or "global"
@@ -41,160 +42,154 @@ days2years <- function(total_years, last_sample_time, sampleTimes, init_sim){
 #' @export
 #'
 #' @examples
-sampleIDs <- function(sample_times, art_init, art_halt, art_reinit, departures,
-                      diagnosis, stages, tm, location){
+sampleIDs <- function(n_sample_times, start_date, end_date,
+                      art_init, departures,
+                      diag_info, stages, tm, location){
 
-  IDs <- get_id_by_location(tm = tm, location = location)
-
-  #from total IDPOP in TM
-  #sample individuals that have been diagnosed
-  #but when sampling, I still need to check whether individual was diagnosed
-  #before or at the time of sampling
-  newids <- IDs[match(diagnosis$IDs, IDs)]
-  newids <- newids[!is.na(newids)]
-
+  #initially assume that we will have ids to sample
+  ids2sample <- "yes"
   sampledIDs_list <- NULL
 
-  for(st in 1:length(sample_times)){
+  #count for sample time
+  count <- n_sample_times
 
-    #sample ID from diagnosed individuals only
-    sid <- sample(x = newids, size = 1)
+  #get vector of IDs from location to sample from
+  IDs <- get_id_by_location(tm = tm, location = location)
 
-    #this is just to create a loop
-    #when keep_sid == TRUE
-    keep_sid <- FALSE
+  #browser()
+  while(ids2sample == "no" | count > 0){
 
-    while(keep_sid == FALSE){
+      #sample a time within start_date and end_date
+      sample_time <- runif(n = 1, min = start_date_dec, max = end_date_dec)
 
-      if(any(art_init$IDs == sid) == TRUE){
+      # from IDs vector, get those IDs that have been diagnosed
+      diag_ids <- diag_info[diag_info$IDs %in% IDs,]
 
-        #check if individual was diagnosed before or at the time of sampling
-        if(diagnosis$time_decimal[diagnosis$IDs == sid] <= sample_times[st]){
+      # then from diag_ids, get the ids that have been diagnosed before the sampled
+      # time
+      diagIDs_before_st <- diag_ids[diag_ids$time_decimal <= sample_time,]
 
-          #check if individual is on ART
-          onART <- is_onART (sid = sid, st = sample_times[st], art_init = art_init)
+      #from diagIDs_before_st, get ids that have departured before sampled time
+      dep_before_st <- departured_ids(diagIDs_before_st, departures, sample_time)
 
-          if(onART == "yes"){
+      #from departured ids, get the ids that are active before sampled time
+      active_ids <- diagIDs_before_st[!(diagIDs_before_st$IDs %in% dep_before_st$infID),]
+      activeIDs_before_st <- active_ids[active_ids$time_decimal <= sample_time,]
 
-            # check whether is on halt
+      #from activeIDs_before_st, get ids that is on ART before sampled time
+      ids_onART <- onART(activeIDs_before_st, art_init, sample_time)
 
-            ART_or_halt <- is_onARThalt(sid = sid, st = sample_times[st], art_halt = art_halt)
+      #from ids_onART, get the ones that are NOT on ART before sampled time
+      ids_notOnArt <- activeIDs_before_st[!(activeIDs_before_st$IDs %in% ids_onART$IDs),]
 
-            if(ART_or_halt == "onART"){
-
-              #sampled another individual
-              #TO DO
-            }
-
-            if(ART_or_halt == "haltART"){
-
-              #check whether individual has initiated ART
-              #sampled another individual
-              #TO DO
-            }
-
-          }
-
-          if(onART == "no"){
-
-            # keep id if time of sampling was before individual started ART
-            # then keep ID and sampled id
-            sampledIDs_list[[st]] <- set_sampledIDs(sampled_ID = sid,
-                                                    sampled_time = sample_times[st])
-
-            #removed sampled id (sid) from vector of ids to sample from
-            index <- which(newids == sid)
-            newids <- newids[-index]
-
-            keep_sid <- TRUE
-
-          }
-        }
+      if(nrow(ids_notOnArt) == 0){
+        ids2sample <- "no"
       }
-    }
+
+      if(nrow(ids_notOnArt) > 0){
+
+        #browser()
+
+        results <- get_newids(ids_notOnArt$IDs)
+        sid <- results[[1]]
+        tmpids <- results[[2]]
+
+        sampledIDs_list[[length(sampledIDs_list)+1]] <- set_sampledIDs(sid = sid,
+                                                                       st = sample_time)
+        print(paste("sampled id list", sampledIDs_list, sep = " "))
+
+        index <- which(IDs == sid)
+        IDs <- IDs[-index]
+
+        count <- count - 1
+        ids2sample <- "yes"
+
+      }
   }
+  return(sampledIDs_list)
 }
 
 
-#' Check whether individual has re-initiated ART
+#' Return the departures ID within the sampled time
 #'
-#' @param sid sampled id
+#' @param dig_ids_within_st dataframe of diagnosed ids and time
+#' @param departures dataframe of departures
 #' @param st sampled time
-#' @param art_reinit dataframe of art_reinit
 #'
 #' @return
 #' @export
 #'
 #' @examples
-is_ARTreinit <- function(sid, st, art_reinit){
+departured_ids <- function(dig_ids_within_st, departures, st){
 
 
+  depIDs <- departures[departures$infID %in% dig_ids_within_st$IDs,]
+  depIDs_within_st <- depIDs[depIDs$time_decimal <= st,]
 
-
+  return(depIDs_within_st)
 
 }
 
 
-
-#' Check whether individual has halt ART
+#' Title
 #'
-#' @param sid sampled id
+#' @param activeIDs_before_st
+#' @param art_init
 #' @param st sampled time
-#' @param art_halt dataframe with IDs and time that ART halt happened
 #'
 #' @return
 #' @export
 #'
 #' @examples
-is_onARThalt <- function(sid, st, art_halt){
+onART <- function(activeIDs_before_st, art_init, st){
 
-  art_halt_time <- art_halt[art_halt$IDs == sid,]$time_decimal
-  halt_index <- which(art_halt_time > st)
+  onARTdf <- art_init[art_init$IDs %in% activeIDs_before_st$IDs,]
 
-  if(length(halt_index) == 0){
+  onART_IDs_within_st <- onARTdf[onARTdf$time_decimal <= st,]
 
-    #in this condition individual is still on ART
-    #this function will only be called if individual has initiated ART
+  return(onART_IDs_within_st)
 
-    results <- "onART"
+}
 
 
+#' Return sampled id (sid) and vector of IDs to sample from
+#'
+#' @param ids ids to sample from
+#'
+#' @return
+#' @export
+#'
+#' @examples
+get_newids <- function(ids){
+
+
+  if(length(ids) == 0){
+    sid <- NULL
   }
 
-  if(length(halt_index) > 0){
-
-    halt_times <- art_halt_time[halt_index[1]]
-
-    results <- "haltART"
+  if(length(ids) == 1){
+    sid <- ids
+    tmpids <- NULL
   }
 
+  if(length(ids) > 1) {
+    sid <- sample(x = ids, size = 1)
+
+    #sample another individual
+    index <- which(ids == sid)
+    tmpids <- ids[-index]
+  }
+
+
+  results <- list(sid, tmpids)
   return(results)
-
 }
 
-#' Check whether an individual is on ART
-#'
-#' @param sid sampled ID number
-#' @param st sampled time
-#' @param art_init dataframe for ART dates
-#'
-#' @return
-#' @export
-#'
-#' @examples
-is_onART <- function(sid, st, art_init){
 
-  art_init_time <- art_init[art_init$IDs == sid,]
 
-  # keep id if time of sampling was before individual started ART
-  if(art_init_time$time_decimal < st){
-    onART <- "yes"
-  }else{
-    onART <- "no"
-  }
 
-  return(onART)
-}
+
+
 
 #' Get total number of individuals in network by region
 #'
@@ -257,16 +252,17 @@ get_id_by_location <- function(tm, location){
 
 #' Title
 #'
-#' @param sampled_ID The sampled ID
-#' @param sampled_time The sampled time
+#' @param sid The sampled ID
+#' @param st The sampled time
 #'
 #' @return
 #' @export
 #'
 #' @examples
-set_sampledIDs <- function(sampled_ID, sampled_time){
+set_sampledIDs <- function(sid, st){
 
-  sampledID <- data.frame(sampled_ID = sid, sampled_time = sample_times[st])
+  sampledID <- data.frame(sampled_ID = sid, sampled_time = st)
 
   return(sampledID)
 }
+

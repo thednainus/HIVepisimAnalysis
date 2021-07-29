@@ -44,10 +44,10 @@ dep["time_decimal"] <- days2years(total_years = years,
                                   init_sim = init_sim_date)
 
 
-diagnosis <- read.csv("run1/diag_time.csv")
-diagnosis["time_decimal"] <- days2years(total_years = years,
+diag_info <- read.csv("run1/diag_time.csv")
+diag_info["time_decimal"] <- days2years(total_years = years,
                                   last_sample_time = last_sample_date,
-                                  sampleTimes = diagnosis$time,
+                                  sampleTimes = diag_info$time,
                                   init_sim = init_sim_date)
 stages <- read.csv("run1/stages.csv")
 stages["time_decimal"] <- days2years(total_years = years,
@@ -75,9 +75,19 @@ nst_global <- round(0.05 * n_global,0)
 #generate random date numbers from the start and end dates
 st_region <- runif(nst_region, min = start_date_dec, max = end_date_dec)
 st_global <- runif(nst_global,
-                   min = decimal_date(ymd("1980-01-01")),
+                   min = decimal_date(init_sim_date),
                    max = decimal_date(last_sample_date))
 
 
+teste <- sampleIDs(n_sample_times = nst_region, start_date = start_date_dec,
+                   end_date = end_date_dec,
+                   art_init = art_init, departures = dep, diag_info = diag_info,
+                   stages = stages,tm = tm, location = "region")
+
+
+teste_global <- sampleIDs(n_sample_times = nst_global, start_date = decimal_date(init_sim_date),
+                   end_date = decimal_date(last_sample_date),
+                   art_init = art_init, departures = dep, diag_info = diag_info,
+                   stages = stages,tm = tm, location = "global")
 
 
