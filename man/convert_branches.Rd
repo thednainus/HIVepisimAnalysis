@@ -2,7 +2,7 @@
 % Please edit documentation in R/phylo_utils.R
 \name{convert_branches}
 \alias{convert_branches}
-\title{Title Scale branch length from a phylogeentic tree}
+\title{Scale branch length from a phylogeentic tree}
 \usage{
 convert_branches(tree, scale = 1/365)
 }
@@ -15,8 +15,5 @@ convert_branches(tree, scale = 1/365)
 
 }
 \description{
-Title Scale branch length from a phylogeentic tree
-}
-\examples{
-# TO DO!
+Scale branch length from a phylogeentic tree
 }

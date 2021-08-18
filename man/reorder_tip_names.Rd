@@ -21,6 +21,3 @@ Function to reorder the tip names of a phylogenetic tree.
 Vector of tip_names_migrant will be reordered according to
    vector tip_names_vts.
 }
-\examples{
-#TO DO!
-}

@@ -13,10 +13,11 @@ get_newTip_names(dup_tip, el_ori)
 }
 \value{
 A vector of the duplicated vertex in the form of ID_origin or ID_migrant.
-   Based on the oldest time of duplicated rows (see \code{\link{oldest_time}}),
+   Based on the time of duplicated rows at seroconversion
+    (see \code{\link{time_atSeroconversion}}),
    it will return the tip name that should be in the phylogenetic tree.
    I used the origin or migrant information observed at the time of
-   transmission.
+   seroconversion.
 }
 \description{
 This is a support function for the main function

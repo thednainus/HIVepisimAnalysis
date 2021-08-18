@@ -36,8 +36,8 @@
 #'      there was a swap between donor and recipient;
 #'  12. expected_n_trans = expected number of transmission defined as the sum
 #'      of all infector probability (W) values.
-#' @export
 #'
+#' @export
 validadeW <- function(sim, run, tm, W_true, W_estimated, seed_ID, MH, true_tree, prefix = NULL){
   #get seed name
   IDnumber <- str_split(string = seed_ID, pattern = "_")[[1]][2]
@@ -179,7 +179,6 @@ validadeW <- function(sim, run, tm, W_true, W_estimated, seed_ID, MH, true_tree,
 #'      of all infector probability (W) values.
 #'
 #' @export
-#'
 summaryW2 <- function(sim, run, tm, W1, ID, MH, tree, prefix = NULL, labels = TRUE){
 
   #browser()
@@ -309,11 +308,6 @@ summaryW2 <- function(sim, run, tm, W1, ID, MH, tree, prefix = NULL, labels = TR
 
 }
 
-
-
-
-
-
 W_manipulations <- function(W, code){
 
   #tm_mh$sus is the recipient
@@ -356,7 +350,6 @@ W_manipulations <- function(W, code){
 #'
 #' @return
 #' @export
-#'
 keep_row <- function(df, tree){
   tip_IDs <- as.numeric(unlist(lapply(tree$tip.label, function(x) str_split(x, "_")[[1]][1])))
   rows_to_keep <- NULL
@@ -404,6 +397,5 @@ keep_row <- function(df, tree){
 
   rows_to_keep <- sort(unique(rows_to_keep))
 
-
+  return(rows_to_keep)
 }
-

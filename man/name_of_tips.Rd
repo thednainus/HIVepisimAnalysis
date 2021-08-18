@@ -11,7 +11,7 @@ name_of_tips(dup_tip, row_int)
 
 \item{row_int}{data.frame of the row of interest. The row in the transmission
 matrix that have the oldest time step based on duplicated value.
-See \code{\link{oldest_time}} and \code{\link{get_newTip_names}}.}
+See \code{\link{time_atSeroconversion}} and \code{\link{get_newTip_names}}.}
 }
 \value{
 vector of ID_origin or ID_migrant.
@@ -20,7 +20,7 @@ vector of ID_origin or ID_migrant.
 This is a support function for the main function
    \code{\link{toPhylo_transmatOrigin}}.
 
-Function that gest the name of the tip in the form of ID_origin or ID_migrant
+Function that gets the name of the tip in the form of ID_origin or ID_migrant
 because we can observe duplicates (when in the form ID_origin or ID_migrant),
 we need to remove those from the phylogenetic tree.
 }

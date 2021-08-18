@@ -1,59 +1,33 @@
-#' @title Convert transmat infection tree into a phylogenetic tree
-#'
-#' @description Converts the edgelist matrix in the \code{transmat} object into
-#'              a \code{phylo} object by doing the required reordering and
-#'              labeling. This is a specific function that requires simulations
-#'              using EpiModel using the package HIVepisim (this package)
+#' Get tip names of phylogenetic tree based on transmission matrix
 #'
 #' @inheritParams get.transmat.phylo
 #' @param format If format = "origin" return tip in the form of ID_global or ID_region.
 #'        If format = "migrant" return tip in the form of ID_1, ID_2, ID_21, ID_12
-#' @param tips_only tips_only = TRUE returns only the tip names of the phylogenetic tree,
-#'        tips_only = FALSE returns the phylogenetic tree.
+#'
+#' @return List of tip names. See details for codes on the tip names related
+#'    to origin or global.
 #'
 #' @details
 #' This code was build using the algorithm as in \code{\link{as.phylo.transmat}}.
-#' The difference is that if using format = "origin", tip names of the phylogenetic
-#' tree will have appended to their names their origin at the moment infection
-#' happened (region or global). If using format = "migrant", tip names of the
-#' phylogenetic tree will have appended to their names if they are a migrant
-#' or not at the time of infection.
+#' The difference is that it will return only the tip names of phylogenetic tree.
+#' If using format = "origin", tip names will be in the form of ID_global or
+#' ID_region. If using format = "migrant", tip names will be in the form of
+#' ID_1, ID_21, ID_2, ID_12.
 #' Migrant values can take the value of 1 if vertex is from region,
 #' 2 if vertex is from global,
 #' 21 if vertex is from global that migrated to region and
 #' 12 if vertex is from region that migrated to global.
+#' It will return the origin at time of seroconversion.
 #'
-#' Converts a \code{\link{transmat}} object containing information about the
-#' history of a simulated infection into a \code{\link{phylo}} object
-#' representation suitable for plotting as a tree with
-#' \code{\link[ape]{plot.phylo}}. Each infection event becomes a 'node'
-#' (horizontal branch) in the resulting phylo tree, and each network vertex
-#' becomes a 'tip' of the tree. The infection events are labeled with the vertex
-#' id of the infector to make it possible to trace the path of infection.
-#'
-#' The infection timing information is included to position the phylo-nodes,
-#' with the lines to the tips drawn to the max time value +1 (unless
-#' \code{vertex.exit.times} are passed in it effectively assumes all vertices
-#' are active/alive until the end of the simulation).
-#'
-#' If the transmat contains multiple infection seeds (there are multiple trees
-#' with seperate root nodes) it will return a list of class 'multiPhylo', each
-#' element of which is a phylo object.  See \code{\link[ape]{read.tree}}.
-#'
-#' Note that in EpiModel versions <= 1.2.4, the phylo tree was constructed
-#' differently, translating network vertices to both phylo-nodes and tips and
-#' requiring 'collapse.singles' to prune it to an appropriate branching
-#' structure.
 #'
 #' This script will specifically work with the package HIVepisim.
 #'
 #' @export
-get_tip_names <- function(x, format = "migrant", by_areas = "region",
-                          max_value = NULL, tips_only = TRUE) {
+get_tipNames <- function(x, format = "migrant", by_areas = "region",
+                          max_value = NULL) {
   format <- format
   by_areas <-  by_areas
   max_value <- max_value
-  tips_only <- tips_only
 
   # if not named properly, assume inf, sus at
   if (!all(c("inf", "sus", "at") %in% names(x))) {
@@ -94,6 +68,7 @@ get_tip_names <- function(x, format = "migrant", by_areas = "region",
 
 
     # get tip names in the form of inf_infOri or sus_susOri
+    #browser()
     tipNamesOri <- unique(as.vector(el_ori[,c(4:5)]))
     # get tip names only without the origin. This will allow to determine duplications
     # when a tip was region and changed to global (or vice versa, for example)
@@ -119,27 +94,29 @@ get_tip_names <- function(x, format = "migrant", by_areas = "region",
 
 
 
-#' @title Get oldest times of duplicates.
+#' Get the time of duplicates at seroconversion.
 #'
 #' @description This is a support function for the main function
 #'    \code{\link{toPhylo_transmatOrigin}}.
 #'
 #' @param dup_rows matrix of list of matrices of transmat
 #'    that have duplicated vertex IDs.
-#' @param get_last_time vector of oldest time
+#' @param get_time vector of oldest time
 #'
 #' @details During the simulations, vertex can migrate from region to global
 #' or global to region. When adding the information of migrant or origin to the
 #' tip name, we will observe duplicated on vertex IDs because it can be in region
 #' at one time point but later in global, for example.
 #' This function will get the duplicated rows in the transmission matrix
-#' in which a duplicated vertex is observed. It will then get the oldest observed
-#' time for each duplicated vertex.
+#' in which a duplicated vertex is observed. It will then get the time observed
+#' for each duplicated vertex based on get_time. Basically it will return the
+#' origin at time of seroconversion.
 #'
 #' @export
-oldest_time <- function(dup_rows, get_last_time){
+time_atSeroconversion <- function(dup_rows, get_time){
+  #browser()
   dup_rows <- as.data.frame(dup_rows)
-  row_int <- dup_rows[dup_rows$at == get_last_time,]
+  row_int <- dup_rows[dup_rows$at == get_time,]
 
   return(row_int)
 }
@@ -153,18 +130,20 @@ oldest_time <- function(dup_rows, get_last_time){
 #' @param el_ori Matrix of edge list and information on origin or migration
 #'
 #' @return A vector of the duplicated vertex in the form of ID_origin or ID_migrant.
-#'    Based on the oldest time of duplicated rows (see \code{\link{oldest_time}}),
+#'    Based on the time of duplicated rows at seroconversion
+#'     (see \code{\link{time_atSeroconversion}}),
 #'    it will return the tip name that should be in the phylogenetic tree.
 #'    I used the origin or migrant information observed at the time of
-#'    transmission.
+#'    seroconversion.
 #'
 #' @export
 get_newTip_names <- function(dup_tip, el_ori){
+  #browser()
   if(length(dup_tip) == 1){
     # get duplicated rows in the el_ori matrix
     dup_rows <- el_ori[el_ori[,2] == dup_tip | el_ori[,3] == dup_tip,]
-    get_last_time <- as.numeric(tail(sort(dup_rows[,1]), 1))
-    row_int <- oldest_time(dup_rows, get_last_time)
+    get_time <- head(sort(as.numeric(dup_rows[,1])), 1)
+    row_int <- time_atSeroconversion(dup_rows, get_time)
 
     tip_origin_names <- name_of_tips(dup_tip, row_int)
 
@@ -172,9 +151,9 @@ get_newTip_names <- function(dup_tip, el_ori){
     # get duplicated rows in the el_ori matrix
     dup_rows <- lapply(dup_tip, function(x) el_ori[el_ori[,2] == x | el_ori[,3] == x,])
     # if duplicated tip appears in more the one row, get the oldest time
-    get_last_time <- lapply(dup_rows, function(x) as.numeric(tail(sort(x[,1]), 1)))
+    get_time <- lapply(dup_rows, function(x) head(sort(as.numeric(x[,1])), 1))
     #get the row of interest
-    row_int <- mapply(oldest_time, dup_rows, get_last_time, SIMPLIFY = FALSE)
+    row_int <- mapply(time_atSeroconversion, dup_rows, get_time, SIMPLIFY = FALSE)
 
     # here get unique values because we can still observe at a same time point a
     # transmission by a same node (individual)
@@ -190,14 +169,14 @@ get_newTip_names <- function(dup_tip, el_ori){
 #' @description This is a support function for the main function
 #'    \code{\link{toPhylo_transmatOrigin}}.
 #'
-#' Function that gest the name of the tip in the form of ID_origin or ID_migrant
+#' Function that gets the name of the tip in the form of ID_origin or ID_migrant
 #' because we can observe duplicates (when in the form ID_origin or ID_migrant),
 #' we need to remove those from the phylogenetic tree.
 #'
 #' @inheritParams get_newTip_names
 #' @param row_int data.frame of the row of interest. The row in the transmission
 #' matrix that have the oldest time step based on duplicated value.
-#' See \code{\link{oldest_time}} and \code{\link{get_newTip_names}}.
+#' See \code{\link{time_atSeroconversion}} and \code{\link{get_newTip_names}}.
 #'
 #' @return vector of ID_origin or ID_migrant.
 #'
@@ -281,16 +260,13 @@ replace_dups <- function(dup_tip, origNodes, tipNamesOri, tip_names_toInsert, ti
 }
 
 
-#' Title Scale branch length from a phylogeentic tree
+#' Scale branch length from a phylogeentic tree
 #'
 #' @param tree a phylo object
 #' @param scale numeric value to convert branch length
 #'
 #' @return
 #' @export
-#'
-#' @examples
-#' # TO DO!
 convert_branches <- function(tree, scale = 1/365){
 
   #convert branch lengths from days to years ----
@@ -316,9 +292,6 @@ convert_branches <- function(tree, scale = 1/365){
 #'
 #' @return
 #' @export
-#'
-#' @examples
-#' #TO DO!
 reorder_tip_names <- function(tip_names_migrant, tip_names_vts){
   # Get tip names in the form of ID_migrant
   tip_names_migrant_ID <- str_match(string = tip_names_migrant, pattern = "\\d+")
@@ -343,7 +316,6 @@ reorder_tip_names <- function(tip_names_migrant, tip_names_vts){
 #'
 #' @return merged trees as object of class phylo
 #' @export
-#'
 merge_trees <- function(trees){
 
 
@@ -355,7 +327,7 @@ merge_trees <- function(trees){
 
   if(n_trees > 0){
     #index to merge next tree
-    index_count <- 3
+    #index_count <- 3
     while(length(trees) - 2 > 0){
       tree <- trees[[3]]
 
@@ -367,7 +339,7 @@ merge_trees <- function(trees){
       new_tree <- bind.tree(treesxy, tree, position = treesxy$root.edge)
       treesxy <- new_tree
       trees <- trees[-3]
-      index_count <- index_count + 1
+      #index_count <- index_count + 1
     }
   }
 
@@ -383,9 +355,8 @@ merge_trees <- function(trees){
 #'
 #' @return
 #' @export
-#'
 add_root_edge <- function(tree, total_sim_steps, root.edge_value = 7665){
-
+  #browser()
   #max_edge <- max(distRoot(tree))
   max_edge <- max(get_all_distances_to_root(tree))
   tree_root.edge <- (total_sim_steps - max_edge) + root.edge_value
@@ -401,7 +372,6 @@ add_root_edge <- function(tree, total_sim_steps, root.edge_value = 7665){
 #'
 #' @return list of pairs of tip_names that are cherries
 #' @export
-#'
 get_tip_cherry <- function(phy){
   if (!inherits(phy, "phylo"))
     stop("object \"phy\" is not of class \"phylo\"")
@@ -420,6 +390,3 @@ get_tip_cherry <- function(phy){
 
   return(tip_names)
 }
-
-
-

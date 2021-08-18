@@ -11,7 +11,7 @@ summarize_data(df)
 }
 \value{
 dataframe for median and quantiles for quantities of interest.
-  see \code{link{validadeW}}
+  see \code{\link{validadeW}}.
 }
 \description{
 Summarize data for statistics calculated for infector probability (W)

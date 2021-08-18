@@ -1,5 +1,9 @@
 # Simulate sequence alignments
 # Seq-Gen MUST be installed in your computer
+
+#start of script
+start_time <- Sys.time()
+
 library(stringr)
 library(ape)
 
@@ -44,3 +48,12 @@ for(tree_name in vts_trees_years){
   args2 <- c("-mHKY", "-l10000", "-t8.75", "-f0.389,0.165,0.228,0.218", "-s0.0028", "-n1", "-of", tree_name)
   system2(command = Software, args = args2, stdout = seq_filename10000)
 }
+
+
+#end of script
+end_time <- Sys.time()
+print("Sequence alignment simulation took:")
+end_time - start_time
+
+seq_alignment_time <- data.frame(start = start_time, end = end_time)
+saveRDS(seq_alignment_time, "seq_alignment_time.RDS")

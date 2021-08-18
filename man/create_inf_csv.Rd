@@ -25,6 +25,3 @@ Create a transmission matrix file to be used with the
 \details{
 If a prefix is not provided, csv file will be saved as inf.csv
 }
-\examples{
-TO DO
-}

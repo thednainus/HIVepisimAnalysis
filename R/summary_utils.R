@@ -7,9 +7,8 @@
 #' @param df dataframe containing data to summarize
 #'
 #' @return dataframe for median and quantiles for quantities of interest.
-#'   see \code{link{validadeW}}
+#'   see \code{\link{validadeW}}.
 #' @export
-#'
 summarize_data <- function(df){
 
   df <- df[c(1,5,9,18,19)]
@@ -45,7 +44,6 @@ summarize_data <- function(df){
 }
 
 
-
 #' Get epi data for simulation runs
 #'
 #' @param list_dirs list of directories containing data
@@ -59,7 +57,6 @@ summarize_data <- function(df){
 #'   plotting purposes.
 #'
 #' @export
-#'
 get_epi_data <- function(list_dirs){
 
   #browser()

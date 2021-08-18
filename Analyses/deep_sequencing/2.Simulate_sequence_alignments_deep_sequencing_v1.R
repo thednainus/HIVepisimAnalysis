@@ -26,7 +26,7 @@ number_trees <- "~/Desktop/Imperial/newHIVproject-01Aug2020/reference_subtypeB/g
 # get all VirusTreeSimulator in which branch lengths have been converted into years
 # and tip names are in the format of ID_migrant
 vts_trees_years <- list.files(path = "output_deepseq/vts/merged_trees",
-                              pattern ="*onlyactive.tre|*onlyactive_diag.tre|*active_region_diag.tre", full.names = TRUE)
+                              pattern ="*.tre", full.names = TRUE)
 
 for(tree_name in vts_trees_years){
   filename_prefix <- str_split(tree_name, pattern = "\\.")[[1]][1]
@@ -63,7 +63,8 @@ for(tree_name in vts_trees_years){
   # Run VirusTreeSimulator
   #cmd <- paste(parameters1, parameters2, vts_trees_years[1])
   #Simulate complete HIV genomes
-  args1 <- c("-mHKY", "-t8.75", "-f0.389,0.165,0.228,0.218", "-s0.0028", "-n1", "-of", "-k 1", input_seqgen)
+  args1 <- c("-mHKY", "-t8.75", "-f0.389,0.165,0.228,0.218", "-s0.0028", "-n1",
+             "-of", "-k 1", input_seqgen)
   system2(command = Software, args = args1, stdout = seq_filename_genome)
 
   # read alignment and split each combination of sequences per individual
@@ -81,7 +82,8 @@ for(tree_name in vts_trees_years){
   #match id_names to sequence name in DNAbin
   index <- lapply(seq_ID_split, function(x) match(unname(unlist(x[[1]])), names(genome_seqs)))
 
-  seq_by_ID <- lapply(index, function(x) genome_seqs[head(x, n=1):tail(x, n=1)])
+  #seq_by_ID <- lapply(index, function(x) genome_seqs[head(x, n=1):tail(x, n=1)])
+  seq_by_ID <- lapply(index, function(x) genome_seqs[x])
 
   #save separate alignment in fasta format
 
@@ -102,7 +104,11 @@ for(tree_name in vts_trees_years){
 
 }
 
+
 #end of script
 end_time <- Sys.time()
-print("Simulation took:")
+print("Sequence alignment simulation took:")
 end_time - start_time
+
+seq_alignment_time <- data.frame(start = start_time, end = end_time)
+saveRDS(seq_alignment_time, "seq_alignment_time.RDS")

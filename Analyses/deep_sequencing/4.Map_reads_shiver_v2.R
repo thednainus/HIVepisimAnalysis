@@ -9,6 +9,7 @@ library(DescTools)
 
 #prefix for path names
 prefix <- "/Users/user/Desktop/Imperial/newHIVproject-01Aug2020/R_projects/HIVepisim/"
+#prefix <- paste(getwd(), "/", sep = "")
 
 # list directories
 reads_output <- dir(path = "output_deepseq/vts/merged_trees/Illumina_reads",
@@ -17,6 +18,8 @@ reads_output <- reads_output[1]
 
 #location of shiver
 shiver <- "/Users/user/Desktop/Imperial/newHIVproject-01Aug2020/shiver/"
+#shiver <- paste(prefix, "shiver/", sep = "")
+
 
 # location for shiver align contigs
 shiver_align_contigs <- paste(shiver, "shiver_align_contigs.sh", sep = "")
@@ -33,6 +36,7 @@ config_file <- paste(shiver, "config_MyChanges.sh", sep = "")
 
 #subtypeB reference sequence for mapping
 loc_subtypeB <- "/Users/user/Desktop/Imperial/newHIVproject-01Aug2020/reference_subtypeB/genome/reference_subtypeB_completeGenome.fasta"
+#loc_subtypeB <- paste(prefix, "reference_subtypeB_completeGenome.fasta", sep = "")
 
 
 for(i in 1:length(reads_output)){
@@ -77,7 +81,7 @@ for(i in 1:length(reads_output)){
     reads_2 <- paste(SID_shiver, "2.fq.gz", sep = "_")
     reads_2_fullPath <- paste(SplitPath(id_dirs[n])$normpath, reads_2, sep = "/")
 
-    parameters2 <- paste(MyInitDir, config_file, contigs_fasta_iva, SID_shiver,
+    parameters2 <- paste(MyInitDir, config_file, loc_subtypeB, SID_shiver,
                         SID_blast_fullPath, SID_wRefs_fullPath,
                         reads_1_fullPath, reads_2_fullPath,  sep = " ")
 
@@ -93,4 +97,7 @@ for(i in 1:length(reads_output)){
 end_time <- Sys.time()
 print("Simulation took:")
 end_time - start_time
+
+shiver_time <- data.frame(start = start_time, end = end_time)
+saveRDS(shiver_time, "shiver_time.RDS")
 

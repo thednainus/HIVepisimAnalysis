@@ -10,9 +10,11 @@
 start_time <- Sys.time()
 
 library(DescTools)
+library(stringr)
 
 #prefix for path names
-prefix <- "/Users/user/Desktop/Imperial/newHIVproject-01Aug2020/R_projects/HIVepisim/"
+prefix <- "/Users/user/Desktop/Imperial/newHIVproject-01Aug2020/R_projects/HIVepisimAnalysis/"
+#prefix <- paste(getwd(), "/", sep = "")
 
 # list directories
 output_dirs <- dir(path = "output_deepseq/vts/merged_trees/Illumina_reads",
@@ -137,3 +139,7 @@ write.table(x =  input_files, file = filename, quote = FALSE, sep = ",",
 end_time <- Sys.time()
 print("Simulation took:")
 end_time - start_time
+
+
+prepare_phyloscanner <- data.frame(start = start_time, end = end_time)
+saveRDS(prepare_phyloscanner, "prepare_phyloscanner.RDS")

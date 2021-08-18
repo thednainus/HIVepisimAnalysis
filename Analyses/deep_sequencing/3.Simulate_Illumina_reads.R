@@ -32,7 +32,7 @@ Software <- "/Applications/art_bin_MountRainier/art_illumina"
 
 
 # list directories
-fasta_dirs <- dir(path = "output_deepseq/vts/merged_trees/alignments/by_ID",
+fasta_dirs <- dir(path = "output_deepseq1/vts/merged_trees/alignments/by_ID",
                   full.names = TRUE)
 
 for(i in 1:length(fasta_dirs)){
@@ -41,18 +41,18 @@ for(i in 1:length(fasta_dirs)){
   fasta_files <- list.files(path = fasta_dirs[i], pattern = ".fasta",
                             full.names = TRUE)
 
-  fasta_files <- fasta_files[1:10]
-  print(fasta_files)
+  #fasta_files <- fasta_files[1:10]
+  #print(fasta_files)
 
   #get name of tree directory
   dir_name <- SplitPath(fasta_dirs[i])$filename
 
   # Create directory to save Illumina reads
-  if (!dir.exists("output_deepseq/vts/merged_trees/Illumina_reads")) {
-    dir.create("output_deepseq/vts/merged_trees/Illumina_reads")
+  if (!dir.exists("output_deepseq1/vts/merged_trees/Illumina_reads")) {
+    dir.create("output_deepseq1/vts/merged_trees/Illumina_reads")
   }
 
-  where2save_reads <- paste("output_deepseq/vts/merged_trees/Illumina_reads",
+  where2save_reads <- paste("output_deepseq1/vts/merged_trees/Illumina_reads",
                             dir_name, sep = "/")
 
   # Create directory for each type of phylogenetic tree
@@ -89,10 +89,12 @@ for(i in 1:length(fasta_dirs)){
 
   }
 
+}
+
 #end of script
 end_time <- Sys.time()
 print("Simulation took:")
 end_time - start_time
 
-
-}
+Illumina_time <- data.frame(start = start_time, end = end_time)
+saveRDS(Illumina_time, "Illumina_time.RDS")

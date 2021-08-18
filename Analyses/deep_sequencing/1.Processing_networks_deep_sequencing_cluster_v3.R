@@ -2,17 +2,21 @@
 # and run VirusTreeSimulator
 # This code has been tested on a Mac OS and might not work on windows or linux
 
+# this script will add a function to sample IDs and sample times
+
 #start of script
 start_time <- Sys.time()
 
 library(EpiModel)
 library(HIVepisim)
+library(HIVepisimAnalysis)
 library(DescTools)
 library(stringr)
 library(ape)
 library(phydynR)
 library(castor)
 library(dplyr)
+library(lubridate)
 
 
 # This function will generate input file to be used with program
@@ -41,8 +45,17 @@ parameters <- "-demoModel Logistic -N0 1 -growthRate 0.007813436 -t50 -0.0027397
 years <-  40
 area <-  "all"
 max_value <-  NULL
+#beginning of simulation time
+init_sim_date <- ymd("1981-01-01")
 # year of last sample dates in simulations
-last_sample_date <- 2021.0
+last_sample_date <- as.Date(x = years*365, origin = init_sim_date)
+
+
+#Times for sampling IDs and sampling times
+start_date <- ymd("1996-01-01")
+start_date_dec <- decimal_date(start_date)
+end_date <- ymd("2015-06-30")
+end_date_dec <- decimal_date(end_date)
 
 
 #Create directory named output_deepseq if it does not exist
@@ -51,11 +64,23 @@ if (!dir.exists("output_deepseq")) {
 }
 
 # read departure ID files
-dep <- read.csv("departure_IDs.csv")
-#read stages for the other IDs
-stages <- read.csv("stage_and_IDs.csv")
+#read info from file and convert time from days to decimal years
+art_init <- read.csv("run1/ART_init.csv")
+art_init["time_decimal"] <- days2years(sampleTimes = art_init$time,
+                                       init_date = init_sim_date)
+dep <- read.csv("run1/departure_IDs.csv")
+dep["time_decimal"] <- days2years(sampleTimes = dep$time,
+                                  init_date = init_sim_date)
 
-sim <- readRDS("results_sim.RDS")
+diag_info <- read.csv("run1/diag_time.csv")
+diag_info["time_decimal"] <- days2years(sampleTimes = diag_info$time,
+                                        init_date = init_sim_date)
+stages <- read.csv("run1/stages.csv")
+stages["time_decimal"] <- days2years(sampleTimes = stages$time,
+                                     init_date = init_sim_date)
+
+#read simulation results
+sim <- readRDS("run1/results_sim.RDS")
 sim_df <- as.data.frame(sim)
 
 tm <- get_transmat(sim)
@@ -64,9 +89,8 @@ tm <- get_transmat(sim)
 if(!is.null(tm)){
 
     # Get tip names in the form of ID_migrant
-    tip_names <- get_tip_names(tm, format = "migrant",
-                                   by_areas = area, max_value = max_value,
-                                   tips_only = TRUE)
+    tip_names <- get_tipNames(tm, format = "migrant",
+                                   by_areas = area, max_value = max_value)
 
     # check number of individual within "region"
     # region is code as 1 and 21
@@ -88,38 +112,23 @@ if(!is.null(tm)){
 
       create_inf_csv(tm, time_tr = rep(0, length(seed_names)), prefix=output)
 
+      # sample IDs and time of sampling
+      st_ids_region <- sampleIDs(perc = 0.05, start_date = start_date_dec,
+                                 end_date = end_date_dec, art_init = art_init,
+                                 departure = dep, diag_info = diag_info,
+                                 tm = tm, location = "region")
 
-      el <- cbind(tm$inf, tm$sus)
-      IDPOP <- unique(as.vector(el))
-
-
-      #match IDs from phylogenetic tree to the departure.csv file
-      index <- match(IDPOP, dep$infID)
-      time_seqs <- dep$time[index]
-      time_seqs[is.na(time_seqs)] <- years * 365
-
-      # if tx.status = 0 then sample 10 different viruses
-      # if tx.status = 1 then sample 2 different viruses
+      # sampled IDs are not on ART
+      # Sample 10 viruses per ID
       # note that this is just to start the simulations
       # but I should try to find real values for those
 
-      dep["seq_count"] <- ifelse(dep$tx.status_dep == 0, 10, 2)
-      stages["seq_count"] <- ifelse(stages$tx.status_inf == 0, 10, 2)
+      st_ids_region["date"] <- as.Date(date_decimal(st_ids_region$sampled_time))
+      st_ids_region["time_days"] <- as.numeric(st_ids_region$date - init_sim_date)
 
-      index_active <- match(IDPOP, stages$infID)
-
-      count_dep <- dep$seq_count[index]
-      count_active <- stages$seq_count[index_active]
-      count_total <- count_dep
-      count_total[is.na(count_total)] <- count_active[!is.na(count_active)]
-
-      #commented lines are just to check if code above is correct
-      #test_dep_id <- dep$infID[index]
-      #test_active_id <- stages$infID[index_active]
-      #all_ids <- test_dep_id
-      #all_ids[is.na(all_ids)] <- test_active_id[!is.na(test_active_id)]
-
-      create_sample_csv(tm, time_seq = time_seqs, seq_count = count_total, prefix = output)
+      create_sample_csv2(ids = st_ids_region$sampled_ID,
+                         time_seq = st_ids_region$time_days,
+                         seq_count = 10, prefix = output)
 
       #Create directory named VTS (for VirusTreeSimulator) if it does not exist
       if (!dir.exists("output_deepseq/vts/")) {
@@ -146,12 +155,14 @@ if(!is.null(tm)){
   list_trees <- dir("output_deepseq/vts", pattern = "*_simple.nex", full.names = TRUE)
   trees <- lapply(list_trees, read.nexus)
   #add root.edge
-  trees_rootedge <- lapply(trees, add_root_edge, total_sim_steps = 365 * years, root.edge_value = 0)
+  trees_rootedge <- lapply(trees, add_root_edge, total_sim_steps = years * 365,
+                           root.edge_value = 0)
   vts_tree <- merge_trees(trees_rootedge)
 
 
   # convert branch lengths from days to years
   tree_years <- convert_branches(tree = vts_tree, scale = 1/365)
+
 
   #get tip names from VirusTreeSimulator tree
   tip_names_vts <- tree_years$tip.label
@@ -164,6 +175,7 @@ if(!is.null(tm)){
   # 12 migrated from region to global;
   # 21 migrated from global to region)
   tip_names1 <- reorder_tip_names(tip_names, tip_names_vts)
+  tip_names1 <- tip_names1[!is.na(tip_names1)]
 
   #get sample number for each sequence
   sample_numbers <- unlist(lapply(tip_names_vts, function(x) paste("sample",
@@ -176,46 +188,19 @@ if(!is.null(tm)){
   tree_years$tip.label <- paste("ID", tip_names1, sample_numbers, sep = "_")
 
   # save trees
-  tree_filename <- paste(prefix_trees, "_merged_trees_allnodes_years.tre", sep="")
+  tree_filename <- paste(prefix_trees, "_sampling.tre", sep="")
   write.tree(phy = tree_years, file = tree_filename)
-
-  #drop tips in which node has died before end of simulation
-  all_IDs <- as.numeric(unlist(lapply(tree_years$tip.label, function(x) str_split(x, "_")[[1]][2])))
-  all_IDs <- all_IDs %in% dep$infID
-  all_IDs <- setNames(all_IDs, tree_years$tip.label)
-  toDrop <- all_IDs[all_IDs == TRUE]
-  only_active_tree <- drop.tip(tree_years, names(toDrop))
-
-  # save tree to simulate sequence alignment
-  tree_filename <- paste(prefix_trees, "_merged_trees_onlyactive.tre", sep="")
-  write.tree(phy = only_active_tree, file = tree_filename)
-
-
-  # drop the IDs of individuals that have not been diagnosed
-  IDs <- as.numeric(unlist(lapply(only_active_tree$tip.label, function(x) str_split(x, "_")[[1]][2])))
-  active_diagStatus <- subset(stages, diag.status_inf == 0)
-  IDs <- IDs %in% active_diagStatus$infID
-  IDs <- setNames(IDs, only_active_tree$tip.label)
-  toDrop <- IDs[IDs == TRUE]
-  only_active_tree_diag <- drop.tip(only_active_tree, names(toDrop))
-
-  # save tree to simulate sequence alignment
-  tree_filename <- paste(prefix_trees, "_merged_trees_onlyactive_diag.tre", sep="")
-  write.tree(phy = only_active_tree_diag, file = tree_filename)
-
 
   # Remove sequences from "global" -----
   # to calculate infector probability
-  migrant_ID <- unlist(lapply(only_active_tree_diag$tip.label,
+  migrant_ID <- unlist(lapply(tree_years$tip.label,
                               function(x) ifelse(str_split(x, "_")[[1]][3] == "1" | str_split(x, "_")[[1]][3] == "21",
                                                  FALSE, TRUE)))
-  migrant_ID <- setNames(migrant_ID, only_active_tree_diag$tip.label)
-  toDrop <- migrant_ID[migrant_ID == TRUE]
-  region_only_tree <- drop.tip(only_active_tree_diag, names(toDrop))
+  if(sum(migrant_ID) != 0){
+    stop("there are mix region and global samples together. Something wrong with
+         script to get tip names")
+  }
 
-  # save tree to simulate sequence alignment
-  tree_filename <- paste(prefix_trees, "_merged_trees_active_region_diag.tre", sep="")
-  write.tree(phy = region_only_tree, file = tree_filename)
 
 
 }
@@ -224,4 +209,7 @@ if(!is.null(tm)){
 end_time <- Sys.time()
 print("Simulation took:")
 end_time - start_time
+
+processing_network_time <- data.frame(start = start_time, end = end_time)
+saveRDS(processing_network_time, "processing_network_time.RDS")
 

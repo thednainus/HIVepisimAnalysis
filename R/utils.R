@@ -98,9 +98,6 @@ get.transmat.phylo <- function(x, vertex.exit.times, by_areas = "all", max_value
 #'
 #' @return
 #' @export
-#'
-#' @examples
-#' TO DO
 create_inf_csv <- function(tm, time_tr, prefix = NULL){
 
   seed_names <- setdiff(unique(tm$inf), unique(tm$sus))
@@ -184,7 +181,50 @@ create_sample_csv <- function(tm, time_seq, seq_count, prefix = NULL){
 }
 
 
+#' Get sample csv file
+#'
+#' @param ids Vector of samples IDs.
+#' @inheritParams create_sample_csv
+#'
+#' @details
+#' If a prefix is not provided, csv file will be saved as sample.csv
+#'
+#' @return
+#' @export
+create_sample_csv2 <- function(ids, time_seq, seq_count, prefix = NULL){
 
+  IDPOP <- ids
+
+  if(length(time_seq) == 1){
+    TIME_SEQ <- rep(time_seq, length(IDPOP))
+  } else if (length(time_seq) == length(IDPOP)){
+    TIME_SEQ <- time_seq
+  }else if (length(time_seq) != length(IDPOP)){
+    stop("`time_seq` should be of length 1 or length of samples in the transmission matrix")
+  }
+
+
+  if(length(seq_count) == 1){
+    SEQ_COUNT <- rep(seq_count, length(IDPOP))
+  } else if (length(seq_count) == length(IDPOP)){
+    SEQ_COUNT <- seq_count
+  }else if(length(seq_count) != length(IDPOP)){
+    stop(" `seq_count` should be of length 1 or length of samples in the transmission matrix")
+  }
+
+
+  all_data <- data.frame(IDPOP, TIME_SEQ, SEQ_COUNT)
+
+  if(is.null(prefix)){
+    filename <- "sample.csv"
+  } else {
+    filename <- paste(prefix, "sample.csv", sep = "_")
+  }
+
+
+  write.csv(x = all_data, file = filename, row.names = FALSE)
+
+}
 
 
 #' @export
