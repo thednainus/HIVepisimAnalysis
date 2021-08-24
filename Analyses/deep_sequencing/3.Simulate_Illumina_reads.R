@@ -64,7 +64,8 @@ for(i in 1:length(fasta_dirs)){
   for(f in 1:length(fasta_files)){
 
     # Create directory for save reads for each ID in the phylogenetic tree
-    out_dir <- SplitPath(fasta_files[f])$filename
+    #out_dir <- SplitPath(fasta_files[f])$filename
+    out_dir <- f
     if (!dir.exists(paste(where2save_reads, out_dir, sep = "/"))) {
       dir.create(paste(where2save_reads, out_dir, sep = "/"))
     }

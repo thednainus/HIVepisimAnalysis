@@ -83,7 +83,8 @@ for(i in 1:length(outfiles)){
 
     fileToAnalyse <- paste(fileToAnalyse, paste(new_dir, ".", sep = "/"), sep = " ")
 
-    tar_filename <- paste("results_", main_dirName, ID_count[j], ".tar.gz", sep = "")
+    tar_filename <- paste("results_", paste(main_dirName, "_", sep = ""),
+                          ID_count[j], ".tar.gz", sep = "")
 
     pbstext <- paste(pbstext,
 
@@ -121,11 +122,21 @@ for(i in 1:length(outfiles)){
                 "rm shiver.tar.gz",
                 "rm -rf ./output_deepseq/vts/merged_trees/Illumina_reads/results_sampling",
 
+                "\n",
+                "## make dir in the submission directory - anything not copied back will be lost",
+                paste("mkdir -p $WORK/Ethics-HIV/small_pop/sim1/res_sim1",
+                      main_dirName,
+                      loc_IDs,
+                      "shiver",
+                      paste("newID_$PBS_ARRAY_INDEX", "/", sep = ""),
+                      sep = "/"),
 
+                "\n",
                 "## copy files back to the submission directory - anything not copied back will be lost",
                 paste("cp -a $WORKDIR $WORK/Ethics-HIV/small_pop/sim1/res_sim1",
                       main_dirName,
                       loc_IDs,
+                      "shiver",
                       paste("newID_$PBS_ARRAY_INDEX", "/", sep = ""),
                       sep = "/"),
 

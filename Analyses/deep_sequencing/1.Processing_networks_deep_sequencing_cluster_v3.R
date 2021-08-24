@@ -46,7 +46,7 @@ years <-  40
 area <-  "all"
 max_value <-  NULL
 #beginning of simulation time
-init_sim_date <- ymd("1981-01-01")
+init_sim_date <- ymd("1980-01-01")
 # year of last sample dates in simulations
 last_sample_date <- as.Date(x = years*365, origin = init_sim_date)
 

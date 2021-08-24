@@ -276,3 +276,75 @@ get_cd4s <- function(IDPOP, df_actives, df_departures){
 
 }
 
+
+#' Get CD4s by node IDs
+#'
+#' @param df_actives dataframe of IDs that were active at the end of a simulation
+#'    and stages of HIV infection.
+#' @param df_departures dataframe of IDs that departed the network before end of
+#'    simulation and stages of HIV infection
+#'
+#' @return
+#' @export
+#'
+get_cd4s <- function(sampled_info, stages){
+
+  stages_per_ID <- apply(sampled_info, MARGIN = 1,
+                                function(x) stages[stages$time_decimal <= as.numeric(x["sampled_time"]) &
+                                                     IDs == as.numeric(stages$IDs == x["sampled_ID"]),] )
+
+  stages_per_ID <- apply(sampled_info, MARGIN = 1,
+                         function(x) subset(stages, IDs == as.numeric(x["sampled_ID"]) &
+                                              time_decimal <= as.numeric(x["sampled_time"])))
+
+
+  apply(sampled_info, MARGIN = 1,
+        function(x) print(as.numeric(x["sampled_time"])))
+
+
+  lapply(sampled_info$sampled_ID, stageatTimeSample,
+         sampled_time =
+         stages = stages,
+         sam)
+  apply(sampled_info, MARGIN = 1,
+        function(x) print(x))
+
+
+
+  subset(stages, time_decimal <= sampled_time & IDs == sampled_id)
+
+    unlist(lapply(df_actives$stage_inf, function(x) cd4s(x)))
+  #cd4s of active nodes at the end of simulation
+  active_cd4s <- df_actives$cd4s
+  active_cd4s_IDs <- setNames(active_cd4s, df_actives$infID)
+
+  df_departures["cd4s"] <- unlist(lapply(df_departures$stage_dep, function(x) cd4s(x)))
+  dep_cd4s <- df_departures$cd4s
+  dep_cd4s_IDs <- setNames(dep_cd4s, df_departures$infID)
+
+  index1 <- match(IDPOP, names(active_cd4s_IDs))
+  cd4s1 <- active_cd4s_IDs[index1]
+  index2 <- match(IDPOP, names(dep_cd4s_IDs))
+  cd4s2 <- dep_cd4s_IDs[index2]
+
+  index_tmp <- index1
+  index_tmp[is.na(index_tmp)] <- index2[!is.na(index2)]
+  #get cds4
+  cd4s_tmp <- cd4s1
+
+  cd4s_tmp[is.na(cd4s_tmp)] <- cd4s2[!is.na(cd4s2)]
+  names(cd4s_tmp)[is.na(names(cd4s_tmp))] <- names(cd4s2)[!is.na(names(cd4s2))]
+
+  return(cd4s_tmp)
+
+}
+
+stageatTimeSample <- function(sampled_id, sampled_time, stages){
+
+  id_df <- subset(stages, time_decimal <= sampled_time & IDs == sampled_id)
+
+
+}
+
+
+
