@@ -13,7 +13,7 @@
 #' @param MH maximum height in which infector probabilities were calculated
 #' @param true_tree object of class phylo
 #' @param prefix prefix to save results. If prefix = NULL, results will be saved
-#'   on file W_on_true.csv.
+#'   on file W_stats.csv.
 #'
 #' @return a data frame of 1 row with the following values:
 #'  1. Code = code indicating if W was calculated on true trees
@@ -53,7 +53,7 @@ validadeW <- function(sim, run, tm, W_true, W_estimated, seed_ID, MH, true_tree,
   tm_mh <- subset(tm_seed, infOrigin == "region" & susOrigin == "region")
 
   # W on true trees ----
-  W_on_true <- W_manipulations(W_true, code = "W on true")
+  W_stats <- W_manipulations(W_true, code = "W on true")
 
 
   # W on estimated trees ----
@@ -67,19 +67,19 @@ validadeW <- function(sim, run, tm, W_true, W_estimated, seed_ID, MH, true_tree,
 
 
   # get transmission
-  all_trans_Wtrue <- semi_join(W_on_true$Wsub, tm, by = c("donor_ID", "recip_ID"))
+  all_trans_Wtrue <- semi_join(W_stats$Wsub, tm, by = c("donor_ID", "recip_ID"))
   all_trans_West <- semi_join(W_on_estimated$Wsub, tm, by = c("donor_ID", "recip_ID"))
 
 
 
 
-  if(!is.null(W_on_true$W80)){
+  if(!is.null(W_stats$W80)){
     # true transmissions: correct identification of donor and recipient
-    W80true_correctDonorRecip <- semi_join(W_on_true$W80, tm, by = c("donor_ID", "recip_ID"))
+    W80true_correctDonorRecip <- semi_join(W_stats$W80, tm, by = c("donor_ID", "recip_ID"))
   }
-  if(!is.null(W_on_true$W80_trunc)){
+  if(!is.null(W_stats$W80_trunc)){
     # true transmission but incorrect identification of donor and recipient
-    W80true_swapDonorRecip <- semi_join(W_on_true$W80_trunc, tm, by = c("donor_ID", "recip_ID"))
+    W80true_swapDonorRecip <- semi_join(W_stats$W80_trunc, tm, by = c("donor_ID", "recip_ID"))
   }
 
   if(!is.null(W_on_estimated$W80)){
@@ -107,22 +107,22 @@ validadeW <- function(sim, run, tm, W_true, W_estimated, seed_ID, MH, true_tree,
                          total_tips = length(true_tree$tip.label),
                          n_tips_region = sum(region),
                          n_tips_global = sum(global),
-                         n_trans_Wtrue = nrow(W_on_true$Wsub),
+                         n_trans_Wtrue = nrow(W_stats$Wsub),
                          n_trans_West = nrow(W_on_estimated$Wsub),
                          n_trans_tm = nrow(tm),
                          n_true_trans_Wtrue = nrow(all_trans_Wtrue),
                          n_true_trans_West = nrow(all_trans_West),
-                         n_W80true_all = ifelse(is.null(W_on_true$W80), 0, nrow(W_on_true$W80)),
-                         n_W80true_correctDonorRecipt = ifelse(is.null(W_on_true$W80),
+                         n_W80true_all = ifelse(is.null(W_stats$W80), 0, nrow(W_stats$W80)),
+                         n_W80true_correctDonorRecipt = ifelse(is.null(W_stats$W80),
                                                                0, nrow(W80true_correctDonorRecip)),
-                         n_W80true_swapDonorRecipt = ifelse(is.null(W_on_true$W80_trunc),
+                         n_W80true_swapDonorRecipt = ifelse(is.null(W_stats$W80_trunc),
                                                             0, nrow(W80true_swapDonorRecip)),
                          n_W80est_all = ifelse(is.null(W_on_estimated$W80), 0, nrow(W_on_estimated$W80)),
                          n_W80est_correctDonorRecipt = ifelse(is.null(W_on_estimated$W80), 0,
                                                               nrow(W80est_correctDonorRecip)),
                          n_W80est_swapDonorRecipt = ifelse(is.null(W_on_estimated$W80_trunc), 0,
                                                            nrow(W80est_swapDonorRecip)),
-                         expected_n_trans_Wtrue = sum(W_on_true$W$infectorProbability),
+                         expected_n_trans_Wtrue = sum(W_stats$W$infectorProbability),
                          expected_n_trans_West = sum(W_on_estimated$W$infectorProbability))
 
   if(is.null(prefix)){
@@ -137,85 +137,103 @@ validadeW <- function(sim, run, tm, W_true, W_estimated, seed_ID, MH, true_tree,
 }
 
 
-#' Title Validate infector probability calculation
+#' Summarize infector probability (W) for phylogenetic trees
 #'
-#' This function saves several values to compare W calculated on true trees
-#'    (all region and a subset of it)
-#'    and the true transmission matrix. For the return values see below.
+#' This function will summarize results for W calculated for a phylogenetic tree.
 #'
 #' @param sim Simulation number to know the parameter values that network was
-#'    simulated
-#' @param run Run number
-#' @param tm Transmission matrix
+#'    simulated.
+#' @param tm Transmission matrix.
 #' @param W1 Infector probability calculated on true trees (all region tips)
-#' @param W2 Infector probability calculated on true trees (subset of region tips)
 #' @param ID ID name.
-#' @param MH maximum height in which infector probabilities should be calculated
-#' @param true1 object of class phylo
-#' @param true2 object of class phylo
+#' @param code string to identify if W was calculated on true or simulated trees.
 #' @param prefix prefix to save results. If prefix = NULL, results will be saved
-#'   on file W_on_true.csv.
+#'    as W.csv.
+#' @param labels if labels = TRUE, labels of 0 or 1 will be created for ROC
+#'    curves.
 #'
 #' @return a data frame of 1 row with the following values:
-#'  1. Code = code indicating if W was calculated on true trees
-#'  2. Maximum height = maximum height (MH) in which calculations were performed;
-#'  3. Total tips = total number of tips in the phylogenetic tree;
-#'  4. n_tips_region = total number of tips from region in the phylogenetic tree;
-#'  5. n_tips_global = total number of tips from global in the phylogenetic tree;
-#'  6. n_trans_W = total number of transmissions independent of infector probability
-#'     values;
-#'  7. n_trans_tm = total number of transmissions based on transmission matrix
-#'     subset by MH;
-#'  8. n_true_trans_W = total number of true transmission independent of infector
+#'
+#'   all_data <- data.frame(sim,
+#'  1. Sim = simulation number (to get parameter values).
+#'
+#'
+#'  2. Total tips = total number of tips in the phylogenetic tree.
+#'
+#'  3. n_tips_region = total number of tips from region in the phylogenetic tree.
+#'
+#'  4. n_tips_global = total number of tips from global in the phylogenetic tree.
+#'
+#'  5. n_trans_W_all = total number of transmission pairs in which W was calculated.
+#'     Here we consider all infector probability values.Here W was calculated for
+#'     the combination of tips in the phylogenetic tree.
+#'
+#'  6. n_trans_tm = total number of true transmissions based on the transmission
+#'                  matrix (tm). Note that the tm will be subset to include only
+#'                  IDs that are also observed in the phylogenetic tree.
+#'
+#'  7. n_true_trans_W = total number of true transmission independent of infector
 #'     probability (W) values. Here is the true transmission when compared to the
-#'     transmission matrix;
-#'  9. n_W80_all = number of transmission in which W >= 80%;
-#'  10. n_W80_correctDonorRecipt = number of transmission in point 9 that is a
-#'      true transmission (when comparing to the transmission matrix);
-#'  11. n_W80_swapDonorRecipt = number of transmission in point 9 that is a
+#'     transmission matrix.
+#'
+#'  8. n_W80_all = number of transmission pairs in which W >= 80%.
+#'
+#'  9. n_W80_correctDonorRecipt = number of transmission pairs in point 8 that is a
+#'      true transmission (when comparing to the transmission matrix).
+#'
+#'  10. n_W80_swapDonorRecipt = number of transmission pairs in point 8 that is a
 #'      true transmission (when comparing to the transmission matrix), but
-#'      there was a swap between donor and recipient;
-#'  12. expected_n_trans = expected number of transmission defined as the sum
-#'      of all infector probability (W) values.
+#'      there was a swap between donor and recipient.
+#'
+#'  11. expected_n_trans = expected number of transmission defined as the sum
+#'                         of all infector probability (W) values.
 #'
 #' @export
-summaryW2 <- function(sim, run, tm, W1, ID, MH, tree, prefix = NULL, labels = TRUE){
+summaryW <- function(sim, tm, W1, ID, tree, code, prefix = NULL, labels = TRUE){
 
   #browser()
-
-  #add time in years
-  tm["time_years"] <- tm["at"] * 1/365
 
   #subset tm to region only
   tm_region <- subset(tm, infOrigin == "region" & susOrigin == "region")
 
   #keep_only_rows that tips are in phylogenetic tree
   rows_to_keep <- keep_row(df = tm_region, tree = tree)
-  tm1 <- tm_region[rows_to_keep,]
+
+  if(!is.null(rows_to_keep)){
+    tm1 <- tm_region[rows_to_keep,]
+  } else{
+    #if there is no rows to keep, assign all values of tm1 to NA
+    tm1 <- tm_region[1,]
+    tm1[1,] <- NA
+  }
+
 
 
   # W on true trees (all region tips: tree1) ----
-  W_on_true <- W_manipulations(W1, code = "W on true")
+  W_stats <- W_manipulations(W1, code = code)
 
 
   #converting tm to the same column names as Wsub
+  # Wsub = data frame of W that was subset to contain only donor_ID and recip_ID
+  # which we can compare to the transmission matrix
   tm_all1 <- data.frame(donor_ID = tm1$inf, recip_ID = tm1$sus,
                    infectorProbability = 1, Code = "True transmission")
 
 
 
-  # get transmission
-  all_trans_W1 <- semi_join(W_on_true$Wsub, tm_all1, by = c("donor_ID", "recip_ID"))
+  # get all transmissions that has a W calculated and also occured as
+  # true transmission in the transmission matrix
+  all_trans_W1 <- semi_join(W_stats$Wsub, tm_all1, by = c("donor_ID", "recip_ID"))
 
 
-
-  if(!is.null(W_on_true$W80)){
+  # W_stats$W80 is a subset of W that was higher than 80%
+  if(!is.null(W_stats$W80)){
     # true transmissions: correct identification of donor and recipient
-    W80true_correctDonorRecip <- semi_join(W_on_true$W80, tm_all1, by = c("donor_ID", "recip_ID"))
+    W80true_correctDonorRecip <- semi_join(W_stats$W80, tm_all1, by = c("donor_ID", "recip_ID"))
   }
-  if(!is.null(W_on_true$W80_trunc)){
+  if(!is.null(W_stats$W80_trunc)){
     # true transmission but incorrect identification of donor and recipient
-    W80true_swapDonorRecip <- semi_join(W_on_true$W80_trunc, tm_all1, by = c("donor_ID", "recip_ID"))
+    W80true_swapDonorRecip <- semi_join(W_stats$W80_trunc, tm_all1, by = c("donor_ID", "recip_ID"))
   }
 
 
@@ -227,20 +245,18 @@ summaryW2 <- function(sim, run, tm, W1, ID, MH, tree, prefix = NULL, labels = TR
 
 
   all_data <- data.frame(sim,
-                         run,
-                         maximum_height = MH,
                          total_tips = length(tree$tip.label),
                          n_tips_region_tree = sum(region),
                          n_tips_global_tree = sum(global),
-                         n_trans_Wtrue = nrow(W_on_true$Wsub),
+                         n_trans_W_all = nrow(W_stats$Wsub),
                          n_trans_tm = nrow(tm1),
-                         n_trans_W = nrow(all_trans_W1),
-                         n_W80_all_tree1 = ifelse(is.null(W_on_true$W80), 0, nrow(W_on_true$W80)),
-                         n_W80_correctDonorRecipt_tree1 = ifelse(is.null(W_on_true$W80),
+                         n_true_trans_W = nrow(all_trans_W1),
+                         n_W80_all = ifelse(is.null(W_stats$W80), 0, nrow(W_stats$W80)),
+                         n_W80_correctDonorRecipt = ifelse(is.null(W_stats$W80),
                                                                0, nrow(W80true_correctDonorRecip)),
-                         n_W80_swapDonorRecipt_tree1 = ifelse(is.null(W_on_true$W80_trunc),
+                         n_W80_swapDonorRecipt = ifelse(is.null(W_stats$W80_trunc),
                                                             0, nrow(W80true_swapDonorRecip)),
-                         expected_n_trans_Wtrue = sum(W_on_true$W$infectorProbability))
+                         expected_n_trans = sum(W_stats$W$infectorProbability))
 
   if(is.null(prefix)){
     filename <- "W_stats.csv"
@@ -248,8 +264,8 @@ summaryW2 <- function(sim, run, tm, W1, ID, MH, tree, prefix = NULL, labels = TR
     filename <- paste(prefix, "W_stats.csv", sep = "_")
   }
 
-  write.table(all_data, file = filename, append = TRUE, sep = ",",
-              row.names = FALSE, col.names = !file.exists(filename))
+  write.table(all_data, file = filename, append = FALSE, sep = ",",
+              row.names = FALSE)
 
   if(labels == TRUE){
 
@@ -266,10 +282,13 @@ summaryW2 <- function(sim, run, tm, W1, ID, MH, tree, prefix = NULL, labels = TR
     }
 
     # get transmission
-    not_correct <- anti_join(W_on_true$Wsub, tm_all1, by = c("donor_ID", "recip_ID"))
+    not_correct <- anti_join(W_stats$Wsub, tm_all1, by = c("donor_ID", "recip_ID"))
     not_correct["labels"] <- 0
 
-    all_trans_W1["labels"] <- 1
+    if(nrow(all_trans_W1) > 0){
+      all_trans_W1["labels"] <- 1
+    }
+
 
     all_labels <- rbind(all_trans_W1, not_correct)
     all_labels["total_tips"] <- length(tree$tip.label)
@@ -302,8 +321,8 @@ summaryW2 <- function(sim, run, tm, W1, ID, MH, tree, prefix = NULL, labels = TR
     pairs$labels <- as.factor(pairs$labels)
 
 
-    write.table(pairs, file = filename1, append = TRUE, sep = ",",
-                row.names = FALSE, col.names = !file.exists(filename1))
+    write.table(pairs, file = filename1, append = FALSE, sep = ",",
+                row.names = FALSE)
   }
 
 }

@@ -64,12 +64,12 @@ sampleIDs <- function(perc, start_date, end_date,
   sampledIDs_list <- NULL
 
   #total number of individuals in the transmission matrix
-  n_region <- get_n_by_origin(tm, location = location)
+  n_origin <- get_n_by_origin(tm, location = location)
 
   #get percentage of total number of individuals for each population
   #nst = number of sample times to take for each population
-  n_sample_times <- round(perc * n_region, 0)
-  #nst_global <- round(0.05 * n_global,0)
+  n_sample_times <- round(perc * n_origin, 0)
+
 
   #count for sample time
   count <- n_sample_times

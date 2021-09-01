@@ -1,152 +1,190 @@
 # create pbs script to run shiver in individual IDs.
 library(DescTools)
+library(stringr)
+library(HIVepisimAnalysis)
 
-#outfiles <- list.files("/rds/general/user/fferre15/home/Ethics-HIV/small_pop/sim1/res_sim1", full.names = TRUE)
+#outfiles <- list.files("/rds/general/user/fferre15/home/Ethics-HIV/small_pop/sim1/res_sim1/stage2", full.names = TRUE)
 #outfiles <- list.files("output_deepseq1/vts/merged_trees/Illumina_reads/results_sampling/")
 outfiles <- list.files("/Users/user/Desktop/teste/storage_test", full.names = TRUE)
 
+simulation <- "sim1"
 
-
-#location of IDS
-loc_IDs <- "output_deepseq/vts/merged_trees/Illumina_reads/results_sampling"
-
-
-#count number of files
-n_files <- length(outfiles)
+#save input list file
+input_files <- list()
 
 for(i in 1:length(outfiles)){
 
-  pbsfilename <- paste("shiver", SplitPath(outfiles[i])$filename, "pbs", sep = ".")
+  dir_list <- list.dirs(outfiles[i])
+  dir_list <- dir_list[grepl("ID_", dir_list)]
+  input_files[[i]] <- paste(dir_list, "/.", sep = "")
 
-  ID_dirs <- paste(outfiles[i], loc_IDs, sep = "/")
+}
 
-  ID_count <- list.files(ID_dirs)
+input_files <- unlist(input_files)
 
-  if(length(ID_count) < 10000){
+#separate input files into chunks
+#an array job can have a maximum of 10,000 subjobs
 
-    array_number <- paste("#PBS", " -J", " 1-", length(ID_count), sep = "")
-
-  }
-
-  for(j in 1:length(ID_count)){
-
-    pbstext <- paste("#PBS -l walltime=72:00:00",
-                     "#PBS -l select=1:ncpus=2:mem=15gb",
-                     "#PBS -o sim1_stage3.stdout",
-                     "#PBS -e sim1_stage3.stderr",
-                     array_number,
-                     sep = "\n")
-
-    pbstext <- paste(pbstext,
-                     "\n",
-                     "## load in the R environment",
-                     "module load anaconda3/personal",
-                     "source activate deep_seq_analysis",
-
-                     "\n",
-                     "## copy required files to the temporary directory on the compute node",
-                     "WORKDIR=${EPHEMERAL}/${PBS_JOBID}",
-                     "mkdir -p $WORKDIR",
-                     "cd $WORKDIR",
-
-                     "\n",
-                     "#copy R scripts",
-                     "cp $HOME/Ethics-HIV/small_pop/Rscripts/4.Map_reads_shiver_v2.R .",
-
-                     "\n",
-                     "#copy Softwares and other input files",
-                     "#that we will need to run the abovementioned R scripts",
-                     "cp $HOME/Ethics-HIV/small_pop/input_files/reference_subtypeB_completeGenome.fasta .",
-
-                     "cp $HOME/Ethics-HIV/Programs/shiver.tar.gz .",
-
-                     "\n",
-                     "#untar shiver program",
-                     "tar -xzvf shiver.tar.gz ",
-                     sep = "\n")
-
-    #copy files to run shiver
-    #get main dir name
-    main_dirName <- SplitPath(outfiles[i])$filename
-
-    #create dirs to copy files
-    new_dir <- paste(loc_IDs, ID_count[j], sep = "/")
-
-    fileToAnalyse <- paste("cp -a $WORK/Ethics-HIV/small_pop/sim1/res_sim1",
-                           main_dirName,
-                           loc_IDs,
-                           ID_count[j],
-                           ".",
-                           sep = "/")
+input_split_dirs <- split_dirs(input_files, size = 10000)
 
 
+output_files <- str_split(input_files, pattern = "/")
+output_files <- unlist(lapply(output_files, function(x) paste(x[1:7], collapse = "/")))
+output_split_dirs <- split_dirs(output_files, size = 10000)
 
-    fileToAnalyse <- paste(fileToAnalyse, paste(new_dir, ".", sep = "/"), sep = " ")
+mkdir_outfiles <- lapply(output_split_dirs, function(x) str_split(x, pattern = "/"))
 
-    tar_filename <- paste("results_", paste(main_dirName, "_", sep = ""),
-                          ID_count[j], ".tar.gz", sep = "")
-
-    pbstext <- paste(pbstext,
+mkdir_outfiles <- lapply(mkdir_outfiles, lapply, function(x) str_split(x, pattern = "/")[[7]])
+mkdir_outfiles <- lapply(mkdir_outfiles, function(x) unlist(x))
 
 
-                "#make new dir",
-                paste("mkdir", "-p", new_dir, sep = " "),
+for (i in 1:length(input_split_dirs)){
 
-                "\n",
-                "#cp network simulations from first round of simulations",
-                fileToAnalyse,
+  #create files with input file list
+  input_filename <- paste(paste("input_file_list", simulation, i, sep ="_"),
+                          "txt", sep = ".")
+  write.table(x = input_split_dirs[[i]], quote = FALSE,
+              row.names = FALSE, col.names = FALSE,
+              file = input_filename)
 
-                "\n",
-                "## Run R scripts",
-                "Rscript 4.Map_reads_shiver_v2.R",
+  #create files with output file list
+  output_filename <- paste(paste("output_file_list", simulation, i, sep ="_"),
+                           "txt", sep = ".")
+  write.table(x = output_split_dirs[[i]], quote = FALSE,
+              row.names = FALSE, col.names = FALSE,
+              file = output_filename)
 
-                "\n",
-                "# remove simulated Illumina reads to decrease storage spage",
-                paste("rm ", new_dir, "/*.fq.gz", sep = ""),
+  #create files with mkdir file list
+  mkdir_filename <- paste(paste("mkdir_file_list", simulation, i, sep ="_"),
+                           "txt", sep = ".")
+  write.table(x = mkdir_outfiles[[i]], quote = FALSE,
+              row.names = FALSE, col.names = FALSE,
+              file = mkdir_filename)
 
-                "\n",
-                "#remove tmp files generated by shiver",
-                paste("rm ", new_dir, "/shiver/temp_*", sep = ""),
+  OUT_DIR <-  paste("$(head -n $PBS_ARRAY_INDEX", output_filename, "| tail -1)", sep = " ")
+  mknew_dir <- paste("$(head -n $PBS_ARRAY_INDEX", mkdir_filename, "| tail -1)", sep = " ")
 
-                "\n",
-                "#compress files",
-                paste("tar -czvf",
-                      tar_filename,
-                      "./output_deepseq/vts/merged_trees/Illumina_reads/results_sampling",
-                      sep = " "),
 
-                "\n",
-                "#Remove directories for shiver",
-                "# so they do not get transferred back to home directory",
-                "rm -rf shiver",
-                "rm shiver.tar.gz",
-                "rm -rf ./output_deepseq/vts/merged_trees/Illumina_reads/results_sampling",
+  pbsfilename <- paste(paste("shiver", simulation, i, sep = "_"), ".pbs", sep = "")
 
-                "\n",
-                "## make dir in the submission directory - anything not copied back will be lost",
-                paste("mkdir -p $WORK/Ethics-HIV/small_pop/sim1/res_sim1",
-                      main_dirName,
-                      loc_IDs,
-                      "shiver",
-                      paste("newID_$PBS_ARRAY_INDEX", "/", sep = ""),
-                      sep = "/"),
 
-                "\n",
-                "## copy files back to the submission directory - anything not copied back will be lost",
-                paste("cp -a $WORKDIR $WORK/Ethics-HIV/small_pop/sim1/res_sim1",
-                      main_dirName,
-                      loc_IDs,
-                      "shiver",
-                      paste("newID_$PBS_ARRAY_INDEX", "/", sep = ""),
-                      sep = "/"),
+  array_number <- paste("#PBS", " -J", " 1-", length(output_split_dirs[[i]]), sep = "")
 
-                sep = "\n")
 
-  }
+  pbstext <- paste("#PBS -l walltime=72:00:00",
+                   "#PBS -l select=1:ncpus=2:mem=15gb",
+                   "#PBS -o sim1_stage3.stdout",
+                   "#PBS -e sim1_stage3.stderr",
+                   array_number,
+                   sep = "\n")
+
+  pbstext <- paste(pbstext,
+                   "\n",
+                   "## load in the R environment",
+                   "module load anaconda3/personal",
+                   "source activate deep_seq_analysis",
+
+                   "\n",
+                   "## copy required files to the temporary directory on the compute node",
+                   "WORKDIR=${EPHEMERAL}/${PBS_JOBID}",
+                   "mkdir -p $WORKDIR",
+                   "cd $WORKDIR",
+
+                   "\n",
+                   "#copy R scripts",
+                   "cp $HOME/Ethics-HIV/small_pop/Rscripts/4.Map_reads_shiver_v2.R .",
+
+                   "\n",
+                   "#copy Softwares and other input files",
+                   "#that we will need to run the abovementioned R scripts",
+                   "cp $HOME/Ethics-HIV/small_pop/input_files/reference_subtypeB_completeGenome.fasta .",
+
+                   "cp $HOME/Ethics-HIV/Programs/shiver.tar.gz .",
+
+                   paste("cp $HOME/Ethics-HIV/small_pop/sim1/", input_filename, " .", sep = ""),
+                   paste("cp $HOME/Ethics-HIV/small_pop/sim1/", output_filename, " .", sep = ""),
+                   paste("cp $HOME/Ethics-HIV/small_pop/sim1/", mkdir_filename, " .", sep = ""),
+
+                   "\n",
+                   "#untar shiver program",
+                   "tar -xzvf shiver.tar.gz ",
+                   sep = "\n")
+
+  #copy files to run shiver
+  #create dirs to copy files
+  new_shiver_dir <- "shiver2"
+  new_reads_dir <- paste(new_shiver_dir, "Illumina_reads", sep = "/")
+  output_dirname <- "phyloscanner"
+
+  new_ephemeraldir <- paste("$EPHEMERAL",paste("shiver", simulation, sep = "_"),
+                            mknew_dir, output_dirname,  sep = "/")
+
+  pbstext <- paste(pbstext,
+
+
+                   "#make new dir",
+                   paste("mkdir", "-p", new_reads_dir, sep = " "),
+
+                   "\n",
+                   "#cp Illumina reads to run shiver",
+                   paste(paste("cp -a ", "$(head -n $PBS_ARRAY_INDEX", input_filename, "| tail -1)", sep = ""),
+                         paste(new_reads_dir, "/.", sep = "")),
+                   "\n",
+                   "## Run R scripts",
+                   "Rscript 4.Map_reads_shiver_v2.R",
+
+                   "\n",
+                   "# remove simulated Illumina reads to decrease storage spage",
+                   paste("rm ", new_shiver_dir, "/*.fq.gz", sep = ""),
+
+                   "\n",
+                   "#remove tmp files generated by shiver",
+                   paste("rm ", new_shiver_dir, "/temp_*", sep = ""),
+                   paste("rm ", new_reads_dir, "/temp_*", sep = ""),
+
+                   "\n",
+                   "#Remove directories for shiver",
+                   "# so they do not get transferred back to home directory",
+                   "rm -rf shiver",
+                   "rm shiver.tar.gz",
+
+                   "\n",
+                   "## make dir in the submission directory - anything not copied back will be lost",
+                   paste("mkdir -p", new_ephemeraldir, sep = " "),
+
+                   "\n",
+                   "## copy files back to Ephemeral directory",
+                   "## I cannot copy results back to $HOME because of storage issues",
+                   paste("cp -a ", "$WORKDIR/shiver/*.bam ", new_ephemeraldir, "/.", sep = ""),
+                   paste("cp -a ", "$WORKDIR/shiver/*.bai ", new_ephemeraldir, "/.", sep = ""),
+                   paste("cp -a ", "$WORKDIR/shiver/*ref.fasta ", new_ephemeraldir, "/.", sep = ""),
+
+                   sep = "\n")
+
 
   write.table(pbstext, file = pbsfilename, quote = FALSE,
               row.names = FALSE, col.names = FALSE)
+
+
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

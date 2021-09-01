@@ -34,7 +34,7 @@ transmissions; it is the initial infected node in the simulations.}
 \item{true_tree}{object of class phylo}
 
 \item{prefix}{prefix to save results. If prefix = NULL, results will be saved
-on file W_on_true.csv.}
+on file W_stats.csv.}
 }
 \value{
 a data frame of 1 row with the following values:

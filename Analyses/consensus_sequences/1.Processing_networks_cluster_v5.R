@@ -1,6 +1,10 @@
 # Get transmission matrix ----
 # and run VirusTreeSimulator
 # This code has been tested on a Mac OS and might not work on windows or linux
+
+#start of script
+start_time <- Sys.time()
+
 library(EpiModel)
 library(HIVepisim)
 library(HIVepisimAnalysis)
@@ -10,6 +14,7 @@ library(ape)
 library(phydynR)
 library(castor)
 library(dplyr)
+library(lubridate)
 
 
 # This function will generate input file to be used with program
@@ -46,14 +51,14 @@ init_sim_date <- ymd("1980-01-01")
 last_sample_date <- as.Date(x = years*365, origin = init_sim_date)
 
 
-
 #Times for sampling IDs and sampling times
 start_date <- ymd("1996-01-01")
 start_date_dec <- decimal_date(start_date)
 end_date <- ymd("2015-06-30")
 end_date_dec <- decimal_date(end_date)
 
-
+# percentage of population to sampled IDs
+perc_pop <- 0.05
 
 #Create directory named output if it does not exist
 if (!dir.exists("output")) {
@@ -123,7 +128,7 @@ if(!is.null(tm)){
       create_inf_csv(tm, time_tr = rep(0, length(seed_names)), prefix=output)
 
       # sample IDs and time of sampling
-      st_ids_region <- sampleIDs(perc = 0.05, start_date = start_date_dec,
+      st_ids_region <- sampleIDs(perc = perc_pop, start_date = start_date_dec,
                                  end_date = end_date_dec, art_init = art_init,
                                  departure = dep, diag_info = diag_info,
                                  tm = tm, location = "region")
@@ -186,31 +191,29 @@ if(!is.null(tm)){
 
 
   # save tree to simulate sequence alignment using Python script
-  tree_filename <- paste(prefix_vts, "_merged_trees_sampling.tre", sep="")
+
+  tree_filename <- paste(prefix_vts, "_merged_trees_sampling_", perc_pop, ".tre", sep="")
   write.tree(phy = tree_years, file = tree_filename)
 
 
   # Calculate infector probability ----
-  all_cd4s <- get_cd4s(IDPOP = IDPOP, df_actives = stages, df_departures = dep)
-  names(all_cd4s) <- tip_names
+  all_cd4s <- get_cd4s_sampling(st_ids_region, stages)
+
+  tips <- unlist(lapply(tree_years$tip.label, function(x) str_split(x, "_")[[1]][1]))
+
+  #match cd4s to order of tip names in the phylogenetic tree
+  all_cd4s <- all_cd4s[match(tips, names(all_cd4s))]
+  all_cd4s <- setNames(all_cd4s, tree_years$tip.label)
 
   #get ehi (early HIV infection)
   #named logical vector, may be NA, TRUE if patient sampled with early HIV infection (6 mos )
   ehis <- ifelse(all_cd4s == 1e3, TRUE, FALSE)
 
-
-  #match IDs from phylogenetic tree to the departure.csv file
-  index <- match(IDPOP, dep$infID)
-  time_seqs <- dep$time[index]
-  time_seqs[is.na(time_seqs)] <- years * 365
-
-  sampleTimes <- round(time_seqs/365, digits = 3)
-  sampleTimes <- years - sampleTimes
-  # if sampleTimes == 0, it means that ID was active at the last time step
-  # of network simulation
-  # I assume that the most recent sample data is in object last_sample_date
-  sampleTimes <- ifelse(sampleTimes != 0, last_sample_date - sampleTimes, last_sample_date)
-  names(sampleTimes) <- tip_names
+  #match sampled times to the order of tip names in the phylogenetic tree
+  sampleTimes <- st_ids_region$sampled_time
+  sampleTimes <- setNames(sampleTimes, st_ids_region$sampled_ID)
+  sampleTimes <- sampleTimes[match(tips, names(sampleTimes))]
+  sampleTimes <- setNames(sampleTimes, tree_years$tip.label)
 
 
   # to calculate infector probabilities
@@ -220,37 +223,14 @@ if(!is.null(tm)){
   # numberPeopleLivingWithHIV: scalar
   # numberNewInfectionsPerYear: scalar
 
-  W <- phylo.source.attribution.hiv.msm( region_only_tree, sampleTimes[region_only_tree$tip.label],
-                                         cd4s = all_cd4s[region_only_tree$tip.label],
-                                         ehi = ehis[region_only_tree$tip.label],
+  W <- phylo.source.attribution.hiv.msm( tree_years, sampleTimes[tree_years$tip.label],
+                                         cd4s = all_cd4s[tree_years$tip.label],
+                                         ehi = ehis[tree_years$tip.label],
                                          numberPeopleLivingWithHIV  = totalPLWHIV,
                                          numberNewInfectionsPerYear = newinf_per_year,
                                          maxHeight = years,
                                          res = 1e3,
                                          treeErrorTol = Inf)
-
-
-  #newtree resampled tree
-  n <- as.integer(length(region_only_tree$tip.label) * 0.15)
-  newtree <- keep.tip( region_only_tree, sample( region_only_tree$tip.label,
-                                                 size = n , replace=FALSE))
-
-  # save tree to simulate sequence alignment
-  newtree_filename <- paste(prefix_vts, "_region_diag_resampled.tre", sep="")
-  write.tree(phy = newtree, file = newtree_filename)
-
-
-  W1 <- phylo.source.attribution.hiv.msm( newtree, sampleTimes[newtree$tip.label],
-                                         cd4s = all_cd4s[newtree$tip.label],
-                                         ehi = ehis[newtree$tip.label],
-                                         numberPeopleLivingWithHIV  = totalPLWHIV,
-                                         numberNewInfectionsPerYear = newinf_per_year,
-                                         maxHeight = years,
-                                         res = 1e3,
-                                         treeErrorTol = Inf)
-
-
-
 
   #Create directory named W (to save everything related to infector probability)
   # if it does not exist
@@ -261,19 +241,14 @@ if(!is.null(tm)){
   saveRDS(sampleTimes, paste("output/vts/W/", "sampleTimes.RDS",sep=""))
   prefix <- "test"
 
-  W_filename <- paste("output/vts/W/", "merged_trees", "_migrant_years_1_simple", ".RData", sep="")
-  save(years, max_value, last_sample_date, tm, tree_years, only_active_tree, region_only_tree, only_active_tree_diag,
-       sampleTimes, all_cd4s, ehis, newinf_per_year, totalPLWHIV, W, W1, newtree,
+  W_filename <- paste("output/vts/W/", "merged_trees_sampling", "_migrant_years_1_simple_", perc_pop, ".RData", sep="")
+  save(years, max_value, init_sim_date, last_sample_date, tm, st_ids_region,
+       tree_years, sampleTimes, all_cd4s, ehis, newinf_per_year, totalPLWHIV, W,
        file = W_filename)
 
-  summaryW2(sim = "1", run = "1",
-            tm = tm, W, ID = "all_tips", MH = years,
-            tree = region_only_tree, prefix = paste(prefix, "all_region_diag", sep = "_"), labels = TRUE)
-
-
-  summaryW2(sim = "1", run = "1",
-            tm = tm, W1, ID = "subset_tips", MH = years,
-            tree = newtree, prefix = paste(prefix, "region_subset_all_diag", sep = "_"), labels = TRUE)
+  summaryW(sim = "1", tm = tm, W, ID = "sampled",
+            tree = tree_years, code = "code",
+           prefix = paste(prefix, "sampled_region", sep = "_"), labels = TRUE)
 
 }
 
