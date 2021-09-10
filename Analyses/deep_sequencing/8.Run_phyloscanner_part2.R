@@ -1,6 +1,6 @@
 # script to run phyloscanner: https://github.com/BDI-pathogens/phyloscanner
 # this script run the second part of phyloscanner:
-# analyse trees generated from part 1
+# it will analyze trees generated with script 7.Estimate_trees_read_alignments_v2.R
 
 # phyloscanner dependencies
 # https://github.com/BDI-pathogens/phyloscanner/blob/master/InfoAndInputs/InstallationNotesForMakingTrees.sh

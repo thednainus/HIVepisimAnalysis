@@ -59,6 +59,8 @@ sampleIDs <- function(perc, start_date, end_date,
                       art_init, departure,
                       diag_info, tm, location){
 
+  #browser()
+
   #initially assume that we will have ids to sample
   ids2sample <- "yes"
   sampledIDs_list <- NULL
@@ -81,7 +83,7 @@ sampleIDs <- function(perc, start_date, end_date,
   while(ids2sample == "no" | count > 0){
 
       #sample a time within start_date and end_date
-      sample_time <- runif(n = 1, min = start_date_dec, max = end_date_dec)
+      sample_time <- runif(n = 1, min = start_date, max = end_date)
 
       # from IDs vector, get those IDs that have been diagnosed
       diag_ids <- diag_info[diag_info$IDs %in% IDs,]

@@ -20,10 +20,10 @@ Software <- "/Applications/Seq-Gen-1.3.4/source/seq-gen"
 # get all VirusTreeSimulator in which branch lengths have been converted into years
 # and tip names are in the format of ID_migrant
 #vts_trees_years <- list.files(path = "output/vts", pattern ="*migrant_years", full.names = TRUE)
-vts_trees_years <- list.files(path = "output/vts", pattern ="*onlyactive.tre", full.names = TRUE)
+vts_trees_years <- list.files(path = "output/vts", pattern ="*trees_sampling*", full.names = TRUE)
 
 for(tree_name in vts_trees_years){
-  filename_prefix <- str_split(tree_name, pattern = "\\.")[[1]][1]
+  filename_prefix <- str_split(tree_name, pattern = "\\.tre")[[1]][1]
   filename_prefix <- str_split(filename_prefix, pattern = "/")[[1]][3]
 
   #Create directory for sequence alignment

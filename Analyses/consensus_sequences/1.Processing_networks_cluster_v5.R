@@ -51,14 +51,15 @@ init_sim_date <- ymd("1980-01-01")
 last_sample_date <- as.Date(x = years*365, origin = init_sim_date)
 
 
-#Times for sampling IDs and sampling times
+#Times for sampling IDs and sampling times for within region
 start_date <- ymd("1996-01-01")
 start_date_dec <- decimal_date(start_date)
 end_date <- ymd("2015-06-30")
 end_date_dec <- decimal_date(end_date)
 
 # percentage of population to sampled IDs
-perc_pop <- 0.05
+perc_pop_region <- 0.05
+perc_pop_global <- 2 * perc_pop_region
 
 #Create directory named output if it does not exist
 if (!dir.exists("output")) {
@@ -127,8 +128,8 @@ if(!is.null(tm)){
 
       create_inf_csv(tm, time_tr = rep(0, length(seed_names)), prefix=output)
 
-      # sample IDs and time of sampling
-      st_ids_region <- sampleIDs(perc = perc_pop, start_date = start_date_dec,
+      # sample IDs from region and time of sampling
+      st_ids_region <- sampleIDs(perc = perc_pop_region, start_date = start_date_dec,
                                  end_date = end_date_dec, art_init = art_init,
                                  departure = dep, diag_info = diag_info,
                                  tm = tm, location = "region")
@@ -138,6 +139,18 @@ if(!is.null(tm)){
       st_ids_region["date"] <- as.Date(date_decimal(st_ids_region$sampled_time))
       st_ids_region["time_days"] <- as.numeric(st_ids_region$date - init_sim_date)
 
+
+      # sample IDs from global and time of sampling
+      st_ids_global <- sampleIDs(perc = perc_pop_global, start_date = decimal_date(init_sim_date),
+                                 end_date = decimal_date(last_sample_date), art_init = art_init,
+                                 departure = dep, diag_info = diag_info,
+                                 tm = tm, location = "global")
+
+      # sampled IDs are not on ART
+
+      st_ids_global["date"] <- as.Date(date_decimal(st_ids_global$sampled_time))
+      st_ids_global["time_days"] <- as.numeric(st_ids_global$date - init_sim_date)
+
       #get stage of HIV infection at time of sampling for each individual
 
 
@@ -145,8 +158,8 @@ if(!is.null(tm)){
       # 1 individual.
       # Because I am applying a sampling process, I may have trees with 1 individual
       # and the following scripts would not work
-      create_sample_csv2(ids = st_ids_region$sampled_ID,
-                         time_seq = st_ids_region$time_days,
+      create_sample_csv2(ids = c(st_ids_region$sampled_ID, st_ids_global$sampled_ID),
+                         time_seq = c(st_ids_region$time_days, st_ids_global$time_days),
                          seq_count = 2, prefix = output)
 
 
@@ -197,7 +210,7 @@ if(!is.null(tm)){
 
 
   # Calculate infector probability ----
-  all_cd4s <- get_cd4s_sampling(st_ids_region, stages)
+  all_cd4s <- get_cd4s_sampling(rbind(st_ids_region, st_ids_global), stages)
 
   tips <- unlist(lapply(tree_years$tip.label, function(x) str_split(x, "_")[[1]][1]))
 
@@ -210,8 +223,8 @@ if(!is.null(tm)){
   ehis <- ifelse(all_cd4s == 1e3, TRUE, FALSE)
 
   #match sampled times to the order of tip names in the phylogenetic tree
-  sampleTimes <- st_ids_region$sampled_time
-  sampleTimes <- setNames(sampleTimes, st_ids_region$sampled_ID)
+  sampleTimes <- c(st_ids_region$sampled_time, st_ids_global$sampled_time)
+  sampleTimes <- setNames(sampleTimes, c(st_ids_region$sampled_ID, st_ids_global$sampled_ID))
   sampleTimes <- sampleTimes[match(tips, names(sampleTimes))]
   sampleTimes <- setNames(sampleTimes, tree_years$tip.label)
 
@@ -223,9 +236,17 @@ if(!is.null(tm)){
   # numberPeopleLivingWithHIV: scalar
   # numberNewInfectionsPerYear: scalar
 
-  W <- phylo.source.attribution.hiv.msm( tree_years, sampleTimes[tree_years$tip.label],
-                                         cd4s = all_cd4s[tree_years$tip.label],
-                                         ehi = ehis[tree_years$tip.label],
+  #drop tips from global to calculate infector probability
+
+  tipLocation <- grepl(pattern = "_2$|_12", x = tree_years$tip.label, perl = TRUE)
+  tipLocation <- setNames(tipLocation, tree_years$tip.label)
+  tips2drop <- tipLocation[tipLocation == TRUE]
+
+  onlyregion_tree <- drop.tip(tree_years, names(tips2drop))
+
+  W <- phylo.source.attribution.hiv.msm( onlyregion_tree, sampleTimes[onlyregion_tree$tip.label],
+                                         cd4s = all_cd4s[onlyregion_tree$tip.label],
+                                         ehi = ehis[onlyregion_tree$tip.label],
                                          numberPeopleLivingWithHIV  = totalPLWHIV,
                                          numberNewInfectionsPerYear = newinf_per_year,
                                          maxHeight = years,
@@ -239,16 +260,17 @@ if(!is.null(tm)){
   }
 
   saveRDS(sampleTimes, paste("output/vts/W/", "sampleTimes.RDS",sep=""))
-  prefix <- "test"
+  #prefix <- "test"
 
   W_filename <- paste("output/vts/W/", "merged_trees_sampling", "_migrant_years_1_simple_", perc_pop, ".RData", sep="")
-  save(years, max_value, init_sim_date, last_sample_date, tm, st_ids_region,
+  save(years, MH = years, max_value, init_sim_date, last_sample_date, start_date,
+       end_date, tm, st_ids_region, st_ids_global,
        tree_years, sampleTimes, all_cd4s, ehis, newinf_per_year, totalPLWHIV, W,
        file = W_filename)
 
   summaryW(sim = "1", tm = tm, W, ID = "sampled",
-            tree = tree_years, code = "code",
-           prefix = paste(prefix, "sampled_region", sep = "_"), labels = TRUE)
+            tree = tree_years, code = "TrueTrees",
+           prefix = NULL, labels = TRUE)
 
 }
 

@@ -22,9 +22,9 @@ phyloscanner <- "/Users/user/Desktop/Imperial/newHIVproject-01Aug2020/Phyloscann
 make_trees <- paste(phyloscanner, "phyloscanner_make_trees.py", sep = "/")
 
 # window parameters
-# these windows parameters are from Table S3 from Ratman et al. 2019 (Nature Communications)
+# these window parameters are from Table S1 from Ratman et al. 2019 (Nature Communications)
 window_width <- "250,"
-window_overlap <- "25,"
+window_overlap <- "125,"
 start_pos <- "800,"
 end_pos <- "9400"
 
@@ -55,9 +55,9 @@ excision_coords <- paste("--excision-coords", "$(cat",
                          ")", sep = " ")
 
 
-merging_threshold <- paste("--merging-threshold-a", "0", sep = " ")
+merging_threshold <- paste("--merging-threshold-a", "1", sep = " ")
 
-min_read_count <- paste("--min-read-count", "1", sep = " ")
+min_read_count <- paste("--min-read-count", "2", sep = " ")
 
 #option to generate read alignments only
 #trees will not be generated
@@ -67,40 +67,31 @@ no_trees <- "--no-trees"
 #Phyloscanner location
 
 # list directories
-output_dirs <- dir(path = "output_deepseq/vts/merged_trees/Illumina_reads",
-                   full.names = TRUE)
-output_dirs <- output_dirs[1]
+# phyloscanner directory (with the bam files)
+phyloscanner_dir_fullPath <- paste(getwd(), "phyloscanner", sep = "/")
 
-for(i in 1:length(output_dirs)){
-
-  # phyloscanner directory
-  pyloscanner_dir_fullPath <- paste(SplitPath(output_dirs[i])$normpath,
-                                    "phyloscanner", sep = "/")
-
-  BamsRefsAndIds <- paste(pyloscanner_dir_fullPath, "BamsRefsAndIDs.csv", sep = "/")
+BamsRefsAndIds <- paste(phyloscanner_dir_fullPath, "BamsRefsAndIDs.csv", sep = "/")
 
 
-  #parameters <- paste(BamsRefsAndIds, auto_window_param, alignment_other_refs,
-  #              paiwise_align_to, merge_pairs, quality_trim_ends,
-  #              min_internal_quality, excision_ref, excision_coords,
-  #              merging_threshold, min_read_count, raxml, sep = " ")
+#parameters <- paste(BamsRefsAndIds, auto_window_param, alignment_other_refs,
+#              paiwise_align_to, merge_pairs, quality_trim_ends,
+#              min_internal_quality, excision_ref, excision_coords,
+#              merging_threshold, min_read_count, raxml, sep = " ")
 
-  parameters <- paste(BamsRefsAndIds, auto_window_param, alignment_other_refs,
-                      paiwise_align_to, merge_pairs, quality_trim_ends,
-                      min_internal_quality,
-                      excision_ref, excision_coords,
-                      merging_threshold, min_read_count, no_trees, sep = " ")
-
-
-  command_make_trees <- paste("cd", pyloscanner_dir_fullPath, "&&", make_trees, sep = " ")
-  makeTrees_and_args <- paste(command_make_trees, parameters, sep = " ")
+parameters <- paste(BamsRefsAndIds, auto_window_param, alignment_other_refs,
+                    paiwise_align_to, merge_pairs, quality_trim_ends,
+                    min_internal_quality,
+                    excision_ref, excision_coords,
+                    merging_threshold, min_read_count, no_trees, sep = " ")
 
 
-  system(makeTrees_and_args)
+command_make_trees <- paste("cd", phyloscanner_dir_fullPath, "&&", make_trees, sep = " ")
+makeTrees_and_args <- paste(command_make_trees, parameters, sep = " ")
 
 
+system(makeTrees_and_args)
 
-}
+
 
 #end of script
 end_time <- Sys.time()
