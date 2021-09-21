@@ -1,4 +1,4 @@
-#Sampling importance resampling (SIR) using deviance for poisson distribtution
+#Sampling importance resampling (SIR) using deviance for poisson distribution
 
 #source observed data
 source(system.file("data/incidence_HIVdiagnosis.R", package = "HIVepisimAnalysis"))
