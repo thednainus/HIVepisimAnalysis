@@ -3,47 +3,31 @@
 #source observed data
 source(system.file("data/incidence_HIVdiagnosis.R", package = "HIVepisimAnalysis"))
 
-#pop1_data_agg
-#pop1_data_agg["rep_param"] <- paste(pop1_data_agg$param, "replicate", pop1_data_agg$sim, sep = "_")
-#pop1_data_agg$rep_param <- as.factor(pop1_data_agg$rep_param)
-#pop1_data_agg <- pop1_data_agg[,c(1,6,4)]
-
 pop1_data_agg <- readRDS(system.file("data/example_data.RDS", package = "HIVepisimAnalysis"))
 
-#sampling importance resampling
-test <- ddply(pop1_data_agg, "rep_param", sir,
-               diag_obs = incidenceDiag$frequency)
 
 
-sir <- function(diag_obs, diag_est){
-  #browser()
-  diag_est <- diag_est$newDx_pop1
-  #subset to remove the NA in observed data (data not available fro 1981 and 2021)
-  diag_est <- diag_est[3:41]
-
-  diag_obs <- diag_obs[3:41]
-
-  dev_poi <- list()
-
-  for(i in 1:length(diag_obs)){
-    #I used the equation for the unit deviance for the poisson distribution
-    dev_poi[[i]] <- 2 * (diag_obs[i] * log(diag_obs[i]/diag_est[i]) - diag_obs[i] + diag_est[i])
-
-  }
-
-  dev_poi <- unlist(dev_poi)
-  #browser()
-  #normalize deviance
-  dev_poi <- dev_poi/sum(dev_poi)
-
-  if(sum(dev_poi) > 0 & is.na(sum(dev_poi)) == FALSE ){
-    new_sampling <- sample(x = diag_est,
-                           size = 39,
-                           replace = TRUE,
-                           prob = dev_poi)
-  }else{
-    new_sampling <- rep(NA, 39)
-  }
-
-  return(new_sampling)
+compute_log_importance_weight <- function ( diag_obs, diag_sim )
+{
+	diag_sim <- diag_sim$newDx_pop1
+	#subset to remove the NA in observed data (data not available fro 1981 and 2021)
+	diag_sim <- diag_sim[3:41]
+	diag_obs <- diag_obs[3:41]
+	
+	sum( dpois( diag_sim, lambda = diag_obs , log = TRUE ) )
 }
+log_weights <- plyr::ddply(pop1_data_agg, "rep_param", compute_log_importance_weight,
+               diag_obs = incidenceDiag$frequency)
+w =   exp( log_weights[,2]  - max( log_weights[,2] ) )
+resample <- sample( as.character( log_weights[, 'rep_param']  ), prob = w, replace = TRUE ) 
+
+
+
+# this is effectively sampling only one trajectory so let's look at taht alongside the real data 
+pop1_data_agg$year <- as.numeric(  pop1_data_agg$year ) + 1980
+sims = split( pop1_data_agg , pop1_data_agg$rep_param )
+Y = do.call( cbind, lapply( sims , '[[', 'newDx_pop1' )  )
+matplot( sims[[1]]$year, Y , type = 'l', col = 'grey', lwd=.5, ylim = c( 0, max(na.omit( c(pop1_data_agg$newDx_pop1,  incidenceDiag$frequency)) ) ) )
+lines( sims[[ resample[1] ]]$year , sims[[ resample[1] ]]$newDx_pop1, col = 'red', lwd = 2 )
+with( incidenceDiag, points( time, frequency, pty = 20, col = 'black', cex = 2 ) )
+
