@@ -2,10 +2,12 @@
 
 #deviance for poisson distribution
 
-pop1_data_agg
-pop1_data_agg["rep_param"] <- paste(pop1_data_agg$param, "replicate", pop1_data_agg$sim, sep = "_")
-pop1_data_agg$rep_param <- as.factor(pop1_data_agg$rep_param)
-pop1_data_agg <- pop1_data_agg[,c(1,6,4)]
+#pop1_data_agg
+#pop1_data_agg["rep_param"] <- paste(pop1_data_agg$param, "replicate", pop1_data_agg$sim, sep = "_")
+#pop1_data_agg$rep_param <- as.factor(pop1_data_agg$rep_param)
+#pop1_data_agg <- pop1_data_agg[,c(1,6,4)]
+
+pop1_data_agg <- readRDS(system.file("data/example_data.RDS", package = "HIVepisimAnalysis"))
 
 #sampling importance resampling
 test <- ddply(pop1_data_agg, "rep_param", sir,
@@ -32,8 +34,6 @@ sir <- function(diag_obs, diag_est){
   #browser()
   #normalize deviance
   dev_poi <- dev_poi/sum(dev_poi)
-
-  browser()
 
   if(sum(dev_poi) > 0 & is.na(sum(dev_poi)) == FALSE ){
     new_sampling <- sample(x = diag_est,
