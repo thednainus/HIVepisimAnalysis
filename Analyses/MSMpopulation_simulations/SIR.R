@@ -1,6 +1,7 @@
 #Sampling importance resampling (SIR) using deviance for poisson distribtution
 
-#deviance for poisson distribution
+#source observed data
+source(system.file("data/incidence_HIVdiagnosis.R", package = "HIVepisimAnalysis"))
 
 #pop1_data_agg
 #pop1_data_agg["rep_param"] <- paste(pop1_data_agg$param, "replicate", pop1_data_agg$sim, sep = "_")
