@@ -121,3 +121,45 @@ get_rates <- function(threshold, df_true){
 
   return(rates)
 }
+
+
+#' Sampling Importance Resampling
+#'
+#' @param diag_obs Frequency of observed incidence of HIV diagnosis in MSM
+#'    from 1982 to 2020
+#' @param diag_est Frequency of estimated incidence of HIV diagnosis in MSM
+#'    from 1982 to 2020
+#'
+#' @return
+#' @export
+samp_imp_resamp <- function(diag_obs, diag_est){
+  #browser()
+  diag_est <- diag_est$newDx_pop1
+  dev_poi <- list()
+
+  for(i in 1:length(diag_obs)){
+    #print(i)
+    dev_poi[[i]] <- 2 * (diag_obs[i] * log(diag_obs[i]/diag_est[i]) - diag_obs[i] + diag_est[i])
+  }
+
+  dev_poi <- unlist(dev_poi)
+  #browser()
+  #normalize deviance
+  dev_poi <- dev_poi/sum(dev_poi, na.rm = TRUE)
+
+  #browser()
+
+  #in many instances dev_poi will be equal to zeros
+  #so I can't sample anything because it has probability of zero
+
+  if(sum(dev_poi) != 0 ){
+    new_sampling <- sample(x = diag_est,
+                           size = 42,
+                           replace = TRUE,
+                           prob = dev_poi)
+  }else{
+    new_sampling <- rep(NA, 40)
+  }
+
+  return(new_sampling)
+}

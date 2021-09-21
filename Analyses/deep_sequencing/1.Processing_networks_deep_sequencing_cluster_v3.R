@@ -47,8 +47,10 @@ area <-  "all"
 max_value <-  NULL
 #beginning of simulation time
 init_sim_date <- ymd("1980-01-01")
+# end of simulation date
+end_sim_date <- ymd("2021-01-01")
 # year of last sample dates in simulations
-last_sample_date <- as.Date(x = years*365, origin = init_sim_date)
+last_sample_date <- end_sim_date
 
 
 #Times for sampling IDs and sampling times
@@ -155,7 +157,7 @@ if(!is.null(tm)){
   list_trees <- dir("output_deepseq/vts", pattern = "*_simple.nex", full.names = TRUE)
   trees <- lapply(list_trees, read.nexus)
   #add root.edge
-  trees_rootedge <- lapply(trees, add_root_edge, total_sim_steps = years * 365,
+  trees_rootedge <- lapply(trees, add_root_edge, total_sim_steps = as.numeric(last_sample_date - init_sim_date),
                            root.edge_value = 0)
   vts_tree <- merge_trees(trees_rootedge)
 
