@@ -2,6 +2,7 @@
 
 export(add_root_edge)
 export(cd4s)
+export(compute_log_importance_weight)
 export(convert_branches)
 export(create_inf_csv)
 export(create_sample_csv)

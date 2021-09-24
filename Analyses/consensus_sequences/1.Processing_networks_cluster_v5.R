@@ -69,29 +69,38 @@ if (!dir.exists("output")) {
 
 # read departure ID files
 #read info from file and convert time from days to decimal years
-art_init <- read.csv("run2/ART_init.csv")
+art_init <- read.csv("../HIVepisimAnalysisPreviousResults/run1/ART_init.csv")
 art_init["time_decimal"] <- days2years(sampleTimes = art_init$time,
                                        init_date = init_sim_date)
-dep <- read.csv("run2/departure_IDs.csv")
+dep <- read.csv("../HIVepisimAnalysisPreviousResults/run1/departure_IDs.csv")
 dep["time_decimal"] <- days2years(sampleTimes = dep$time,
                                   init_date = init_sim_date)
 
-diag_info <- read.csv("run2/diag_time.csv")
+diag_info <- read.csv("../HIVepisimAnalysisPreviousResults/run1/diag_time.csv")
 diag_info["time_decimal"] <- days2years(sampleTimes = diag_info$time,
                                         init_date = init_sim_date)
-stages <- read.csv("run2/stages.csv")
+stages <- read.csv("../HIVepisimAnalysisPreviousResults/run1/stages.csv")
 stages["time_decimal"] <- days2years(sampleTimes = stages$time,
                                      init_date = init_sim_date)
 
 
-sim <- readRDS("run2/results_sim.RDS")
+sim <- readRDS("../HIVepisimAnalysisPreviousResults/run1/results_sim.RDS")
 sim_df <- as.data.frame(sim)
+#convert time to years decimal
+sim_df["years"] <- days2years(sampleTimes = sim_df$time, init_date = init_sim_date)
 #get the average number of people living with HIV at end of simulation
 # (last year simulated)
-totalPLWHIV <- sum(sim_df$i.num.pop1[tail(sim_df$time, n=365)])/365
+#get total people living with HIV for the sampling times for region
+# end_date_dec = 2015.493
+total_days <- length(sim_df$i.num.pop1[sim_df$years >= 2015 & sim_df$years < 2016])
+totalPLWHIV <- sum(sim_df$i.num.pop1[sim_df$years >= 2015 & sim_df$years < 2016])/total_days
+#totalPLWHIV <- sum(sim_df$i.num.pop1[tail(sim_df$time, n=365)])/365
 PLWHIV <- paste("PLWHIV", totalPLWHIV, sep="_")
 #get number of new infections in the past year
-newinf_per_year  <- sum(sim_df$incid.pop1[tail(sim_df$time, n=365)])
+#get number of new infections the sampling times for region
+# end_date_dec = 2015.493
+newinf_per_year <- sum(sim_df$incid.pop1[sim_df$years >= 2015 & sim_df$years < 2016])/total_days
+#newinf_per_year  <- sum(sim_df$incid.pop1[tail(sim_df$time, n=365)])
 newinf <- paste("newinf", newinf_per_year, sep="_")
 
 tm <- get_transmat(sim)
@@ -205,7 +214,7 @@ if(!is.null(tm)){
 
   # save tree to simulate sequence alignment using Python script
 
-  tree_filename <- paste(prefix_vts, "_merged_trees_sampling_", perc_pop, ".tre", sep="")
+  tree_filename <- paste(prefix_vts, "_merged_trees_sampling_", perc_pop_region, ".tre", sep="")
   write.tree(phy = tree_years, file = tree_filename)
 
 
@@ -262,7 +271,7 @@ if(!is.null(tm)){
   saveRDS(sampleTimes, paste("output/vts/W/", "sampleTimes.RDS",sep=""))
   #prefix <- "test"
 
-  W_filename <- paste("output/vts/W/", "merged_trees_sampling", "_migrant_years_1_simple_", perc_pop, ".RData", sep="")
+  W_filename <- paste("output/vts/W/", "merged_trees_sampling", "_migrant_years_1_simple_", perc_pop_region, ".RData", sep="")
   save(years, MH = years, max_value, init_sim_date, last_sample_date, start_date,
        end_date, tm, st_ids_region, st_ids_global,
        tree_years, sampleTimes, all_cd4s, ehis, newinf_per_year, totalPLWHIV, W,
@@ -274,3 +283,11 @@ if(!is.null(tm)){
 
 }
 
+
+#end of script
+end_time <- Sys.time()
+print("Simulation took:")
+end_time - start_time
+
+processing_network_time <- data.frame(start = start_time, end = end_time)
+saveRDS(processing_network_time, "processing_network_time.RDS")

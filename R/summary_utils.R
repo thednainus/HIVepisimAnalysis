@@ -123,43 +123,24 @@ get_rates <- function(threshold, df_true){
 }
 
 
-#' Sampling Importance Resampling
+#' Calculate the log importance weight based on observed and simulated data
 #'
 #' @param diag_obs Frequency of observed incidence of HIV diagnosis in MSM
 #'    from 1982 to 2020
-#' @param diag_est Frequency of estimated incidence of HIV diagnosis in MSM
+#' @param diag_sim Frequency of estimated incidence of HIV diagnosis in MSM
 #'    from 1982 to 2020
 #'
 #' @return
 #' @export
-samp_imp_resamp <- function(diag_obs, diag_est){
+compute_log_importance_weight <- function ( diag_obs, diag_sim )
+{
   #browser()
-  diag_est <- diag_est$newDx_pop1
-  dev_poi <- list()
+  diag_sim <- diag_sim$newDx_pop1
+  #subset to remove the NA in observed data (data not available from 1981 and 2021)
+  diag_sim <- diag_sim[3:41]
+  diag_obs <- diag_obs[3:41]
 
-  for(i in 1:length(diag_obs)){
-    #print(i)
-    dev_poi[[i]] <- 2 * (diag_obs[i] * log(diag_obs[i]/diag_est[i]) - diag_obs[i] + diag_est[i])
-  }
+  log_importance_weight <- sum( dpois( diag_sim, lambda = diag_obs , log = TRUE ) )
 
-  dev_poi <- unlist(dev_poi)
-  #browser()
-  #normalize deviance
-  dev_poi <- dev_poi/sum(dev_poi, na.rm = TRUE)
-
-  #browser()
-
-  #in many instances dev_poi will be equal to zeros
-  #so I can't sample anything because it has probability of zero
-
-  if(sum(dev_poi) != 0 ){
-    new_sampling <- sample(x = diag_est,
-                           size = 42,
-                           replace = TRUE,
-                           prob = dev_poi)
-  }else{
-    new_sampling <- rep(NA, 40)
-  }
-
-  return(new_sampling)
+  return(log_importance_weight)
 }

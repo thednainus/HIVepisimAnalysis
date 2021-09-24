@@ -1,9 +1,18 @@
 # Estimate phylogenetic tree using IQ-TREE
+#this script taks as argument "1000" or "10000"
+#to specify alignments of 1000bp or 10000bp
+#start of script
+start_time <- Sys.time()
+
+
 # and convert branch lengths to unit of calendar time
 library(treedater)
 library(DescTools)
 library(phydynR)
 library(ape)
+
+seq_length <- commandArgs(trailingOnly = TRUE)
+seq_length <- paste(seq_length, "bp", sep = "")
 
 
 # You have to download IQ-TREE to run this script
@@ -16,14 +25,15 @@ maxCPU <- 3
 
 
 #list files
-list_files <- list.files("output/vts/alignments", pattern = "_1000bp.fasta", full.names = TRUE)
-# read alignments of 1000 bp
+pattern <- paste("_", seq_length, ".fasta", sep = "")
+list_files <- list.files("output/vts/alignments", pattern = pattern, full.names = TRUE)
 
 list_sampleTimes <- list.files("output/vts/W", pattern = ".RData", full.names = TRUE)
 
 #make dir to save iqtree
-if (!dir.exists("output/vts/alignments/iqtree_results_1000bp")) {
-  dir.create("output/vts/alignments/iqtree_results_1000bp")
+iqtree_dirname <- paste("output/vts/alignments/iqtree_results_", seq_length, sep = "")
+if (!dir.exists(iqtree_dirname)) {
+  dir.create(iqtree_dirname)
 }
 
 for(ali in list_files){
@@ -36,14 +46,6 @@ for(ali in list_files){
   #run iqtree
   system2(command = Software, args = iqtree_param)
 
-  #get sample times
-  #ali_ID_name <- str_extract(ali, pattern = "vtsID_\\d+_")
-  #ali_ID_name <- str_extract(ali, pattern = "ID_\\d+_")
-
-  #get sampleTimes equivalent to the tree estimated
-  #get index
-  #index <- which(str_detect(list_sampleTimes, pattern = ali_ID_name))
-
   # get sampleTimes, cd4s, ehis to estimate treedater and infector probabilities
   load(list_sampleTimes)
 
@@ -52,7 +54,7 @@ for(ali in list_files){
   mltree <- read.tree(paste(ali, ".treefile", sep = ""))
 
   #check if tree has polytomies
-  #if tree has polytomies resolve polytomis randomly
+  #if tree has polytomies resolve polytomies randomly
   if(is.binary(mltree) == FALSE){
     mltree <- multi2di(mltree)
     if(is.rooted(mltree) == TRUE){
@@ -92,7 +94,7 @@ for(ali in list_files){
                                                    ehi = ehis[region_only_dated_tree$tip.label],
                                                    numberPeopleLivingWithHIV  = totalPLWHIV,
                                                    numberNewInfectionsPerYear = newinf_per_year,
-                                                   maxHeight = MH,
+                                                   maxHeight = years,
                                                    res = 1e3,
                                                    treeErrorTol = Inf)
 
@@ -102,9 +104,25 @@ for(ali in list_files){
     dir.create("output/vts/W_estimated")
   }
 
-  W_filename <- paste("output/vts/W_estimated/", ali_ID_name, "migrant_years_1_simple_estimated", ".RData", sep="")
+  W_filename <- paste("output/vts/W_estimated/", seq_length, "_migrant_years_1_simple_estimated", ".RData", sep="")
   save(years, max_value, last_sample_date, tm, region_only_dated_tree,
        sampleTimes, all_cd4s, ehis, newinf_per_year, totalPLWHIV, W_estimated,
        file = W_filename)
 }
+
+#move iqtree results to diretory for iqtree
+files <- paste(getwd(), "output/vts/alignments", "*.fasta*", sep = "/")
+iqtree_dir <- paste(getwd(), iqtree_dirname, sep = "/")
+command_args <- paste("mv", files, iqtree_dir, sep = " ")
+system(command_args)
+
+
+#end of script
+end_time <- Sys.time()
+print("IQTREE simulation took:")
+end_time - start_time
+
+iqtree_time <- data.frame(start = start_time, end = end_time)
+saveRDS(iqtree_time, "iqtree_time.RDS")
+
 
