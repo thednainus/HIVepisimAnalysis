@@ -132,15 +132,36 @@ get_rates <- function(threshold, df_true){
 #'
 #' @return
 #' @export
-compute_log_importance_weight <- function ( diag_obs, diag_sim )
+compute_log_importance_weight_newDx <- function ( diag_obs, diag_sim )
 {
   #browser()
   diag_sim <- diag_sim$newDx_pop1
   #subset to remove the NA in observed data (data not available from 1981 and 2021)
-  diag_sim <- diag_sim[3:41]
-  diag_obs <- diag_obs[3:41]
+  #diag_sim <- diag_sim[3:41]
+  #diag_obs <- diag_obs[3:41]
+
+  diag_sim <- diag_sim[6:41]
+  diag_obs <- diag_obs[6:41]
 
   log_importance_weight <- sum( dpois( diag_sim, lambda = diag_obs , log = TRUE ) )
+
+  return(log_importance_weight)
+}
+
+#' Calculate the log importance weight based on observed and simulated data
+#' for incidence
+#'
+#' @param diag_obs Frequency of observed incidence in MSM from 1980 to 2020
+#' @param diag_sim Frequency of estimated incidence in MSM from 1980 to 2020
+#'
+#' @return
+#' @export
+compute_log_importance_weight_incidence <- function ( incid_obs, incid_sim )
+{
+  #browser()
+  incid_sim <- incid_sim$incid.pop1
+
+  log_importance_weight <- sum( dpois( incid_sim, lambda = incid_obs , log = TRUE ) )
 
   return(log_importance_weight)
 }

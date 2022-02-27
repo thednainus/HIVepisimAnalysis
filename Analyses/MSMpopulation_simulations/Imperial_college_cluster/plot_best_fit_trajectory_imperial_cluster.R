@@ -4,13 +4,7 @@ library(HIVepisimAnalysis)
 library(lubridate)
 library(stringr)
 
-#dir_list <- dir("/Users/user/Desktop/Imperial/newHIVproject-01Aug2020/R_projects/FitTrajectories", full.names = T)
-#dir_list <- dir("/Users/user/Desktop/Imperial/newHIVproject-01Aug2020/R_projects/best_trajectories/MSMpop_25Oct2021", full.names = T)
-#dir_list <- dir("/Users/user/Desktop/tmp2/osg_test_1000jobs/results_v3", full.names = T)
-#dir_list <- dir("/Users/user/Desktop/tmp2/osg_test_1000jobs/results_params_24Jan22", full.names = T)
-dir_list <- dir("/Users/user/Desktop/tmp2/osg_new_scrips/results", full.names = T)
-dir_list <- dir("/Users/user/Desktop/tmp2/osg_new_scrips/results_art_2004", full.names = T)
-dir_list <- dir("/Users/user/Desktop/tmp2/osg_new_scrips/results_narrow_parameters", full.names = T)
+dir_list <- dir("/Users/user/Desktop/tmp2/results_imperial", full.names = T)
 
 #beginning of simulation time
 init_sim_date <- ymd("1980-01-01")
@@ -18,60 +12,23 @@ init_sim_date <- ymd("1980-01-01")
 results_incid <- data.frame()
 results_diag <- data.frame()
 
-#params <- c("params_3158", "params_4299", "params_4013")
-#params <- c("params_6582", "params_6876")
-#params <- c("params_72", "params_9509")
-#params <- c("params_5497", "params_2598")
-#best params using the new scrips
-#params <- c("params_113", "params_4352", "params_7007")
-#params <- c("params_8598", "params_2575", "params_6284")
-#art at 1995
-params <- c("params_75", "params_308")
-params <- c("params_2354", "params_887")
-params <- c("params_3158", "params_887")
-params <- c("params_5125", "params_887")
 
-#art at 2005
-params <- c("params_705", "params_802", "params_355")
-params <- c("params_705", "params_802", "params_1352")
-params <- c("params_1663", "params_1352")
-
-#narrow parameter values (5000 jobs)
-params <- c("params_64", "params_18")
-params <- c("params_665", "params_118")
-params <- c("params_665", "params_1067")
-
-#"params_1067", "params_2348" was resampled for diagnosis
-params <- c("params_665", "params_1067", "params_2348")
-
-#params <- paste("/Users/user/Desktop/tmp2/osg_test_1000jobs/results_params_24Jan22", params, sep = "/")
-params <- paste("/Users/user/Desktop/tmp2/osg_new_scrips/results", params, sep = "/")
-params <- paste("/Users/user/Desktop/tmp2/osg_new_scrips/results_art_2004", params, sep = "/")
-params <- paste("/Users/user/Desktop/tmp2/osg_new_scrips/results_narrow_parameters", params, sep = "/")
-
-indexes <- unlist(lapply(params, function(x) which(dir_list == x)))
-for(i in 1:length(indexes)){
+for(i in 1:length(dir_list)){
 
 
-
-
-  #filename <- list.files(list.files(list.files
-  #                                   (dir_list[i], full.names = T), full.names = T),
-  #                        full.names = T, pattern = "results_sim.RDS")
-  index <- indexes[i]
-  filename <- list.files(list.files(paste(dir_list[index], "rep_1", sep = "/"), full.names = T),
-                          full.names = T, pattern = "results_sim.RDS")
+  filename <- list.files(list.files(dir_list[i], full.names = T),
+                         full.names = T, pattern = "results_sim.RDS")
 
   sim <- readRDS(filename)
 
   sim_param <- str_split(filename, "/")
 
   sim_df <- as.data.frame(sim)
-  sim_df$param <- sim_param[[1]][8]
+  sim_df$param <- sim_param[[1]][7]
   #sim_df$param <- unlist(lapply(sim_df$param, function(x) str_replace(string = x,
   #                                                         replacement = "param")))
   #                                                         pattern = "small_msm_pop_sim",
-  sim_df$replicate <- sim_param[[1]][9]
+  sim_df$replicate <- sim_param[[1]][8]
 
   sim_df["rep_param"] <- paste(sim_df$replicate, sim_df$param, sep = "_")
 
@@ -113,27 +70,6 @@ source(system.file("data/incidence_HIVdiagnosis.R", package = "HIVepisimAnalysis
 incidence <- readRDS(system.file("data/ECDC_incidence_model_22Oct2021.RDS",
                                  package = "HIVepisimAnalysis"))
 
-#plot diagnosis
-results_diag$year <- as.character(results_diag$year )
-results_diag$year <- as.numeric(results_diag$year )
-sims = split( results_diag , results_diag$rep_param )
-Y = do.call( cbind, lapply( sims , '[[', 'newDx_pop1' )  )
-matplot( sims[[1]]$year, Y[,1] , type = 'l', col = 'grey', lwd=.5,
-         ylim = c( 0, max(na.omit( c(results_diag$newDx_pop1,  incidenceDiag$frequency)) ) ) )
-#lines( sims[[ resample[1] ]]$year , sims[[ resample[1] ]]$newDx_pop1, col = 'red', lwd = 2 )
-with( incidenceDiag, points( time, frequency, pty = 20, col = 'blue', cex = 1 ) )
-
-
-#plot incidence
-results_incid$year <- as.character(  results_incid$year )
-results_incid$year <- as.numeric(  results_incid$year )
-sims = split( results_incid , results_incid$rep_param )
-Y = do.call( cbind, lapply( sims , '[[', 'incid.pop1' )  )
-matplot( sims[[1]]$year, Y[,1] , type = 'l', col = 'grey', lwd=.5,
-         ylim = c( 0, max(na.omit( c(results_incid$incid.pop1,  incidence$ECDC_incidence.N_Inf_M)) ) ) )
-#lines( sims[[ resample[1] ]]$year , sims[[ resample[1] ]]$newDx_pop1, col = 'red', lwd = 2 )
-with( incidence, points( ECDC_incidence.Year, ECDC_incidence.N_Inf_M, pty = 20, col = 'blue', cex = 1 ) )
-
 
 library(ggplot2)
 library(reshape2)
@@ -150,6 +86,13 @@ all_inc_data <- data.frame(year=incidence$ECDC_incidence.Year,
                            best_fit_incidence1 = results_incid[1:41,3],
                            best_fit_incidence2 = results_incid[43:83, 3],
                            best_fit_incidence3 = results_incid[85:125, 3])
+
+all_inc_data <- data.frame(year=incidence$ECDC_incidence.Year,
+                           ECDC_incidence = incidence$ECDC_incidence.N_Inf_M,
+                           best_fit1 = results_incid[1:41,3],
+                           best_fit2 = results_incid[43:83, 3],
+                           best_fit3 = results_incid[85:125, 3],
+                           best_fit4 = results_incid[127:167, 3])
 
 all_inc_data <- data.frame(year=incidence$ECDC_incidence.Year,
                            ECDC_incidence = incidence$ECDC_incidence.N_Inf_M,
@@ -190,6 +133,13 @@ all_dx_data <- data.frame(year = incidenceDiag$time[6:41],
 
 all_dx_data <- data.frame(year = incidenceDiag$time[6:41],
                           Diagnosis = incidenceDiag$frequency[6:41],
+                          best_fit3317 = results_diag[6:41,3],
+                          best_fit490 = results_diag[48:83, 3],
+                          best_fit578 = results_diag[90:125,3],
+                          best_fit951 = results_diag[132:167, 3])
+
+all_dx_data <- data.frame(year = incidenceDiag$time[6:41],
+                          Diagnosis = incidenceDiag$frequency[6:41],
                           best_fit_incid_diag1 = results_diag[6:41,3],
                           best_fit_incid_diag2 = results_diag[48:83, 3],
                           best_fit_incid_diag1_2005 = results_2005[6:41,3],
@@ -200,22 +150,6 @@ all_dx_data <- data.frame(year = incidenceDiag$time[6:41],
                           Diagnosis = incidenceDiag$frequency[6:41],
                           best_fit_incid_diag1 = results_diag[6:41,3])
 
-best_fits <- data.frame(year = incidence$ECDC_incidence.Year,
-                        best_fit_incid_diag1 = results_diag[1:41,3],
-                        best_fit_incid_diag2 = results_diag[43:83,3],
-                        best_fit_incidence1 = results_incid[1:41,3],
-                        best_fit_incidence2 = results_incid[43:83,3]
-                        )
-
-best_fitsm <- melt(best_fits, id.vars = c("year"))
-
-quartz()
-ggplot(best_fitsm, aes(x = year, y = value)) +
-  geom_line(aes(colour = variable), size = 1.5) +
-  theme_bw() +
-  theme(legend.title = element_blank(),
-        legend.position = "bottom",
-        text = element_text(size = 20))
 
 
 #melt data
@@ -246,9 +180,8 @@ source(system.file("data/incidence_HIVdiagnosis.R", package = "HIVepisimAnalysis
 incidence <- readRDS(system.file("data/ECDC_incidence_model_22Oct2021.RDS",
                                  package = "HIVepisimAnalysis"))
 
-diag_1995 <- readRDS("Results_for_diagnosis/diagnosis_1995_best887.RDS")
-diag_1995_2 <- readRDS("Results_for_diagnosis/diagnosis_1995_best887diag_5125incid.RDS")
-#diag_1995 <- diag_1995[48:83,]
+diag_1995 <- readRDS("Results_for_diagnosis/diagnosis_1995.RDS")
+diag_1995 <- diag_1995[48:83,]
 diag_2004 <- readRDS("Results_for_diagnosis/diagnosis_2004.RDS")
 diag_2004 <- diag_2004[48:83,]
 diag_narrow <- readRDS("Results_for_diagnosis/diagnosis_narrow_parameters.RDS")
@@ -260,9 +193,7 @@ diag_narrow3 <- diag_narrow3[48:83,]
 
 all_dx_data <- data.frame(year = incidenceDiag$time[6:41],
                           Diagnosis = incidenceDiag$frequency[6:41],
-                          diag_1995_308 = diag_1995[c(6:41),3],
-                          diag_1995_887 = diag_1995[c(48:83),3],
-                          diag_1995_5125 = diag_1995_2[c(6:41), 3],
+                          diag_1995 = diag_1995[,3],
                           diag_narrow18 = diag_narrow[, 3],
                           diag_narrow118 = diag_narrow2[, 3],
                           diag_narrow1067 = diag_narrow3[, 3])

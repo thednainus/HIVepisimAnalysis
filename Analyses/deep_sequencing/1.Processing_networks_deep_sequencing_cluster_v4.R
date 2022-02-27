@@ -18,6 +18,11 @@ library(castor)
 library(dplyr)
 library(lubridate)
 
+# percentage of population to sampled IDs
+#perc_pop_region <- commandArgs(trailingOnly = TRUE)
+#perc_pop_region <- as.numeric(perc_pop_region)
+perc_pop_region <- 0.05
+
 
 # This function will generate input file to be used with program
 # VirusTreeSimulator
@@ -54,10 +59,10 @@ last_sample_date <- end_sim_date
 
 
 #Times for sampling IDs and sampling times
-start_date <- ymd("1996-01-01")
+#sample individuals in the past 5 years
+start_date <- ymd("2016-01-01")
 start_date_dec <- decimal_date(start_date)
-end_date <- ymd("2015-06-30")
-end_date_dec <- decimal_date(end_date)
+end_date_dec <- decimal_date(last_sample_date)
 
 
 #Create directory named output_deepseq if it does not exist
@@ -67,22 +72,22 @@ if (!dir.exists("output_deepseq")) {
 
 # read departure ID files
 #read info from file and convert time from days to decimal years
-art_init <- read.csv("run1/ART_init.csv")
+art_init <- read.csv("ART_init.csv")
 art_init["time_decimal"] <- days2years(sampleTimes = art_init$time,
                                        init_date = init_sim_date)
-dep <- read.csv("run1/departure_IDs.csv")
+dep <- read.csv("departure_IDs.csv")
 dep["time_decimal"] <- days2years(sampleTimes = dep$time,
                                   init_date = init_sim_date)
 
-diag_info <- read.csv("run1/diag_time.csv")
+diag_info <- read.csv("diag_time.csv")
 diag_info["time_decimal"] <- days2years(sampleTimes = diag_info$time,
                                         init_date = init_sim_date)
-stages <- read.csv("run1/stages.csv")
+stages <- read.csv("stages.csv")
 stages["time_decimal"] <- days2years(sampleTimes = stages$time,
                                      init_date = init_sim_date)
 
 #read simulation results
-sim <- readRDS("run1/results_sim.RDS")
+sim <- readRDS("results_sim.RDS")
 sim_df <- as.data.frame(sim)
 
 tm <- get_transmat(sim)
@@ -115,7 +120,7 @@ if(!is.null(tm)){
       create_inf_csv(tm, time_tr = rep(0, length(seed_names)), prefix=output)
 
       # sample IDs and time of sampling
-      st_ids_region <- sampleIDs(perc = 0.05, start_date = start_date_dec,
+      st_ids_region <- sampleIDs(perc = perc_pop_region, start_date = start_date_dec,
                                  end_date = end_date_dec, art_init = art_init,
                                  departure = dep, diag_info = diag_info,
                                  tm = tm, location = "region")
@@ -130,7 +135,7 @@ if(!is.null(tm)){
 
       create_sample_csv2(ids = st_ids_region$sampled_ID,
                          time_seq = st_ids_region$time_days,
-                         seq_count = 10, prefix = output)
+                         seq_count = 100, prefix = output)
 
       #Create directory named VTS (for VirusTreeSimulator) if it does not exist
       if (!dir.exists("output_deepseq/vts/")) {
@@ -202,6 +207,12 @@ if(!is.null(tm)){
     stop("there are mix region and global samples together. Something wrong with
          script to get tip names")
   }
+
+  deep_sequencing_processingnw <- paste("output/vts/", "merged_trees_sampling", "_migrant_years_1_simple_", perc_pop_region, ".RData", sep="")
+
+  save(years, max_value, init_sim_date, last_sample_date, start_date,
+       end_date_dec, tm, st_ids_region,
+       file = deep_sequencing_processingnw)
 
 
 

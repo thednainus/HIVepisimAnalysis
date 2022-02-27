@@ -4,7 +4,15 @@
 \alias{generate_model0_net}
 \title{Generate a simple HIV epidemic model for use by phydynR}
 \usage{
-generate_model0_net(art_start = 2005)
+generate_model0_net(
+  natmort = 0.0131061,
+  srcGrowth = 0.018,
+  src1980 = 50000,
+  i1980 = 1,
+  gamma = 1/5.06,
+  importRate = 1/10,
+  art_start = 2004
+)
 }
 \value{
 A list with elements

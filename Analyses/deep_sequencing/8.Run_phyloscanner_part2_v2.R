@@ -19,7 +19,7 @@ analyse_trees <- paste(phyloscanner, "phyloscanner_analyse_trees.R", sep = "/")
 # of results of running run_phyloscanner_part1.R
 
 #label to name output results
-output_label <- "results_"
+output_label <- "results_5perc_"
 
 #splits rule
 splitsRule <- "s,20"
@@ -45,6 +45,7 @@ confidenceCut <- "--confidence.cut 0.5"
 #update this later using the 2019 reference genome sequences I used with shiver
 #check manual on how to create this normalization file
 norm_file_location <- "/Users/user/Desktop/Imperial/newHIVproject-01Aug2020/Phyloscanner/phyloscanner/InfoAndInputs/HIV_DistanceNormalisationOverGenome.csv"
+#norm_file_location <- "/Users/user/Desktop/Imperial/newHIVproject-01Aug2020/shiver/HIV_REF_alignment/norm_resultscanner_ByPosition.csv"
 norm <- paste("--normRefFileName", norm_file_location, sep = " ")
 
 # downsamplig option
@@ -52,18 +53,19 @@ downsampling <- "--maxReadsPerHost 50"
 
 
 # list directories
-tree_files <- list.files(path = "/Users/user/Desktop/teste/iqtree/",
+tree_files <- list.files(path = "/Users/user/Desktop/Imperial/newHIVproject-01Aug2020/R_projects/deep_sequencing_results_cluster/5perc/iqtree/treefile",
                    pattern = "treefile")
 
 #directory phyloscanner used to save results of make_trees
-iqtree_dir <- "/Users/user/Desktop/teste/iqtree"
+iqtree_dir <- "/Users/user/Desktop/Imperial/newHIVproject-01Aug2020/R_projects/deep_sequencing_results_cluster/5perc/iqtree/treefile"
+raxml_test_dir <- "/Users/user/Desktop/Imperial/newHIVproject-01Aug2020/R_projects/deep_sequencing_results_cluster/5perc/iqtree/treefile/using_raxml"
 
 #location of iqtree tree files
 iqtree_trees <- paste(iqtree_dir, "*.treefile", sep = "/")
 
 treefile_extension <- "--treeFileExtension .treefile"
 
-parameters <- paste(iqtree_dir, treefile_extension, output_label, splitsRule, outgroup,
+parameters <- paste(raxml_test_dir, treefile_extension, output_label, splitsRule, outgroup,
                     multifurcation, multtrans, norm, sep = " ")
 
 

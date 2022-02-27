@@ -10,14 +10,17 @@ library(treedater)
 library(DescTools)
 library(phydynR)
 library(ape)
+library(stringr)
 
 seq_length <- commandArgs(trailingOnly = TRUE)
+seqlength <- as.numeric(seq_length)
 seq_length <- paste(seq_length, "bp", sep = "")
 
 
 # You have to download IQ-TREE to run this script
 # Change to the correct path of IQ-TREE on your computer
 Software <- "/Applications/iqtree-2.1.2-MacOSX/bin/iqtree2"
+#Software <- "iqtree"
 maxCPU <- 3
 
 
@@ -71,7 +74,7 @@ for(ali in list_files){
   #}
 
   #run treedater
-  dated_tree <- dater(tre = mltree, sts = sampleTimes[mltree$tip.label], s = 1000)
+  dated_tree <- dater(tre = mltree, sts = sampleTimes[mltree$tip.label], s = seqlength)
 
 
   #drop tips of the tree that are from "global"

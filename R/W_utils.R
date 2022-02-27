@@ -327,6 +327,217 @@ summaryW <- function(sim, tm, W1, ID, tree, code, prefix = NULL, labels = TRUE){
 
 }
 
+
+
+#' Summarize infector probability (W) for phylogenetic trees
+#'
+#' This function will summarize results for W calculated for a phylogenetic tree.
+#' It will uses the information of sampling time. Pairs will be only considered
+#' if transmission happened before sampling time.
+#'
+#' @param sim Simulation number to know the parameter values that network was
+#'    simulated.
+#' @param tm Transmission matrix.
+#' @param W1 Infector probability calculated on true trees (all region tips)
+#' @param ID ID name.
+#' @param code String to identify if W was calculated on true or simulated trees.
+#' @param st_df Dataframe for the IDs and its sampling times in decimal year.
+#' @param init_sim_date Ititial date that simulation started in the format
+#'    "1980-01-01".
+#' @param prefix prefix to save results. If prefix = NULL, results will be saved
+#'    as W.csv.
+#' @param labels if labels = TRUE, labels of 0 or 1 will be created for ROC
+#'    curves.
+#'
+#' @return a data frame of 1 row with the following values:
+#'
+#'   all_data <- data.frame(sim,
+#'  1. Sim = simulation number (to get parameter values).
+#'
+#'
+#'  2. Total tips = total number of tips in the phylogenetic tree.
+#'
+#'  3. n_tips_region = total number of tips from region in the phylogenetic tree.
+#'
+#'  4. n_tips_global = total number of tips from global in the phylogenetic tree.
+#'
+#'  5. n_trans_W_all = total number of transmission pairs in which W was calculated.
+#'     Here we consider all infector probability values.Here W was calculated for
+#'     the combination of tips in the phylogenetic tree.
+#'
+#'  6. n_trans_tm = total number of true transmissions based on the transmission
+#'                  matrix (tm). Note that the tm will be subset to include only
+#'                  IDs that are also observed in the phylogenetic tree.
+#'
+#'  7. n_true_trans_W = total number of true transmission independent of infector
+#'     probability (W) values. Here is the true transmission when compared to the
+#'     transmission matrix.
+#'
+#'  8. n_W80_all = number of transmission pairs in which W >= 80%.
+#'
+#'  9. n_W80_correctDonorRecipt = number of transmission pairs in point 8 that is a
+#'      true transmission (when comparing to the transmission matrix).
+#'
+#'  10. n_W80_swapDonorRecipt = number of transmission pairs in point 8 that is a
+#'      true transmission (when comparing to the transmission matrix), but
+#'      there was a swap between donor and recipient.
+#'
+#'  11. expected_n_trans = expected number of transmission defined as the sum
+#'                         of all infector probability (W) values.
+#'
+#' @export
+summaryW2 <- function(sim, tm, W1, ID, tree, code, st_df, init_sim_date,
+                      prefix = NULL, labels = TRUE){
+
+  #browser()
+
+  #subset tm to region only
+  tm_region <- subset(tm, infOrigin == "region" & susOrigin == "region")
+  tm_region$year <- days2years(tm_region$at, init_date = init_sim_date)
+
+  #keep_only_rows that tips are in phylogenetic tree
+  rows_to_keep <- keep_row(df = tm_region, tree = tree)
+
+  if(!is.null(rows_to_keep)){
+    tm1 <- tm_region[rows_to_keep,]
+  } else{
+    #if there is no rows to keep, assign all values of tm1 to NA
+    tm1 <- tm_region[1,]
+    tm1[1,] <- NA
+  }
+
+  #pair of transmissions before sampling time
+  tm_bst <- apply(st_df, 1, function(x) tm1[tm1$sus == x[1] & tm1$year <= x[2],])
+  tm_bst <- do.call(rbind, tm_bst)
+
+  if(is.null(tm_bst)){
+    browser()
+    #if there is no rows to keep, assign all values of tm_bst to NA
+    tm_bst <- tm_region[1,]
+    tm_bst[1,] <- NA
+
+  }
+
+
+
+  # W on true trees (all region tips: tree1) ----
+  W_stats <- W_manipulations(W1, code = code)
+
+
+  #converting tm to the same column names as Wsub
+  # Wsub = data frame of W that was subset to contain only donor_ID and recip_ID
+  # which we can compare to the transmission matrix
+  tm_all1 <- data.frame(donor_ID = tm_bst$inf, recip_ID = tm_bst$sus,
+                        infectorProbability = 1, Code = "True transmission")
+
+
+
+  # get all transmissions that has a W calculated and also occured as
+  # true transmission in the transmission matrix
+  all_trans_W1 <- semi_join(W_stats$Wsub, tm_all1, by = c("donor_ID", "recip_ID"))
+
+
+  # W_stats$W80 is a subset of W that was higher than 80%
+  if(!is.null(W_stats$W80)){
+    # true transmissions: correct identification of donor and recipient
+    W80true_correctDonorRecip <- semi_join(W_stats$W80, tm_all1, by = c("donor_ID", "recip_ID"))
+  }
+  if(!is.null(W_stats$W80_trunc)){
+    # true transmission but incorrect identification of donor and recipient
+    W80true_swapDonorRecip <- semi_join(W_stats$W80_trunc, tm_all1, by = c("donor_ID", "recip_ID"))
+  }
+
+
+
+  #get names in phylogenetic trees
+  region <- unlist(lapply(tree$tip.label, function(x) grepl("_1$", x) | grepl("_21", x)))
+  global <- unlist(lapply(tree$tip.label, function(x) grepl("_2$", x) | grepl("_12", x)))
+
+
+
+  all_data <- data.frame(sim,
+                         total_tips = length(tree$tip.label),
+                         n_tips_region_tree = sum(region),
+                         n_tips_global_tree = sum(global),
+                         n_trans_W_all = nrow(W_stats$Wsub),
+                         n_trans_tm = nrow(tm_bst),
+                         n_true_trans_W = nrow(all_trans_W1),
+                         n_W80_all = ifelse(is.null(W_stats$W80), 0, nrow(W_stats$W80)),
+                         n_W80_correctDonorRecipt = ifelse(is.null(W_stats$W80),
+                                                           0, nrow(W80true_correctDonorRecip)),
+                         n_W80_swapDonorRecipt = ifelse(is.null(W_stats$W80_trunc),
+                                                        0, nrow(W80true_swapDonorRecip)),
+                         expected_n_trans = sum(W_stats$W$infectorProbability))
+
+  if(is.null(prefix)){
+    filename <- "W_stats_bst.csv"
+  } else {
+    filename <- paste(prefix, "W_stats_bst.csv", sep = "_")
+  }
+
+  write.table(all_data, file = filename, append = FALSE, sep = ",",
+              row.names = FALSE)
+
+  if(labels == TRUE){
+
+    ntips_all <- paste("all", length(tree$tip.label), sep = "")
+    ntips_region <- paste("reg", sum(region), sep = "")
+    ntips_global <- paste("glo", sum(global), sep = "")
+
+    tip <- paste(ntips_all, ntips_region, ntips_global, sep = "_")
+
+    if(is.null(prefix)){
+      filename1 <- paste(paste("W_labels_bst", tip, sep = "_"), "csv", sep = ".")
+    } else {
+      filename1 <- paste(paste(prefix, "W_labels_bst", tip, sep = "_"), "csv", sep = ".")
+    }
+
+    # get transmission
+    not_correct <- anti_join(W_stats$Wsub, tm_all1, by = c("donor_ID", "recip_ID"))
+    not_correct["labels"] <- 0
+
+    if(nrow(all_trans_W1) > 0){
+      all_trans_W1["labels"] <- 1
+    }
+
+
+    all_labels <- rbind(all_trans_W1, not_correct)
+    all_labels["total_tips"] <- length(tree$tip.label)
+    all_labels["n_tips_region"] <- sum(region)
+    all_labels["n_tips_global"] <- sum(global)
+
+    #get only labels for cherries
+
+    cherries <- get_tip_cherry(tree)
+    cherries <- do.call(rbind, cherries)
+    cherries <- as.data.frame(cherries)
+    names(cherries) <- c("donor", "recip")
+
+    cherries["donor_ID"] <- unlist(lapply(cherries$donor, function(x)
+      str_split(string = x, pattern = "_")[[1]][1]))
+    cherries["recip_ID"] <- unlist(lapply(cherries$recip, function(x)
+      str_split(string = x, pattern = "_")[[1]][1]))
+
+    cherries$donor_ID <- as.integer(cherries$donor_ID)
+    cherries$recip_ID <- as.integer(cherries$recip_ID)
+
+
+    cherries_truc <- data.frame(donor_ID = cherries$recip_ID, recip_ID = cherries$donor_ID)
+
+
+    pairs12 <- semi_join(all_labels, cherries[3:4], by = c("donor_ID", "recip_ID"))
+    pairs21 <- semi_join(all_labels, cherries_truc, by = c("donor_ID", "recip_ID"))
+
+    pairs <- rbind(pairs12, pairs21)
+    pairs$labels <- as.factor(pairs$labels)
+
+
+    write.table(pairs, file = filename1, append = FALSE, sep = ",",
+                row.names = FALSE)
+  }
+
+}
+
 W_manipulations <- function(W, code){
 
   #tm_mh$sus is the recipient

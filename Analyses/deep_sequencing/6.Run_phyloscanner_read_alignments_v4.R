@@ -23,15 +23,23 @@ make_trees <- paste(phyloscanner, "phyloscanner_make_trees.py", sep = "/")
 
 # window parameters
 # these window parameters are from Table S1 from Ratman et al. 2019 (Nature Communications)
-window_width <- "250,"
-window_overlap <- "125,"
-start_pos <- "800,"
-end_pos <- "9400"
+#window_width <- "250,"
+#window_overlap <- "125,"
+#start_pos <- "800,"
+#end_pos <- "9400"
+#get argument of window to generate alignmets
+#in the form of 800,1049 (will generate alignment from 800 to 1049)
+#read csv with window coordinate
+row_number <- commandArgs(trailingOnly = TRUE)
+row_number <- as.numeric(row_number)
+#row_number <- 1
+windows <- read.table(system.file("data/phyloscanner_windows_30Sep2021.csv",
+                                package = "HIVepisimAnalysis"))[row_number,]
+windows <- paste("--windows", windows, sep = " ")
+
+
 
 # make read alignments
-auto_window_param <- paste("--auto-window-params", window_width, sep = " ")
-auto_window_param <- paste(auto_window_param, window_overlap,
-                           start_pos, end_pos, sep = "")
 alignment_other_refs <- paste("--alignment-of-other-refs",
                               paste(phyloscanner, "InfoAndInputs",
                                     "2refs_HXB2_C.BW.fasta", sep = "/"), sep = " ")
@@ -73,12 +81,12 @@ phyloscanner_dir_fullPath <- paste(getwd(), "phyloscanner", sep = "/")
 BamsRefsAndIds <- paste(phyloscanner_dir_fullPath, "BamsRefsAndIDs.csv", sep = "/")
 
 
-#parameters <- paste(BamsRefsAndIds, auto_window_param, alignment_other_refs,
+#parameters <- paste(BamsRefsAndIds, windows, alignment_other_refs,
 #              paiwise_align_to, merge_pairs, quality_trim_ends,
 #              min_internal_quality, excision_ref, excision_coords,
 #              merging_threshold, min_read_count, raxml, sep = " ")
 
-parameters <- paste(BamsRefsAndIds, auto_window_param, alignment_other_refs,
+parameters <- paste(BamsRefsAndIds, windows, alignment_other_refs,
                     paiwise_align_to, merge_pairs, quality_trim_ends,
                     min_internal_quality,
                     excision_ref, excision_coords,
@@ -100,5 +108,7 @@ end_time - start_time
 
 
 read_alignments_time <- data.frame(start = start_time, end = end_time)
-saveRDS(read_alignments_time, "phyloscanner_read_alignments_time.RDS")
+saveRDS(read_alignments_time, paste(as.character(row_number),
+                                    "phyloscanner_read_alignments_time.RDS",
+                                    sep = "_"))
 

@@ -26,7 +26,9 @@ days2years <- function(sampleTimes, init_date){
 
 #' Sample IDs
 #'
-#' Function to sample IDs based on sampled time and metadata.
+#' Function to sample IDs based on sampled time and metadata. This function will
+#' sample individuals that are dignosed, active and not on ART at the time of
+#' sampling.
 #'
 #' @param perc Percentage of the population to be sampled: Numbers should be between
 #'    0 and 1.
@@ -92,7 +94,7 @@ sampleIDs <- function(perc, start_date, end_date,
       # time
       diagIDs_before_st <- diag_ids[diag_ids$time_decimal <= sample_time,]
 
-      #from diagIDs_before_st, get ids that have departured before sampled time
+      #from diagIDs_before_st, get ids that have departed before sampled time
       dep_before_st <- selectIDs(diagIDs_before_st$IDs, departure, sample_time)
 
       #from departed ids, get the ids that are active before sampled time
@@ -129,6 +131,118 @@ sampleIDs <- function(perc, start_date, end_date,
         ids2sample <- "yes"
 
       }
+  }
+  sampledIDsdf <- do.call(rbind, sampledIDs_list)
+  return(sampledIDsdf)
+}
+
+
+#' Sample IDs
+#'
+#' Function to sample IDs based on sampled time and metadata. This function will
+#' sample individuals that are dignosed and active at the time of sampling.
+#'
+#' @param perc Percentage of the population to be sampled: Numbers should be between
+#'    0 and 1.
+#' @param start_date Start date for sampling times in decimal year.
+#' @param end_date End date for sampling times in decimal year.
+#' @param art_init Dataframe of IDs and time each ID initiated antiretroviral
+#'    treatment (ART). Time must be in decimal year.
+#' @param departure Dataframe of IDs and their time of departure. Time must be
+#'    in decimal year.
+#' @param diag_info Dataframe of IDs and their time of diagnosis. Time must be
+#'    in decimal year.
+#' @param tm Transmission matrix of who transmitted to whom.
+#' @param location Character of location at time of transmission to get IDs
+#'    to sample from. Location can take the value of "region" or "global".
+#'
+#' @details This function will get all IDs in transmission matrix (tm) from
+#'    location. From those IDs, it selected all IDs that have been diagnosed
+#'    during a simulation run. From all diagnosed IDs, it will select all IDs
+#'    that have been diagnosed before sampled time. Then, from this new list of
+#'    IDs, it select all IDs that have been active before time of sampling.
+#'    Finally, from active and diagnosed IDs before sampled times, it will get
+#'    all IDs that never initiated ART before sample times. From those IDs not
+#'    on ART, the function will random sample a ID to be associated to the
+#'    sampled time. This function is to mimic the idea of sampling individuals
+#'    on HIV studies.
+#'
+#' @return Dataframe of IDs and their sampled times
+#' @export
+sampleIDs2 <- function(perc, start_date, end_date,
+                      art_init, departure,
+                      diag_info, tm, location){
+
+  #browser()
+
+  #initially assume that we will have ids to sample
+  ids2sample <- "yes"
+  sampledIDs_list <- NULL
+
+  #total number of individuals in the transmission matrix
+  n_origin <- get_n_by_origin(tm, location = location)
+
+  #get percentage of total number of individuals for each population
+  #nst = number of sample times to take for each population
+  n_sample_times <- round(perc * n_origin, 0)
+
+
+  #count for sample time
+  count <- n_sample_times
+
+  #get vector of IDs from location to sample from
+  IDs <- get_id_by_location(tm = tm, location = location)
+
+  #browser()
+  while(ids2sample == "no" | count > 0){
+
+    #sample a time within start_date and end_date
+    sample_time <- runif(n = 1, min = start_date, max = end_date)
+
+    # from IDs vector, get those IDs that have been diagnosed
+    diag_ids <- diag_info[diag_info$IDs %in% IDs,]
+
+    # then from diag_ids, get the ids that have been diagnosed before the sampled
+    # time
+    diagIDs_before_st <- diag_ids[diag_ids$time_decimal <= sample_time,]
+
+    #from diagIDs_before_st, get ids that have departed before sampled time
+    dep_before_st <- selectIDs(diagIDs_before_st$IDs, departure, sample_time)
+
+    #from departed ids, get the ids that are active before sampled time
+    active_ids <- diagIDs_before_st[!(diagIDs_before_st$IDs %in% dep_before_st$infID),]
+    activeIDs_before_st <- active_ids[active_ids$time_decimal <= sample_time,]
+
+    #from activeIDs_before_st, get ids that is on ART before sampled time
+    #ids_onART <- selectIDs(activeIDs_before_st$IDs, art_init, sample_time)
+
+
+    #from ids_onART, get the ones that are NOT on ART before sampled time
+    #ids_notOnArt <- activeIDs_before_st[!(activeIDs_before_st$IDs %in% ids_onART$IDs),]
+
+    if(nrow(activeIDs_before_st) == 0){
+      ids2sample <- "no"
+    }
+
+    if(nrow(activeIDs_before_st) > 0){
+
+      #browser()
+
+      #results <- get_newids(activeIDs_before_st$IDs)
+      sid <- get_newids(activeIDs_before_st$IDs)
+      #tmpids <- results[[2]]
+
+      sampledIDs_list[[length(sampledIDs_list)+1]] <- set_sampledIDs(sid = sid,
+                                                                     st = sample_time)
+      #print(paste("sampled id list", sampledIDs_list, sep = " "))
+
+      index <- which(IDs == sid)
+      IDs <- IDs[-index]
+
+      count <- count - 1
+      ids2sample <- "yes"
+
+    }
   }
   sampledIDsdf <- do.call(rbind, sampledIDs_list)
   return(sampledIDsdf)

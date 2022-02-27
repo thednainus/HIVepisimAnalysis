@@ -16,6 +16,14 @@ library(castor)
 library(dplyr)
 library(lubridate)
 
+# percentage of population to sampled IDs
+#perc_pop_region <- commandArgs(trailingOnly = TRUE)
+#perc_pop_region <- as.numeric(perc_pop_region)
+perc_pop_region <- 0.05
+perc_pop_global <- 3 * perc_pop_region
+
+
+
 
 # This function will generate input file to be used with program
 # VirusTreeSimulator
@@ -40,6 +48,9 @@ Software <- "java -jar /Applications/VirusTreeSimulator/VirusTreeSimulator-maste
 # t50 in days = 2/(2*365) = 0.002739726
 parameters <- "-demoModel Logistic -N0 1 -growthRate 0.007813436 -t50 -0.002739726"
 
+#maximum height
+MH = 15
+# total number of years simulated
 years <-  40
 area <-  "all"
 max_value <-  NULL
@@ -47,19 +58,19 @@ max_value <-  NULL
 #beginning of simulation time
 #first case of HIV in San Diego was reported in 1980
 init_sim_date <- ymd("1980-01-01")
+# end of simulation date
+end_sim_date <- ymd("2021-01-01")
 # year of last sample dates in simulations
-last_sample_date <- as.Date(x = years*365, origin = init_sim_date)
+last_sample_date <- end_sim_date
 
 
 #Times for sampling IDs and sampling times for within region
-start_date <- ymd("1996-01-01")
+#sampling within the last 15 years
+start_date <- ymd("2006-01-01")
 start_date_dec <- decimal_date(start_date)
-end_date <- ymd("2015-06-30")
-end_date_dec <- decimal_date(end_date)
+end_date_dec <- decimal_date(last_sample_date)
 
-# percentage of population to sampled IDs
-perc_pop_region <- 0.05
-perc_pop_global <- 2 * perc_pop_region
+
 
 #Create directory named output if it does not exist
 if (!dir.exists("output")) {
@@ -69,38 +80,31 @@ if (!dir.exists("output")) {
 
 # read departure ID files
 #read info from file and convert time from days to decimal years
-art_init <- read.csv("../HIVepisimAnalysisPreviousResults/run1/ART_init.csv")
+art_init <- read.csv("ART_init.csv")
 art_init["time_decimal"] <- days2years(sampleTimes = art_init$time,
                                        init_date = init_sim_date)
-dep <- read.csv("../HIVepisimAnalysisPreviousResults/run1/departure_IDs.csv")
+dep <- read.csv("departure_IDs.csv")
 dep["time_decimal"] <- days2years(sampleTimes = dep$time,
                                   init_date = init_sim_date)
 
-diag_info <- read.csv("../HIVepisimAnalysisPreviousResults/run1/diag_time.csv")
+diag_info <- read.csv("diag_time.csv")
 diag_info["time_decimal"] <- days2years(sampleTimes = diag_info$time,
                                         init_date = init_sim_date)
-stages <- read.csv("../HIVepisimAnalysisPreviousResults/run1/stages.csv")
+stages <- read.csv("stages.csv")
 stages["time_decimal"] <- days2years(sampleTimes = stages$time,
                                      init_date = init_sim_date)
 
 
-sim <- readRDS("../HIVepisimAnalysisPreviousResults/run1/results_sim.RDS")
+sim <- readRDS("results_sim.RDS")
 sim_df <- as.data.frame(sim)
 #convert time to years decimal
 sim_df["years"] <- days2years(sampleTimes = sim_df$time, init_date = init_sim_date)
 #get the average number of people living with HIV at end of simulation
 # (last year simulated)
-#get total people living with HIV for the sampling times for region
-# end_date_dec = 2015.493
-total_days <- length(sim_df$i.num.pop1[sim_df$years >= 2015 & sim_df$years < 2016])
-totalPLWHIV <- sum(sim_df$i.num.pop1[sim_df$years >= 2015 & sim_df$years < 2016])/total_days
-#totalPLWHIV <- sum(sim_df$i.num.pop1[tail(sim_df$time, n=365)])/365
+totalPLWHIV <- sum(sim_df$i.num.pop1[tail(sim_df$time, n=365)])/365
 PLWHIV <- paste("PLWHIV", totalPLWHIV, sep="_")
 #get number of new infections in the past year
-#get number of new infections the sampling times for region
-# end_date_dec = 2015.493
-newinf_per_year <- sum(sim_df$incid.pop1[sim_df$years >= 2015 & sim_df$years < 2016])/total_days
-#newinf_per_year  <- sum(sim_df$incid.pop1[tail(sim_df$time, n=365)])
+newinf_per_year  <- sum(sim_df$incid.pop1[tail(sim_df$time, n=365)])
 newinf <- paste("newinf", newinf_per_year, sep="_")
 
 tm <- get_transmat(sim)
@@ -150,15 +154,15 @@ if(!is.null(tm)){
 
 
       # sample IDs from global and time of sampling
-      st_ids_global <- sampleIDs(perc = perc_pop_global, start_date = decimal_date(init_sim_date),
-                                 end_date = decimal_date(last_sample_date), art_init = art_init,
-                                 departure = dep, diag_info = diag_info,
-                                 tm = tm, location = "global")
+      #st_ids_global <- sampleIDs(perc = perc_pop_global, start_date = decimal_date(init_sim_date),
+      #                           end_date = decimal_date(last_sample_date), art_init = art_init,
+      #                           departure = dep, diag_info = diag_info,
+      #                           tm = tm, location = "global")
 
       # sampled IDs are not on ART
 
-      st_ids_global["date"] <- as.Date(date_decimal(st_ids_global$sampled_time))
-      st_ids_global["time_days"] <- as.numeric(st_ids_global$date - init_sim_date)
+      #st_ids_global["date"] <- as.Date(date_decimal(st_ids_global$sampled_time))
+      #st_ids_global["time_days"] <- as.numeric(st_ids_global$date - init_sim_date)
 
       #get stage of HIV infection at time of sampling for each individual
 
@@ -167,8 +171,8 @@ if(!is.null(tm)){
       # 1 individual.
       # Because I am applying a sampling process, I may have trees with 1 individual
       # and the following scripts would not work
-      create_sample_csv2(ids = c(st_ids_region$sampled_ID, st_ids_global$sampled_ID),
-                         time_seq = c(st_ids_region$time_days, st_ids_global$time_days),
+      create_sample_csv2(ids = st_ids_region$sampled_ID,
+                         time_seq = st_ids_region$time_days,
                          seq_count = 2, prefix = output)
 
 
@@ -189,7 +193,9 @@ if(!is.null(tm)){
   list_trees <- dir("output/vts", pattern = "*_simple.nex", full.names = TRUE)
   trees <- lapply(list_trees, read.nexus)
   #add root.edge
-  trees_rootedge <- lapply(trees, add_root_edge, total_sim_steps = 365 * years)
+  trees_rootedge <- lapply(trees, add_root_edge,
+                           total_sim_steps = as.numeric(end_sim_date - init_sim_date),
+                           root.edge_value = 0)
   vts_tree <- merge_trees(trees_rootedge)
 
   #now keep only one sequence per ID
@@ -219,7 +225,7 @@ if(!is.null(tm)){
 
 
   # Calculate infector probability ----
-  all_cd4s <- get_cd4s_sampling(rbind(st_ids_region, st_ids_global), stages)
+  all_cd4s <- get_cd4s_sampling(st_ids_region, stages)
 
   tips <- unlist(lapply(tree_years$tip.label, function(x) str_split(x, "_")[[1]][1]))
 
@@ -232,8 +238,8 @@ if(!is.null(tm)){
   ehis <- ifelse(all_cd4s == 1e3, TRUE, FALSE)
 
   #match sampled times to the order of tip names in the phylogenetic tree
-  sampleTimes <- c(st_ids_region$sampled_time, st_ids_global$sampled_time)
-  sampleTimes <- setNames(sampleTimes, c(st_ids_region$sampled_ID, st_ids_global$sampled_ID))
+  sampleTimes <- st_ids_region$sampled_time
+  sampleTimes <- setNames(sampleTimes, st_ids_region$sampled_ID)
   sampleTimes <- sampleTimes[match(tips, names(sampleTimes))]
   sampleTimes <- setNames(sampleTimes, tree_years$tip.label)
 
@@ -258,7 +264,7 @@ if(!is.null(tm)){
                                          ehi = ehis[onlyregion_tree$tip.label],
                                          numberPeopleLivingWithHIV  = totalPLWHIV,
                                          numberNewInfectionsPerYear = newinf_per_year,
-                                         maxHeight = years,
+                                         maxHeight = MH,
                                          res = 1e3,
                                          treeErrorTol = Inf)
 
@@ -272,8 +278,13 @@ if(!is.null(tm)){
   #prefix <- "test"
 
   W_filename <- paste("output/vts/W/", "merged_trees_sampling", "_migrant_years_1_simple_", perc_pop_region, ".RData", sep="")
-  save(years, MH = years, max_value, init_sim_date, last_sample_date, start_date,
-       end_date, tm, st_ids_region, st_ids_global,
+  #save(years, MH = years, max_value, init_sim_date, last_sample_date, start_date,
+  #     end_date, tm, st_ids_region, st_ids_global,
+  #     tree_years, sampleTimes, all_cd4s, ehis, newinf_per_year, totalPLWHIV, W,
+  #     file = W_filename)
+
+  save(years, MH, max_value, init_sim_date, last_sample_date, start_date,
+       end_date_dec, tm, st_ids_region,
        tree_years, sampleTimes, all_cd4s, ehis, newinf_per_year, totalPLWHIV, W,
        file = W_filename)
 
