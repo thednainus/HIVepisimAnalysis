@@ -2,7 +2,7 @@
 % Please edit documentation in R/sampling_utils.R
 \name{sampleIDs}
 \alias{sampleIDs}
-\title{Sample IDs}
+\title{Sample IDs of individuals diagnosed, active and not on ART}
 \usage{
 sampleIDs(
   perc,

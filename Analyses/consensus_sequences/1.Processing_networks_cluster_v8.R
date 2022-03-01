@@ -149,7 +149,7 @@ if(!is.null(tm)){
       create_inf_csv(tm, time_tr = rep(0, length(seed_names)), prefix=output)
 
       # sample IDs from region and time of sampling
-      st_ids_region <- sampleIDs2(perc = perc_pop_region, start_date = start_date_dec,
+      st_ids_region <- sampleIDs(perc = perc_pop_region, start_date = start_date_dec,
                                  end_date = end_date_dec, art_init = art_init,
                                  departure = dep, diag_info = diag_info,
                                  tm = tm, location = "region")
