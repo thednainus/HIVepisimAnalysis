@@ -27,7 +27,7 @@ days2years <- function(sampleTimes, init_date){
 #' Sample IDs
 #'
 #' Function to sample IDs based on sampled time and metadata. This function will
-#' sample individuals that are dignosed, active and not on ART at the time of
+#' sample individuals that are diagnosed, active and not on ART at the time of
 #' sampling.
 #'
 #' @param perc Percentage of the population to be sampled: Numbers should be between
@@ -140,7 +140,8 @@ sampleIDs <- function(perc, start_date, end_date,
 #' Sample IDs
 #'
 #' Function to sample IDs based on sampled time and metadata. This function will
-#' sample individuals that are dignosed and active at the time of sampling.
+#' sample individuals that are diagnosed and active (individuals can or cannot be on ART)
+#' at the time of sampling.
 #'
 #' @param perc Percentage of the population to be sampled: Numbers should be between
 #'    0 and 1.

@@ -42,7 +42,8 @@ Dataframe of IDs and their sampled times
 }
 \description{
 Function to sample IDs based on sampled time and metadata. This function will
-sample individuals that are dignosed and active at the time of sampling.
+sample individuals that are diagnosed and active (individuals can or cannot be on ART)
+at the time of sampling.
 }
 \details{
 This function will get all IDs in transmission matrix (tm) from

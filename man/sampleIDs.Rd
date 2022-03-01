@@ -42,7 +42,7 @@ Dataframe of IDs and their sampled times
 }
 \description{
 Function to sample IDs based on sampled time and metadata. This function will
-sample individuals that are dignosed, active and not on ART at the time of
+sample individuals that are diagnosed, active and not on ART at the time of
 sampling.
 }
 \details{

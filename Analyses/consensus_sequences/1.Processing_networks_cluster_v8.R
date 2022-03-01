@@ -24,6 +24,11 @@ perc_pop_region <- 0.37
 perc_pop_global <- 0.05
 
 
+#untar tar file
+teste <- "/Users/user/Desktop/Imperial/newHIVproject-01Aug2020/R_projects/Results_paper/best_trajectories_50migrants/params_1067/rep_99/sim_results.tar.gz"
+untar(teste)
+
+
 
 
 # This function will generate input file to be used with program
@@ -79,26 +84,25 @@ if (!dir.exists("output")) {
   dir.create("output")
 }
 
-
 # read departure ID files
 #read info from file and convert time from days to decimal years
-art_init <- read.csv("ART_init.csv")
+art_init <- read.csv("results/ART_init.csv")
 art_init["time_decimal"] <- days2years(sampleTimes = art_init$time,
                                        init_date = init_sim_date)
-dep <- read.csv("departure_IDs.csv")
+dep <- read.csv("results/departure_IDs.csv")
 dep["time_decimal"] <- days2years(sampleTimes = dep$time,
                                   init_date = init_sim_date)
 dep["IDs"] <- dep$infID
 
-diag_info <- read.csv("diag_time.csv")
+diag_info <- read.csv("results/diag_time.csv")
 diag_info["time_decimal"] <- days2years(sampleTimes = diag_info$time,
                                         init_date = init_sim_date)
-stages <- read.csv("stages.csv")
+stages <- read.csv("results/stages.csv")
 stages["time_decimal"] <- days2years(sampleTimes = stages$time,
                                      init_date = init_sim_date)
 
 
-sim <- readRDS("results_sim.RDS")
+sim <- readRDS("results/results_sim.RDS")
 sim_df <- as.data.frame(sim)
 #convert time to years decimal
 sim_df["years"] <- days2years(sampleTimes = sim_df$time, init_date = init_sim_date)
