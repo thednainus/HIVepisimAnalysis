@@ -21,6 +21,15 @@ m_and_qt <- function(dataframe){
 dir_list <- dir("../Results_paper/best_trajectories_50migrants/meandagree/params_1067", full.names = T)
 dir_list <- dir("../Results_paper/best_trajectories_50migrants/meandagree/params_2348", full.names = T)
 
+#75 migrants
+dir_list <- dir("../Results_paper/best_trajectories_75migrants/params_1067", full.names = T)
+dir_list <- dir("../Results_paper/best_trajectories_75migrants/params_2348", full.names = T)
+
+
+#25 migrants
+dir_list <- dir("../Results_paper/best_trajectories_25migrants/params_1067", full.names = T)
+dir_list <- dir("../Results_paper/best_trajectories_25migrants/params_2348", full.names = T)
+
 #beginning of simulation time
 init_sim_date <- ymd("1980-01-01")
 
@@ -87,8 +96,21 @@ all_incid <- m_and_qt(results_incid)
 saveRDS(all_diag, "all_diag_m_and_q_1067_meandegree.RDS")
 saveRDS(all_incid, "all_incid_m_and_q_1067_meandegree.RDS")
 
+saveRDS(all_diag, "all_diag_m_and_q_1067_75migrants.RDS")
+saveRDS(all_incid, "all_incid_m_and_q_1067_75migrants.RDS")
+
+saveRDS(all_diag, "all_diag_m_and_q_1067_25migrants.RDS")
+saveRDS(all_incid, "all_incid_m_and_q_1067_25migrants.RDS")
+
 saveRDS(all_diag, "all_diag_m_and_q_2348_meandegree.RDS")
 saveRDS(all_incid, "all_incid_m_and_q_2348_meandegree.RDS")
+
+saveRDS(all_diag, "all_diag_m_and_q_2348_75migrants.RDS")
+saveRDS(all_incid, "all_incid_m_and_q_2348_75migrants.RDS")
+
+saveRDS(all_diag, "all_diag_m_and_q_2348_25migrants.RDS")
+saveRDS(all_incid, "all_incid_m_and_q_2348_25migrants.RDS")
+
 
 
 #source observed data
@@ -100,21 +122,56 @@ library(ggplot2)
 library(reshape2)
 
 
-param_1067 <- readRDS("all_diag_m_and_q_1067.RDS")
+param_1067 <- readRDS("Results_paper/all_diag_m_and_q_1067.RDS")
 param_1067["param"] <- "1067"
-param_1067_md <- readRDS("all_diag_m_and_q_1067_meandegree.RDS")
-param_1067_md["param"] <- "1067_md"
-param_2348 <- readRDS("all_diag_m_and_q_2348.RDS")
+param_1067["migrant"] <- "50"
+
+param_1067_75 <- readRDS("Results_paper/all_diag_m_and_q_1067_75migrants.RDS")
+param_1067_75["param"] <- "1067"
+param_1067_75["migrant"] <- "75"
+
+param_1067_25 <- readRDS("Results_paper/all_diag_m_and_q_1067_25migrants.RDS")
+param_1067_25["param"] <- "1067"
+param_1067_25["migrant"] <- "25"
+
+
+
+#param_1067_md <- readRDS("Results_paper/all_diag_m_and_q_1067_meandegree.RDS")
+#param_1067_md["param"] <- "1067_md"
+param_2348 <- readRDS("Results_paper/all_diag_m_and_q_2348.RDS")
 param_2348["param"] <- "2348"
-param_2348_md <- readRDS("all_diag_m_and_q_2348_meandegree.RDS")
-param_2348_md["param"] <- "2348_md"
+param_2348["migrant"] <- "50"
+
+param_2348_75 <- readRDS("Results_paper/all_diag_m_and_q_2348_75migrants.RDS")
+param_2348_75["param"] <- "2348"
+param_2348_75["migrant"] <- "75"
+
+
+param_2348_25 <- readRDS("Results_paper/all_diag_m_and_q_2348_25migrants.RDS")
+param_2348_25["param"] <- "2348"
+param_2348_25["migrant"] <- "25"
+
+
+#param_2348_md <- readRDS("Results_paper/all_diag_m_and_q_2348_meandegree.RDS")
+#param_2348_md["param"] <- "2348_md"
 
 #all_diag <- rbind(param_1067[6:41,], param_1067_md[6:41,],
 #                  param_2348[6:41,], param_2348_md[6:41,])
 all_diag <- rbind(param_1067[6:41,],
-                  param_2348[6:41,])
+                  param_1067_25[6:41,],
+                  param_1067_75[6:41,],
+                  param_2348[6:41,],
+                  param_2348_25[6:41,],
+                  param_2348_75[6:41,])
+all_diag["param_migrant"] <- paste(all_diag$param, all_diag$migrant, sep = "_")
 #all_diag <- rbind(param_1067_md[6:41,],
 #                  param_2348_md[6:41,])
+all_diag$year <- as.character(all_diag$year)
+all_diag$year <- as.numeric(all_diag$year)
+all_diag$param_migrant <- as.factor(all_diag$param_migrant)
+
+all_diag <- all_diag[,c(1:4,7)]
+
 
 params <- readRDS("Results_for_diagnosis/diagnosis_narrow_parameters_best1067_and2348.RDS")
 params$year <- as.character(params$year)
@@ -124,14 +181,23 @@ params2348 <- params[90:125,]
 
 
 names(all_diag)[2:4] <- c("lower", "median", "upper")
-all_diagm <- melt(all_diag, id.vars = c("year", "lower", "upper", "param"))
-all_diagm$year <- as.character(all_diagm$year)
-all_diagm$year <- as.numeric(all_diagm$year)
+all_diagm <- melt(all_diag, id.vars = c("year", "lower", "upper", "param_migrant"))
+
 
 quartz()
+names(incidenceDiag)[1] <- "year"
+incidenceDiag$year <- as.numeric(incidenceDiag$year)
 ggplot(all_diagm, aes(x=year)) +
-  geom_ribbon(aes(ymin = lower, ymax = upper, fill = param), alpha=0.20) +
-  geom_line(aes(y = value, linetype = variable, colour = param), linetype = 2) +
+  geom_ribbon(aes(ymin = lower, ymax = upper, fill = param_migrant), alpha=0.20) +
+  geom_line(aes(y = value, linetype = variable, colour = param_migrant), linetype = 2) +
+  geom_line(data = incidenceDiag[6:41,], aes(y = frequency, colour = "San Diego data"),
+            size = 0.8) +
+  theme_bw() + ylab("Incidence of diagnosis") +
+  theme(text = element_text(size=20), legend.position = "bottom")
+
+ggplot(all_diagm, aes(x=year)) +
+  geom_ribbon(aes(ymin = lower, ymax = upper, fill = param_migrant), alpha=0.20) +
+  geom_line(aes(y = value, linetype = variable, colour = param_migrant), linetype = 2) +
   geom_line(data = incidenceDiag[6:41,], aes(y = frequency, colour = "San Diego data"),
             size = 0.8) +
   theme_bw() + ylab("Incidence of diagnosis") +
@@ -139,7 +205,7 @@ ggplot(all_diagm, aes(x=year)) +
   scale_color_manual(values=c("#c9222a", "#222ac9", "black")) +
   theme(text = element_text(size=20), legend.position = "bottom")
 
-names(incidenceDiag)[1] <- "year"
+
 
 
 

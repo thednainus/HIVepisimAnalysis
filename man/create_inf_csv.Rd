@@ -7,7 +7,8 @@
 create_inf_csv(tm, time_tr, prefix = NULL)
 }
 \arguments{
-\item{tm}{Transmission matrix as returned using the function \link[EpiModel]{get_transmat}}
+\item{tm}{Transmission matrix as returned using the function
+\link[EpiModel]{get_transmat}}
 
 \item{time_tr}{Time of transmission for seeds. The other time of transmission
 should be provided in the tm dataframe.}

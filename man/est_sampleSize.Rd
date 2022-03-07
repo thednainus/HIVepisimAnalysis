@@ -13,7 +13,7 @@ est_sampleSize(
   diag_info,
   tm,
   location = "region",
-  onART = FALSE
+  IncludeOnART = TRUE
 )
 }
 \arguments{
@@ -37,6 +37,10 @@ in decimal year.}
 
 \item{location}{Character of location at time of transmission to get IDs
 to sample from. Location can take the value of "region" or "global".}
+
+\item{IncludeOnART}{It can take the value of TRUE or FALSE. If TRUE will
+include diagnosed, active and on or not on ART. If FALSE will include
+only diagnosed, active and not on ART.}
 }
 \value{
 
@@ -46,9 +50,11 @@ Estimation sample size based on percentage
 }
 \details{
 This function will estimate the sample size based on a percentage
-(0 to 1) and the end of the simulation (end_date). To carry out our analyses,
-we used a sampled to sample time of sequencing just to mimic real HIV studies.
-However, we can only sample diagnosed and active (and on ART) inidviduals,
-it is hard to estimate the exact number of individuals based on the sampling
-times that will be randomly sampled.
+(0 to 1) provided by the user. This sample size will be the average
+of total individuals (e.g., diagnosed, active, not on ART) in the start and
+end points of the sampling dates. To carry out our analyses,
+we used a sampling strategy to sample time of sequencing just to mimic real
+HIV studies. However, we can only sample diagnosed and active (and on ART)
+individuals, it is hard to estimate the exact number of individuals based on
+the sampling times that will be randomly sampled.
 }

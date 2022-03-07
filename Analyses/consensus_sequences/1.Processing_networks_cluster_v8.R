@@ -19,13 +19,15 @@ library(lubridate)
 # percentage of population to sampled IDs
 #perc_pop_region <- commandArgs(trailingOnly = TRUE)
 #perc_pop_region <- as.numeric(perc_pop_region)
-perc_pop_region <- 0.37
+perc_pop_region <- 0.05
 #perc_pop_global <- 3 * perc_pop_region
 perc_pop_global <- 0.05
 
 
 #untar tar file
-teste <- "/Users/user/Desktop/Imperial/newHIVproject-01Aug2020/R_projects/Results_paper/best_trajectories_50migrants/params_1067/rep_99/sim_results.tar.gz"
+#teste <- "/Users/user/Desktop/Imperial/newHIVproject-01Aug2020/R_projects/Results_paper/best_trajectories_50migrants/params_1067/rep_99/sim_results.tar.gz"
+teste <- "~/Box Sync/Results_simulations_test/param1067/rep_1/sim_results.tar.gz"
+
 untar(teste)
 
 
@@ -39,7 +41,7 @@ untar(teste)
 # and will save results to the directory "output"
 
 # Location for VirusTreeSimulator. It should be changed to the correct location on your computer.
-#Software <- "java -jar VirusTreeSimulator-master/out/artifacts/VirusTreeSimulator_jar/VirusTreeSimulator.jar"
+#Software <- "java -jar /Applications/VirusTreeSimulator/out/artifacts/VirusTreeSimulator_jar"
 Software <- "java -jar /Applications/VirusTreeSimulator/VirusTreeSimulator-master/out/artifacts/VirusTreeSimulator_jar/VirusTreeSimulator.jar"
 #parameter for VirusTreeSimulator
 #parameters <- "-demoModel Constant -N0 1"
@@ -53,12 +55,15 @@ Software <- "java -jar /Applications/VirusTreeSimulator/VirusTreeSimulator-maste
 # t50 in Ratman et al paper = -2 years
 # t50 in days = 2/(2*365) = 0.002739726
 # I think the correct here is t50 in days = 2*365 = 730 days (added this on 22Feb2022)
-parameters <- "-demoModel Logistic -N0 1 -growthRate 0.007813436 -t50 -730"
+#parameters <- "-demoModel Logistic -N0 1 -growthRate 0.007813436 -forceCoalescence -t50 -730"
+parameters <- "-demoModel Logistic -N0 1 -growthRate 2.851904 -t50 -2"
 
 #maximum height
+#analyse the past 15 years
 MH <-  15
 # total number of years simulated
 years <-  40
+#area and max_value is used in function get_tipNames
 area <-  "all"
 max_value <-  NULL
 # year of last sample dates in simulations
@@ -106,6 +111,8 @@ sim <- readRDS("results/results_sim.RDS")
 sim_df <- as.data.frame(sim)
 #convert time to years decimal
 sim_df["years"] <- days2years(sampleTimes = sim_df$time, init_date = init_sim_date)
+#convert days to years for tree branch lengths
+sim_df["years_branch_lengths"] <- sim_df$time * 1/365
 #get the average number of people living with HIV at end of simulation
 # (last year simulated)
 totalPLWHIV <- sum(sim_df$i.num.pop1[tail(sim_df$time, n=365)])/365
@@ -125,13 +132,15 @@ tm <- get_transmat(sim)
 if(!is.null(tm)){
 
     # Get tip names in the form of ID_migrant
-    tip_names <- get_tipNames(tm, format = "migrant",
-                                   by_areas = area, max_value = max_value)
+    tip_names <- get_tipNames(tm,
+                              format = "migrant",
+                              by_areas = area,
+                              max_value = max_value)
 
-    # check number of individual within "region"
-    # region is code as 1 and 21
-    tip_names_migrant_ID <- unlist(lapply(tip_names, function(x) str_split(x, "_")[[1]][2]))
-    #total_tips_region <- sum(tip_names_migrant_ID == "1" | tip_names_migrant_ID == "21")
+    # check number of individual in network to make sure it is not empty
+    tip_names_migrant_ID <- unlist(lapply(tip_names,
+                                          function(x) str_split(x, "_")[[1]][2]))
+
 
     if(length(tip_names_migrant_ID) > 0){
 
@@ -146,7 +155,7 @@ if(!is.null(tm)){
 
       seed_names <- setdiff(unique(tm$inf), unique(tm$sus))
 
-      create_inf_csv(tm, time_tr = rep(0, length(seed_names)), prefix=output)
+      create_inf_csv(tm, time_tr = rep(0, length(seed_names)), prefix = output)
 
       # sample IDs from region and time of sampling
       st_ids_region <- sampleIDs(perc = perc_pop_region, start_date = start_date_dec,
@@ -158,6 +167,7 @@ if(!is.null(tm)){
 
       st_ids_region["date"] <- as.Date(date_decimal(st_ids_region$sampled_time))
       st_ids_region["time_days"] <- as.numeric(st_ids_region$date - init_sim_date)
+      st_ids_region["time_years"] <- st_ids_region$time_days * (1/365)
 
 
       # sample IDs from global and time of sampling
@@ -166,10 +176,10 @@ if(!is.null(tm)){
                                  departure = dep, diag_info = diag_info,
                                  tm = tm, location = "global")
 
-      # sampled IDs are not on ART
 
       st_ids_global["date"] <- as.Date(date_decimal(st_ids_global$sampled_time))
       st_ids_global["time_days"] <- as.numeric(st_ids_global$date - init_sim_date)
+      st_ids_global["time_years"] <- st_ids_global$time_days * (1/365)
 
       #get stage of HIV infection at time of sampling for each individual
 
@@ -179,7 +189,7 @@ if(!is.null(tm)){
       # Because I am applying a sampling process, I may have trees with 1 individual
       # and the following scripts would not work
       create_sample_csv2(ids = c(st_ids_region$sampled_ID, st_ids_global$sampled_ID),
-                         time_seq = c(st_ids_region$time_days, st_ids_global$time_days),
+                         time_seq = c(st_ids_region$time_years, st_ids_global$time_years),
                          seq_count = 2, prefix = output)
 
 
@@ -197,11 +207,12 @@ if(!is.null(tm)){
     }
 
   #read all trees from vts
-  list_trees <- dir("output/vts", pattern = "*_simple.nex", full.names = TRUE)
+  list_trees <- dir("output/vts", pattern = "*_detailed.nex", full.names = TRUE)
   trees <- lapply(list_trees, read.nexus)
   #add root.edge
+
   trees_rootedge <- lapply(trees, add_root_edge,
-                           total_sim_steps = as.numeric(end_sim_date - init_sim_date),
+                           total_sim_steps = decimal_date(end_sim_date) - decimal_date(init_sim_date),
                            root.edge_value = 0)
   vts_tree <- merge_trees(trees_rootedge)
 
@@ -214,7 +225,8 @@ if(!is.null(tm)){
 
 
   # convert branch lengths from days to years
-  tree_years <- convert_branches(tree = consensus_tree, scale = 1/365)
+  #tree_years <- convert_branches(tree = consensus_tree, scale = 1/365)
+  tree_years <- consensus_tree
 
   #get tip names from VirusTreeSimulato tree
   tip_names_vts <- tree_years$tip.label

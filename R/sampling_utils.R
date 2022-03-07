@@ -82,7 +82,7 @@ sampleIDs <- function(perc, start_date, end_date,
   #count for sample time
   count <- est_sampleSize(perc, start_date, end_date,
                           art_init, departure,
-                          diag_info, tm, location, onART = TRUE)
+                          diag_info, tm, location, IncludeOnART = FALSE)
 
 
   #browser()
@@ -99,7 +99,7 @@ sampleIDs <- function(perc, start_date, end_date,
       dep_before_st <- selectIDs(diagIDs_before_st$IDs, departure, sample_time)
 
       #from departed ids, get the ids that are active before sampled time
-      active_ids_before_st <- diagIDs_before_st[!(diagIDs_before_st$IDs %in% dep_before_st$infID),]
+      activeIDs_before_st <- diagIDs_before_st[!(diagIDs_before_st$IDs %in% dep_before_st$infID),]
       #activeIDs_before_st <- active_ids[active_ids$time_decimal <= sample_time,]
 
       #from activeIDs_before_st, get ids that is on ART before sampled time
@@ -196,11 +196,12 @@ sampleIDs2 <- function(perc, start_date, end_date,
   # from IDs vector, get those IDs that have been diagnosed
   diag_ids <- diag_info[diag_info$IDs %in% IDs,]
 
-  #get percentage of total number of individuals for each population
   #estimate the total number of individuals to sample based on percentage
-  #of total diagnosed individuals => start_date
-  diag_ids_start_date <- diag_ids[diag_ids$time_decimal >= start_date,]
-  n_sample_times <- round(perc * nrow(diag_ids_start_date), 0)
+  #of total diagnosed and active individuals
+  #count for sample time
+  count <- est_sampleSize(perc, start_date, end_date,
+                          art_init, departure,
+                          diag_info, tm, location, IncludeOnART = TRUE)
 
   #browser()
   while(ids2sample == "no" | count > 0){
@@ -216,7 +217,7 @@ sampleIDs2 <- function(perc, start_date, end_date,
     dep_before_st <- selectIDs(diagIDs_before_st$IDs, departure, sample_time)
 
     #from departed ids, get the ids that are active before sampled time
-    active_ids_before_st <- diagIDs_before_st[!(diagIDs_before_st$IDs %in% dep_before_st$infID),]
+    activeIDs_before_st <- diagIDs_before_st[!(diagIDs_before_st$IDs %in% dep_before_st$infID),]
     #activeIDs_before_st <- active_ids[active_ids$time_decimal <= sample_time,]
 
     #from activeIDs_before_st, get ids that is on ART before sampled time
@@ -394,18 +395,23 @@ set_sampledIDs <- function(sid, st){
 #' Estimation sample size based on percentage
 #'
 #' @inheritParams sampleIDs
+#' @param IncludeOnART It can take the value of TRUE or FALSE. If TRUE will
+#'    include diagnosed, active and on or not on ART. If FALSE will include
+#'    only diagnosed, active and not on ART.
 #'
 #' @details This function will estimate the sample size based on a percentage
-#' (0 to 1) and the end of the simulation (end_date). To carry out our analyses,
-#' we used a sampled to sample time of sequencing just to mimic real HIV studies.
-#' However, we can only sample diagnosed and active (and on ART) inidviduals,
-#' it is hard to estimate the exact number of individuals based on the sampling
-#' times that will be randomly sampled.
+#' (0 to 1) provided by the user. This sample size will be the average
+#' of total individuals (e.g., diagnosed, active, not on ART) in the start and
+#' end points of the sampling dates. To carry out our analyses,
+#' we used a sampling strategy to sample time of sequencing just to mimic real
+#' HIV studies. However, we can only sample diagnosed and active (and on ART)
+#' individuals, it is hard to estimate the exact number of individuals based on
+#' the sampling times that will be randomly sampled.
 #' @return
 #' @export
 est_sampleSize <- function(perc, start_date, end_date, art_init,
                            departure, diag_info, tm, location = "region",
-                           onART = FALSE){
+                           IncludeOnART = TRUE){
 
 
   #get vector of IDs from location to sample from
@@ -418,23 +424,30 @@ est_sampleSize <- function(perc, start_date, end_date, art_init,
   #estimate the total number of individuals to sample based on percentage
   #of total diagnosed individuals => start_date
   diag_ids_bf_end_date <- diag_ids[diag_ids$time_decimal <= end_date,]
+  diag_ids_bf_start_date <- diag_ids[diag_ids$time_decimal <= start_date,]
 
   #from diagIDs_before_st, get ids that have departed before sampled time
-  dep_before_st <- selectIDs(diagIDs_before_st$IDs, departure, end_date)
+  dep_before_st <- selectIDs(diag_ids_bf_end_date$IDs, departure, end_date)
+  dep_before_start_date <- selectIDs(diag_ids_bf_start_date$IDs, departure, start_date)
 
   #from departed ids, get the ids that are active before sampled time
-  active_ids <- diagIDs_before_st[!(diagIDs_before_st$IDs %in% dep_before_st$infID),]
+  active_ids <- diag_ids_bf_end_date[!(diag_ids_bf_end_date$IDs %in% dep_before_st$infID),]
+  active_ids_start_date <- diag_ids_bf_start_date[!(diag_ids_bf_start_date$IDs %in% dep_before_start_date$infID),]
 
-  if(onART == TRUE){
+  if(IncludeOnART == FALSE){
     #from activeIDs_before_st, get ids that is on ART before sampled time
     ids_onART <- selectIDs(active_ids$IDs, art_init, end_date)
+    ids_onART_start_date <- selectIDs(active_ids_start_date$IDs, art_init, start_date)
     #from ids_onART, get the ones that are NOT on ART before sampled time
     ids_notOnArt <- active_ids[!(active_ids$IDs %in% ids_onART$IDs),]
+    ids_notOnArt_start_date <- active_ids_start_date[!(active_ids_start_date$IDs %in% ids_onART_start_date$IDs),]
 
-    n_sample_times <- round(perc * nrow(ids_notOnArt), 0)
+    n_sample_times <- round(mean(c(perc * nrow(ids_notOnArt),
+                            perc * nrow(ids_notOnArt_start_date))))
 
   }else{
-    n_sample_times <- round(perc * nrow(active_ids), 0)
+    n_sample_times <- round(mean(c(perc * nrow(active_ids),
+                                   perc * nrow(active_ids_start_date))))
   }
 
   return(n_sample_times)

@@ -103,7 +103,8 @@ create_inf_csv <- function(tm, time_tr, prefix = NULL){
   seed_names <- setdiff(unique(tm$inf), unique(tm$sus))
 
   if(length(time_tr) == 1){
-    seed_idtr <- data.frame(seed_names, rep(NA, length(seed_names)), rep(0, length(seed_names)))
+    seed_idtr <- data.frame(seed_names, rep(NA, length(seed_names)),
+                            rep(0, length(seed_names)))
   }else if(length(time_tr)!= 1 & length(time_tr) == length(seed_names)){
     seed_idtr <- data.frame(seed_names, rep(NA, length(seed_names)), time_tr)
   }else{
@@ -113,7 +114,7 @@ create_inf_csv <- function(tm, time_tr, prefix = NULL){
 
   colnames(seed_idtr) <- c("IDREC", "IDTR", "TIME_TR")
 
-  inf_sus <- data.frame(tm$sus, tm$inf, tm$at)
+  inf_sus <- data.frame(tm$sus, tm$inf, (tm$at * (1/365)))
   colnames(inf_sus) <- c("IDREC", "IDTR", "TIME_TR")
 
   all_data <- rbind(seed_idtr, inf_sus)
@@ -129,9 +130,13 @@ create_inf_csv <- function(tm, time_tr, prefix = NULL){
 
 #' Get sample csv file
 #'
-#' @param tm Transmission matrix as returned using the function \link[EpiModel]{get_transmat}
-#' @param time_seq Vector for sample time. If one value is provided, it will be replicated
-#'    to the size of samples in the transmission matrix (tm).
+#' In this function the sample file for VirusTreeSimulator program
+#' will contain all individuals in the transmision matrix
+#'
+#' @param tm Transmission matrix as returned using the function
+#'    \link[EpiModel]{get_transmat}
+#' @param time_seq Vector for sample time. If one value is provided,
+#'    it will be replicated to the size of samples in the transmission matrix (tm).
 #' @param seq_count The number of sequences per sample in the transmission matrix.
 #'    If one value is provided, it will be replicated to the size of samples in
 #'    the transmission matrix (tm).
@@ -183,6 +188,9 @@ create_sample_csv <- function(tm, time_seq, seq_count, prefix = NULL){
 
 #' Get sample csv file
 #'
+#' In this function, the sample file for VirusTreeSimulator program
+#' will contain only the sampled individuals (to mimic a real HIV study)
+#'
 #' @param ids Vector of samples IDs.
 #' @inheritParams create_sample_csv
 #'
@@ -200,7 +208,8 @@ create_sample_csv2 <- function(ids, time_seq, seq_count, prefix = NULL){
   } else if (length(time_seq) == length(IDPOP)){
     TIME_SEQ <- time_seq
   }else if (length(time_seq) != length(IDPOP)){
-    stop("`time_seq` should be of length 1 or length of samples in the transmission matrix")
+    stop("`time_seq` should be of length 1 or length of samples in
+         the transmission matrix")
   }
 
 
@@ -209,7 +218,8 @@ create_sample_csv2 <- function(ids, time_seq, seq_count, prefix = NULL){
   } else if (length(seq_count) == length(IDPOP)){
     SEQ_COUNT <- seq_count
   }else if(length(seq_count) != length(IDPOP)){
-    stop(" `seq_count` should be of length 1 or length of samples in the transmission matrix")
+    stop(" `seq_count` should be of length 1 or length of samples
+         in the transmission matrix")
   }
 
 

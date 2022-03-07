@@ -9,8 +9,8 @@ create_sample_csv2(ids, time_seq, seq_count, prefix = NULL)
 \arguments{
 \item{ids}{Vector of samples IDs.}
 
-\item{time_seq}{Vector for sample time. If one value is provided, it will be replicated
-to the size of samples in the transmission matrix (tm).}
+\item{time_seq}{Vector for sample time. If one value is provided,
+it will be replicated to the size of samples in the transmission matrix (tm).}
 
 \item{seq_count}{The number of sequences per sample in the transmission matrix.
 If one value is provided, it will be replicated to the size of samples in
@@ -22,7 +22,8 @@ the transmission matrix (tm).}
 
 }
 \description{
-Get sample csv file
+In this function, the sample file for VirusTreeSimulator program
+will contain only the sampled individuals (to mimic a real HIV study)
 }
 \details{
 If a prefix is not provided, csv file will be saved as sample.csv
