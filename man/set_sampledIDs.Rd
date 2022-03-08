@@ -4,12 +4,17 @@
 \alias{set_sampledIDs}
 \title{Set a dataframe of sampled IDs (sid) and their sampled times.}
 \usage{
-set_sampledIDs(sid, st)
+set_sampledIDs(sid, st, migrant_code)
 }
 \arguments{
 \item{sid}{The sampled ID}
 
 \item{st}{Sampled time in decimal year.}
+
+\item{migrant_code}{Origin code, If 1 is "region" but never migrated,
+if 12 node ID migrated from "region" to "global",
+if 2 is "global" and never migrated,
+if 21 node ID migrated from "global" to "region".}
 }
 \value{
 Return dataframe of sampled IDs and their sampled times.

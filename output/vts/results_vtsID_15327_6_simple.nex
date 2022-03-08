@@ -1,0 +1,17 @@
+#NEXUS
+
+Begin taxa;
+	Dimensions ntax=2;
+	Taxlabels
+		'ID_17124_sampled_2_34.2684931506849'
+		'ID_17124_sampled_1_34.2684931506849'
+		;
+End;
+
+Begin trees;
+	Translate
+		1 'ID_17124_sampled_2_34.2684931506849',
+		2 'ID_17124_sampled_1_34.2684931506849'
+		;
+tree TREE1 [&firstCase=ID_15327] = [&R] (1:12.146441693926114,2:12.146441693926114)[&TransmittedLineage=6];
+End;

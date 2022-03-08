@@ -1,0 +1,17 @@
+#NEXUS
+
+Begin taxa;
+	Dimensions ntax=2;
+	Taxlabels
+		'ID_104150_sampled_2_32.6876712328767'
+		'ID_104150_sampled_1_32.6876712328767'
+		;
+End;
+
+Begin trees;
+	Translate
+		1 'ID_104150_sampled_2_32.6876712328767',
+		2 'ID_104150_sampled_1_32.6876712328767'
+		;
+tree TREE1 [&firstCase=ID_75019] = [&R] ((((((((((((1[&Event=TransmissionTreeToVirusTree3$Event@4c58255,Unit="ID_104150"]:10.824657534246604)[&Event=TransmissionTreeToVirusTree3$Event@7a6ebe1e,Unit="ID_75314"]:0.5671232876711976)[&Event=TransmissionTreeToVirusTree3$Event@5ee34b1b,Unit="ID_43875"]:0.8547945205479017)[&Event=TransmissionTreeToVirusTree3$Event@8a62297,Unit="ID_84115"]:7.457534246575399)[&Event=TransmissionTreeToVirusTree3$Event@4cd1c1dc,Unit="ID_49344"]:0.6876712328766992)[&Event=TransmissionTreeToVirusTree3$Event@267517e4,Unit="ID_54216"]:4.808219178082191)[&Event=TransmissionTreeToVirusTree3$Event@5116ac09,Unit="ID_52168"]:0.2693291113316487,((((((2[&Event=TransmissionTreeToVirusTree3$Event@4c58255,Unit="ID_104150"]:10.824657534246604)[&Event=TransmissionTreeToVirusTree3$Event@7a6ebe1e,Unit="ID_75314"]:0.5671232876711976)[&Event=TransmissionTreeToVirusTree3$Event@5ee34b1b,Unit="ID_43875"]:0.8547945205479017)[&Event=TransmissionTreeToVirusTree3$Event@8a62297,Unit="ID_84115"]:7.457534246575399)[&Event=TransmissionTreeToVirusTree3$Event@4cd1c1dc,Unit="ID_49344"]:0.6876712328766992)[&Event=TransmissionTreeToVirusTree3$Event@267517e4,Unit="ID_54216"]:4.808219178082191)[&Event=TransmissionTreeToVirusTree3$Event@5116ac09,Unit="ID_52168"]:0.2693291113316487)[&Unit="ID_52168"]:0.015602395517660739)[&Event=TransmissionTreeToVirusTree3$Event@322803db,Unit="ID_60326"]:0.3260273972602805)[&Event=TransmissionTreeToVirusTree3$Event@7dd00705,Unit="ID_67558"]:4.20547945205479)[&Event=TransmissionTreeToVirusTree3$Event@3a91d146,Unit="ID_36784"]:0.4383561643835603)[&Event=TransmissionTreeToVirusTree3$Event@31cb96e1,Unit="ID_75019"]:2.23287671232877)[&TransmittedLineage=1,Event=TransmissionTreeToVirusTree3$Event@372ca2d6,Unit="ID_75019"];
+End;

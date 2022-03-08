@@ -1,0 +1,17 @@
+#NEXUS
+
+Begin taxa;
+	Dimensions ntax=2;
+	Taxlabels
+		'ID_76928_sampled_2_5.21917808219178'
+		'ID_76928_sampled_1_5.21917808219178'
+		;
+End;
+
+Begin trees;
+	Translate
+		1 'ID_76928_sampled_2_5.21917808219178',
+		2 'ID_76928_sampled_1_5.21917808219178'
+		;
+tree TREE1 [&firstCase=ID_43979] = [&R] ((((1[&Event=TransmissionTreeToVirusTree3$Event@79b84841,Unit="ID_76928"]:2.5255506526603697,2[&Event=TransmissionTreeToVirusTree3$Event@79b84841,Unit="ID_76928"]:2.5255506526603697)[&Unit="ID_76928"]:1.4415726350108602)[&Event=TransmissionTreeToVirusTree3$Event@2a3b5b47,Unit="ID_69692"]:0.38082191780822106)[&Event=TransmissionTreeToVirusTree3$Event@799f10e1,Unit="ID_43979"]:0.871232876712329)[&TransmittedLineage=2,Event=TransmissionTreeToVirusTree3$Event@4d41ba0f,Unit="ID_43979"];
+End;

@@ -1,0 +1,17 @@
+#NEXUS
+
+Begin taxa;
+	Dimensions ntax=2;
+	Taxlabels
+		'ID_109367_sampled_2_28.2876712328767'
+		'ID_109367_sampled_1_28.2876712328767'
+		;
+End;
+
+Begin trees;
+	Translate
+		1 'ID_109367_sampled_2_28.2876712328767',
+		2 'ID_109367_sampled_1_28.2876712328767'
+		;
+tree TREE1 [&firstCase=ID_54476] = [&R] (((((((((((((1[&Event=TransmissionTreeToVirusTree3$Event@54d8c20d,Unit="ID_109367"]:3.6054794520548015)[&Event=TransmissionTreeToVirusTree3$Event@68c9d179,Unit="ID_46915"]:11.02057166092032,(2[&Event=TransmissionTreeToVirusTree3$Event@54d8c20d,Unit="ID_109367"]:3.6054794520548015)[&Event=TransmissionTreeToVirusTree3$Event@68c9d179,Unit="ID_46915"]:11.02057166092032)[&Unit="ID_46915"]:0.3081954623673795)[&Event=TransmissionTreeToVirusTree3$Event@15888343,Unit="ID_70278"]:0.8904109589041003)[&Event=TransmissionTreeToVirusTree3$Event@6e2829c7,Unit="ID_38828"]:7.33698630136983)[&Event=TransmissionTreeToVirusTree3$Event@1c742ed4,Unit="ID_80802"]:1.6246575342465697)[&Event=TransmissionTreeToVirusTree3$Event@dc7df28,Unit="ID_44585"]:0.2027397260274002)[&Event=TransmissionTreeToVirusTree3$Event@4d14b6c2,Unit="ID_69882"]:0.06575342465752998)[&Event=TransmissionTreeToVirusTree3$Event@25df00a0,Unit="ID_61817"]:2.679452054794523)[&Event=TransmissionTreeToVirusTree3$Event@5884a914,Unit="ID_53904"]:0.186301369863014)[&Event=TransmissionTreeToVirusTree3$Event@79207381,Unit="ID_49468"]:0.19452054794520598)[&Event=TransmissionTreeToVirusTree3$Event@7a6d7e92,Unit="ID_66212"]:0.1013698630136982)[&Event=TransmissionTreeToVirusTree3$Event@5a5a729f,Unit="ID_54476"]:0.07123287671232958)[&TransmittedLineage=1,Event=TransmissionTreeToVirusTree3$Event@4b65d9f4,Unit="ID_54476"];
+End;

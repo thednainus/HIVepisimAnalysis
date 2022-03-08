@@ -40,6 +40,8 @@ days2years <- function(sampleTimes, init_date){
 #'    in decimal year.
 #' @param diag_info Dataframe of IDs and their time of diagnosis. Time must be
 #'    in decimal year.
+#' @param origin Dataframe of IDs that migrated during the simulation and time
+#'    time that migration happened. Time must be in decimal year.
 #' @param tm Transmission matrix of who transmitted to whom.
 #' @param location Character of location at time of transmission to get IDs
 #'    to sample from. Location can take the value of "region" or "global".
@@ -59,7 +61,7 @@ days2years <- function(sampleTimes, init_date){
 #' @export
 sampleIDs <- function(perc, start_date, end_date,
                       art_init, departure,
-                      diag_info, tm, location){
+                      diag_info, origin, tm, location){
 
   #browser()
 
@@ -127,8 +129,14 @@ sampleIDs <- function(perc, start_date, end_date,
 
         #tmpids <- results[[2]]
 
+        #get migrant code at time of sampling
+        #browser()
+        migrant <- get_origin_at_samplingTime(tm, origin, sid, st)
+        print(migrant)
+
         sampledIDs_list[[length(sampledIDs_list)+1]] <- set_sampledIDs(sid = sid,
-                                                                       st = sample_time)
+                                                                       st = sample_time,
+                                                                       migrant_code = migrant)
         #print(paste("sampled id list", sampledIDs_list, sep = " "))
 
         #index <- which(IDs == sid)
@@ -381,13 +389,17 @@ get_id_by_location <- function(tm, location){
 #' Set a dataframe of sampled IDs (sid) and their sampled times.
 #'
 #' @param sid The sampled ID
+#' @param migrant_code Origin code, If 1 is "region" but never migrated,
+#'    if 12 node ID migrated from "region" to "global",
+#'    if 2 is "global" and never migrated,
+#'    if 21 node ID migrated from "global" to "region".
 #' @inheritParams selectIDs
 #'
 #' @return Return dataframe of sampled IDs and their sampled times.
 #' @export
-set_sampledIDs <- function(sid, st){
+set_sampledIDs <- function(sid, st, migrant_code){
 
-  sampledID <- data.frame(sampled_ID = sid, sampled_time = st)
+  sampledID <- data.frame(sampled_ID = sid, sampled_time = st, migrant = migrant_code)
 
   return(sampledID)
 }
@@ -454,6 +466,78 @@ est_sampleSize <- function(perc, start_date, end_date, art_init,
 
 }
 
+#' Get origin at time of sampling
+#'
+#' Get the origin code at time of sampling.
+#'
+#' @inheritParams sampleIDs
+#' @param sid sampled ID
+#' @param st sampled time
+#'
+#' @return
+#' @export
+get_origin_at_samplingTime <- function(tm, origin, sid, st){
 
 
+  #check whether the sid (sampled ID) is an ID of a node that migrated
+  #browser()
+  migrant_code_origin <- origin[origin$IDs == sid,]
 
+
+  if(nrow(migrant_code_origin) == 0){
+    #if sid is not in the origin dataframe, then get migrant code from transmission
+    #matric (tm)
+    # here I check first sid in tm$inf
+    migrant_code_tmInf <- tm[tm$inf == sid,]
+
+    if(nrow(migrant_code_tmInf) == 0){
+      #if migrant_code is empty, it means that sis is a susceptible
+      #then I can get migrant_code from tm$sus
+      migrant_code_tmSus <- tm[tm$sus == sid,]
+      #I expect to have just one value for migrant_code because ID was not
+      #found to be a migrant in the origin dataframe
+      mig_code <- unique(migrant_code_tmSus$susMigrant)
+    } else{
+      mig_code <- unique(migrant_code_tmInf$infMigrant)
+    }
+  } else {
+
+    #if sid is indeed a node that migrated then I get the migrant code
+    #at or before sampling time
+    browser()
+    migrant_code <- migrant_code_origin[migrant_code_origin$time_decimal <= st,]
+
+    #if there are more than one row in dataframe migrant_code,
+    #then get the migrant_code at the more recent time
+    if(nrow(migrant_code) > 1){
+
+      mig_code <- tail(migrant_code, 1)$migrant
+
+    }
+
+    if(nrow(migrant_code) == 1) {
+      mig_code <-  migrant_code$migrant
+    }
+
+    #in this case migration happened after sampling time
+    #them I get migration code from tm
+    if(nrow(migrant_code) == 0){
+      migrant_code_tmSus <- tm[tm$sus == sid,]
+
+      if(nrow(migrant_code_tmSus) == 0){
+        #if migrant_code is empty, it means that sis is a susceptible
+        #then I can get migrant_code from tm$inf
+        migrant_code_tmInf <- tm[tm$inf == sid,]
+        #I expect to have just one value for migrant_code because ID was not
+        #found to be a migrant in the origin dataframe
+        mig_code <- unique(migrant_code_tmInf$infMigrant)
+      } else{
+        mig_code <- unique(migrant_code_tmSus$susMigrant)
+      }
+
+    }
+
+  }
+
+ return(mig_code)
+}

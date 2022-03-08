@@ -42,7 +42,8 @@ untar(teste)
 
 # Location for VirusTreeSimulator. It should be changed to the correct location on your computer.
 #Software <- "java -jar /Applications/VirusTreeSimulator/out/artifacts/VirusTreeSimulator_jar"
-Software <- "java -jar /Applications/VirusTreeSimulator/VirusTreeSimulator-master/out/artifacts/VirusTreeSimulator_jar/VirusTreeSimulator.jar"
+Software <- "java -jar /Applications/VirusTreeSimulator/out/artifacts/VirusTreeSimulator_jar/VirusTreeSimulator.jar"
+
 #parameter for VirusTreeSimulator
 #parameters <- "-demoModel Constant -N0 1"
 # parameters following Ratman et al. 2016 (Mol Biol Evol 34: 185-203)
@@ -55,7 +56,7 @@ Software <- "java -jar /Applications/VirusTreeSimulator/VirusTreeSimulator-maste
 # t50 in Ratman et al paper = -2 years
 # t50 in days = 2/(2*365) = 0.002739726
 # I think the correct here is t50 in days = 2*365 = 730 days (added this on 22Feb2022)
-#parameters <- "-demoModel Logistic -N0 1 -growthRate 0.007813436 -forceCoalescence -t50 -730"
+#parameters <- "-demoModel Logistic -N0 1 -growthRate 0.007813436 -t50 -730"
 parameters <- "-demoModel Logistic -N0 1 -growthRate 2.851904 -t50 -2"
 
 #maximum height
@@ -104,6 +105,10 @@ diag_info["time_decimal"] <- days2years(sampleTimes = diag_info$time,
                                         init_date = init_sim_date)
 stages <- read.csv("results/stages.csv")
 stages["time_decimal"] <- days2years(sampleTimes = stages$time,
+                                     init_date = init_sim_date)
+
+origin <- read.csv("results/origin.csv")
+origin["time_decimal"] <- days2years(sampleTimes = origin$time,
                                      init_date = init_sim_date)
 
 
@@ -161,6 +166,7 @@ if(!is.null(tm)){
       st_ids_region <- sampleIDs(perc = perc_pop_region, start_date = start_date_dec,
                                  end_date = end_date_dec, art_init = art_init,
                                  departure = dep, diag_info = diag_info,
+                                 origin = origin,
                                  tm = tm, location = "region")
 
       # sampled IDs are not on ART

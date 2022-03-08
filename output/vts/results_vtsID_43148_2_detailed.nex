@@ -1,0 +1,17 @@
+#NEXUS
+
+Begin taxa;
+	Dimensions ntax=2;
+	Taxlabels
+		'ID_27878_sampled_2_23.4904109589041'
+		'ID_27878_sampled_1_23.4904109589041'
+		;
+End;
+
+Begin trees;
+	Translate
+		1 'ID_27878_sampled_2_23.4904109589041',
+		2 'ID_27878_sampled_1_23.4904109589041'
+		;
+tree TREE1 [&firstCase=ID_43148] = [&R] (((((((((((((1[&Event=TransmissionTreeToVirusTree3$Event@3bd2af5b,Unit="ID_27878"]:12.7342465753425)[&Event=TransmissionTreeToVirusTree3$Event@ddf20fd,Unit="ID_71860"]:0.07123287671230116)[&Event=TransmissionTreeToVirusTree3$Event@6443b128,Unit="ID_32716"]:0.4164383561643987)[&Event=TransmissionTreeToVirusTree3$Event@1b32cd16,Unit="ID_81520"]:0.18356164383560092)[&Event=TransmissionTreeToVirusTree3$Event@847f3e7,Unit="ID_63857"]:0.2767123287671094)[&Event=TransmissionTreeToVirusTree3$Event@55ea2d70,Unit="ID_75218"]:0.15890410958903978)[&Event=TransmissionTreeToVirusTree3$Event@71c905a3,Unit="ID_29320"]:3.17260273972603)[&Event=TransmissionTreeToVirusTree3$Event@6f099cef,Unit="ID_54924"]:0.08767123287671019)[&Event=TransmissionTreeToVirusTree3$Event@2f879bab,Unit="ID_77785"]:0.6027397260273997)[&Event=TransmissionTreeToVirusTree3$Event@6bcbf05b,Unit="ID_50897"]:0.014727855125500788,(((((((((2[&Event=TransmissionTreeToVirusTree3$Event@3bd2af5b,Unit="ID_27878"]:12.7342465753425)[&Event=TransmissionTreeToVirusTree3$Event@ddf20fd,Unit="ID_71860"]:0.07123287671230116)[&Event=TransmissionTreeToVirusTree3$Event@6443b128,Unit="ID_32716"]:0.4164383561643987)[&Event=TransmissionTreeToVirusTree3$Event@1b32cd16,Unit="ID_81520"]:0.18356164383560092)[&Event=TransmissionTreeToVirusTree3$Event@847f3e7,Unit="ID_63857"]:0.2767123287671094)[&Event=TransmissionTreeToVirusTree3$Event@55ea2d70,Unit="ID_75218"]:0.15890410958903978)[&Event=TransmissionTreeToVirusTree3$Event@71c905a3,Unit="ID_29320"]:3.17260273972603)[&Event=TransmissionTreeToVirusTree3$Event@6f099cef,Unit="ID_54924"]:0.08767123287671019)[&Event=TransmissionTreeToVirusTree3$Event@2f879bab,Unit="ID_77785"]:0.6027397260273997)[&Event=TransmissionTreeToVirusTree3$Event@6bcbf05b,Unit="ID_50897"]:0.014727855125500788)[&Unit="ID_50897"]:0.12499817227175924)[&Event=TransmissionTreeToVirusTree3$Event@72ed9aad,Unit="ID_42110"]:1.2410958904109606)[&Event=TransmissionTreeToVirusTree3$Event@47b2e9e1,Unit="ID_43148"]:4.40547945205479)[&TransmittedLineage=2,Event=TransmissionTreeToVirusTree3$Event@250a500b,Unit="ID_43148"];
+End;

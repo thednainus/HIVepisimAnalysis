@@ -11,6 +11,7 @@ sampleIDs(
   art_init,
   departure,
   diag_info,
+  origin,
   tm,
   location
 )
@@ -31,6 +32,9 @@ in decimal year.}
 
 \item{diag_info}{Dataframe of IDs and their time of diagnosis. Time must be
 in decimal year.}
+
+\item{origin}{Dataframe of IDs that migrated during the simulation and time
+time that migration happened. Time must be in decimal year.}
 
 \item{tm}{Transmission matrix of who transmitted to whom.}
 
