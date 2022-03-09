@@ -317,4 +317,43 @@ get_cd4s_sampling <- function(sampled_info, stages){
 }
 
 
+#' Get which IDs are at early stage of HIV infection in the past 6 months
+#'
+#' This function mimics the idea of the recency test. It selects the IDs of
+#' individuals with recent HIV infection (in the past 6 months)
+#'
+#' @inheritParams get_cd4s_sampling
+#'
+#' @return
+#' @export
+recency_test <- function(sampled_info, stages){
+
+  stages_per_ID <- apply(sampled_info, MARGIN = 1,
+                         function(x) tail(subset(stages, infIDs == as.numeric(x["sampled_ID"]) &
+                                                   time_decimal <= as.numeric(x["sampled_time"])), n = 1))
+  #this is the HIV stage of infection of the ID at time of sampling
+  stages_per_ID <- do.call(rbind, stages_per_ID)
+  #order dataframe to get the difference and time considered on early HIV stage
+  #of infection
+  #select only individuals on early HIV stage
+  stages0 <- stages_per_ID[stages_per_ID$HIVstages == 0,]
+  stages0_ordered <- stages0[order(stages0$infIDs),]
+
+  #get the sampled times and IDs of individuals in stage0
+  sampled_info_stage0 <- sampled_info[sampled_info$sampled_ID %in% stages0_ordered$infIDs,]
+
+  #order sampled IDs and sampled time
+  sampled_info_stage0_ordered <- sampled_info_stage0[order(sampled_info_stage0$sampled_ID),]
+
+  sampled_info_stage0_ordered["difference"] <- sampled_info_stage0_ordered$sampled_time - stages0_ordered$time_decimal
+
+  #return IDs in which the difference is equal or less than 0.5 (representing
+  # half of the year or approx. 6 months)
+  recent_HIV_infection <- sampled_info_stage0_ordered[sampled_info_stage0_ordered$difference <= 0.5,]
+
+  return(recent_HIV_infection$tip_name)
+
+}
+
+
 

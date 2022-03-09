@@ -117,7 +117,7 @@ sampleIDs <- function(perc, start_date, end_date,
 
       if(nrow(ids_notOnArt) > 0){
 
-        # this will make to sure to remove the sids that hev already been sampled
+        # this will make to sure to remove the sids that have already been sampled
         if(is.null(sampled_sids)){
           sid <- get_newids(ids_notOnArt$IDs)
           sampled_sids <- c(sampled_sids, sid)
@@ -131,8 +131,8 @@ sampleIDs <- function(perc, start_date, end_date,
 
         #get migrant code at time of sampling
         #browser()
-        migrant <- get_origin_at_samplingTime(tm, origin, sid, st)
-        print(migrant)
+        migrant <- get_origin_at_samplingTime(tm, origin, sid, sample_time)
+        #print(migrant)
 
         sampledIDs_list[[length(sampledIDs_list)+1]] <- set_sampledIDs(sid = sid,
                                                                        st = sample_time,
@@ -253,15 +253,11 @@ sampleIDs2 <- function(perc, start_date, end_date,
         sampled_sids <- c(sampled_sids, sid)
       }
 
-
-      #tmpids <- results[[2]]
+      migrant <- get_origin_at_samplingTime(tm, origin, sid, sample_time)
 
       sampledIDs_list[[length(sampledIDs_list)+1]] <- set_sampledIDs(sid = sid,
-                                                                     st = sample_time)
-      #print(paste("sampled id list", sampledIDs_list, sep = " "))
-
-      #index <- which(IDs == sid)
-      #IDs <- IDs[-index]
+                                                                     st = sample_time,
+                                                                     migrant_code = migrant)
 
       count <- count - 1
       ids2sample <- "yes"
@@ -348,6 +344,8 @@ get_n_by_origin <- function(tm, location){
   }
 
   #el <- cbind(new_tm$inf, new_tm$sus)
+  #this the total n for when the individual seroconverted.
+  #it is where they got infected
   IDPOP <- new_tm$sus
 
   n <- length(IDPOP)
@@ -504,7 +502,7 @@ get_origin_at_samplingTime <- function(tm, origin, sid, st){
 
     #if sid is indeed a node that migrated then I get the migrant code
     #at or before sampling time
-    browser()
+    #browser()
     migrant_code <- migrant_code_origin[migrant_code_origin$time_decimal <= st,]
 
     #if there are more than one row in dataframe migrant_code,

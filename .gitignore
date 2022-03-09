@@ -2,3 +2,11 @@
 .Rhistory
 .RData
 .Ruserdata
+.gitignore
+.DS_Store
+output/
+results/
+Results_paper
+Results_for_diagnosis
+older/
+Antigos/

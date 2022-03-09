@@ -41,8 +41,8 @@ untar(teste)
 # and will save results to the directory "output"
 
 # Location for VirusTreeSimulator. It should be changed to the correct location on your computer.
-#Software <- "java -jar /Applications/VirusTreeSimulator/out/artifacts/VirusTreeSimulator_jar"
-Software <- "java -jar /Applications/VirusTreeSimulator/out/artifacts/VirusTreeSimulator_jar/VirusTreeSimulator.jar"
+#Software <- "java -jar /Applications/VirusTreeSimulator/out/artifacts/VirusTreeSimulator_jar/VirusTreeSimulator.jar"
+Software <- "java -jar /Applications/VirusTreeSimulator/VirusTreeSimulator-master/out/artifacts/VirusTreeSimulator_jar/VirusTreeSimulator.jar"
 
 #parameter for VirusTreeSimulator
 #parameters <- "-demoModel Constant -N0 1"
@@ -169,23 +169,40 @@ if(!is.null(tm)){
                                  origin = origin,
                                  tm = tm, location = "region")
 
+      #write proportion of sampled ids that were not in region anymore
+      prop_not_region <- nrow(st_ids_region[(st_ids_region$migrant == 2 |
+                                               st_ids_region$migrant == 12),])/nrow(st_ids_region)
+
+      #remove rows in which individuals are not in region anymore
+      #before or at time of sampling
+      st_ids_region <- st_ids_region[(st_ids_region$migrant == 1 |
+                                        st_ids_region$migrant == 21 ),]
+
       # sampled IDs are not on ART
 
       st_ids_region["date"] <- as.Date(date_decimal(st_ids_region$sampled_time))
       st_ids_region["time_days"] <- as.numeric(st_ids_region$date - init_sim_date)
       st_ids_region["time_years"] <- st_ids_region$time_days * (1/365)
+      st_ids_region["tip_name"] <- paste(st_ids_region$sampled_ID, st_ids_region$migrant,
+                                         sep = "_")
 
 
       # sample IDs from global and time of sampling
+      #here does not really matter if some individuals have migrated to region
+      #because this data will be used just to set the clock rate
+      #so individuals infected at the beggining of the epidemic can be sampled
       st_ids_global <- sampleIDs(perc = perc_pop_global, start_date = decimal_date(init_sim_date),
                                  end_date = decimal_date(last_sample_date), art_init = art_init,
                                  departure = dep, diag_info = diag_info,
+                                 origin = origin,
                                  tm = tm, location = "global")
 
 
       st_ids_global["date"] <- as.Date(date_decimal(st_ids_global$sampled_time))
       st_ids_global["time_days"] <- as.numeric(st_ids_global$date - init_sim_date)
       st_ids_global["time_years"] <- st_ids_global$time_days * (1/365)
+      st_ids_global["tip_name"] <- paste(st_ids_global$sampled_ID, st_ids_global$migrant,
+                                         sep = "_")
 
       #get stage of HIV infection at time of sampling for each individual
 
@@ -234,13 +251,14 @@ if(!is.null(tm)){
   #tree_years <- convert_branches(tree = consensus_tree, scale = 1/365)
   tree_years <- consensus_tree
 
-  #get tip names from VirusTreeSimulato tree
+  #get tip names from VirusTreeSimulator tree
   tip_names_vts <- tree_years$tip.label
 
   # Change tip names from vts format to ID_migrant format
   # change the tips names returned by VirusTreeSimulator to those tip_names
   # in the form of ID_migrant
-  tree_years$tip.label <- reorder_tip_names(tip_names, tip_names_vts)
+  tip_names_migrant <- c(st_ids_region$tip_name, st_ids_global$tip_name)
+  tree_years$tip.label <- reorder_tip_names(tip_names_migrant, tip_names_vts)
 
 
   # save tree to simulate sequence alignment using Python script
@@ -252,6 +270,7 @@ if(!is.null(tm)){
   # Calculate infector probability ----
   all_cd4s <- get_cd4s_sampling(rbind(st_ids_region, st_ids_global), stages)
 
+
   tips <- unlist(lapply(tree_years$tip.label, function(x) str_split(x, "_")[[1]][1]))
 
   #match cd4s to order of tip names in the phylogenetic tree
@@ -259,7 +278,13 @@ if(!is.null(tm)){
   all_cd4s <- setNames(all_cd4s, tree_years$tip.label)
 
   #get ehi (early HIV infection)
+  #get which ids that have CD4 count equivalent to stage 0 (Early HIV stage
+  #of infection) is at this stage for the past 6 months at time of sampling
+  recent_ids <- recency_test(rbind(st_ids_region, st_ids_global), stages)
+  which(names(all_cd4s))
+
   #named logical vector, may be NA, TRUE if patient sampled with early HIV infection (6 mos )
+
   ehis <- ifelse(all_cd4s == 1e3, TRUE, FALSE)
 
   #match sampled times to the order of tip names in the phylogenetic tree
