@@ -3,6 +3,9 @@ library(DescTools)
 library(stringr)
 library(HIVepisimAnalysis)
 
+#number of subjobs in array job
+n = 1000
+
 #  commandArgs(trailingOnly = TRUE) allow to call Rscript with an argument
 # this argument will be in the form of "sim1" or "sim2", etc.
 arguments <- commandArgs(trailingOnly = TRUE)
@@ -43,14 +46,14 @@ input_files <- paste(outfiles, "/.", sep = "")
 #separate input files into chunks
 #an array job can have a maximum of 10,000 subjobs
 
-input_split_dirs <- split_dirs(input_files, size = 10000)
+input_split_dirs <- split_dirs(input_files, size = n)
 
 
 output_files <- str_split(input_files, pattern = "/")
 #output_files <- unlist(lapply(output_files, function(x) paste(x[1:7], collapse = "/")))
 #output_files <- unlist(lapply(output_files, function(x) paste(x[1:9], collapse = "/")))
 output_files <- unlist(lapply(output_files, function(x) paste(x[1:10], collapse = "/")))
-output_split_dirs <- split_dirs(output_files, size = 10000)
+output_split_dirs <- split_dirs(output_files, size = n)
 
 #mknew dir to copy shiver files
 #mkdir_outfiles <- lapply(output_split_dirs, function(x) str_split(x, pattern = "/"))
@@ -87,7 +90,7 @@ for (i in 1:length(input_split_dirs)){
   jobfilename <- paste(paste("shiver", i, sep = "_"), ".job", sep = "")
 
 
-  array_number <- paste("#PBS", " -J", "1-", length(input_split_dirs[[i]]), sep = "")
+  array_number <- paste("#SBATCH", " --array=", "1-", length(input_split_dirs[[i]]), sep = "")
 
 
   jobtext <- paste("#!/bin/bash",
@@ -171,7 +174,7 @@ for (i in 1:length(input_split_dirs)){
                    sep = "\n")
 
 
-  write.table(pbstext, file = pbsfilename, quote = FALSE,
+  write.table(jobtext, file = jobfilename, quote = FALSE,
               row.names = FALSE, col.names = FALSE)
 
 

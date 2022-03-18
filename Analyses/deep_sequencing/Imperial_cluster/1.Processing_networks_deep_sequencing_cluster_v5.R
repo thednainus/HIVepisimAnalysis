@@ -21,8 +21,11 @@ library(lubridate)
 # percentage of population to sampled IDs
 line_number <- as.numeric(commandArgs(trailingOnly = TRUE))
 
-params <- readRDS(system.file("data/ssimulations_deepseq_cluster.RDS",
-                              package = "HIVepisimAnalysis"))[line_number,]
+#to analyse only paramater 2348 (param 1067 is being analysed at xsede)
+params_all <- readRDS(system.file("data/simulations_deepseq_cluster.RDS",
+                                  package = "HIVepisimAnalysis"))[201:400,]
+
+params <- params_all[line_number,]
 
 perc_pop_region <- params$perc
 
@@ -31,7 +34,7 @@ perc_pop_region <- params$perc
 #and save filename to save data after simulation is run
 migration_variation <- as.character(params_run[2])
 migration_variation <- paste("best_trajectories", migration_variation, sep ="_")
-simulation_dir <- paste(paste("/ocean/projects/bio210082p/nascimen/data_deepsequencing/", migration_variation, "/", sep = ""),
+simulation_dir <- paste(paste("/rds/general/user/fferre15/ephemeral/", migration_variation, "/", sep = ""),
                         paste("params", params$params, sep = "_"),
                         "/",
                         paste("rep", params$rep, sep = "_"), sep = "")
@@ -61,8 +64,8 @@ untar(simulation_data)
 # and will save results to the directory "output"
 
 # Location for VirusTreeSimulator. It should be changed to the correct location on your computer.
-#Software <- "java -jar VirusTreeSimulator-master/out/artifacts/VirusTreeSimulator_jar/VirusTreeSimulator.jar"
-Software <- "java -jar /Applications/VirusTreeSimulator/VirusTreeSimulator-master/out/artifacts/VirusTreeSimulator_jar/VirusTreeSimulator.jar"
+Software <- "java -jar VirusTreeSimulator-master/out/artifacts/VirusTreeSimulator_jar/VirusTreeSimulator.jar"
+#Software <- "java -jar /Applications/VirusTreeSimulator/VirusTreeSimulator-master/out/artifacts/VirusTreeSimulator_jar/VirusTreeSimulator.jar"
 #Software <- "java -jar VirusTreeSimulator-master/out/artifacts/VirusTreeSimulator_jar/VirusTreeSimulator.jar"
 #parameter for VirusTreeSimulator
 #parameters <- "-demoModel Constant -N0 1"
@@ -371,5 +374,5 @@ print("Simulation took:")
 end_time - start_time
 
 processing_network_time <- data.frame(start = start_time, end = end_time)
-saveRDS(processing_network_time, "processing_network_time.RDS")
+saveRDS(processing_network_time, "processing_network_time_deepseq.RDS")
 

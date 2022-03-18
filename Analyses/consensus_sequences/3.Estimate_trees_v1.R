@@ -14,7 +14,7 @@ library(stringr)
 
 seq_length <- commandArgs(trailingOnly = TRUE)
 seqlength <- as.numeric(seq_length)
-seq_length <- paste(seq_length, "bp", sep = "")
+seq_length <- paste(seqlength, "bp", sep = "")
 
 
 # You have to download IQ-TREE to run this script
@@ -31,8 +31,10 @@ maxCPU <- 3
 #list files
 pattern <- paste("_", seq_length, ".fasta", sep = "")
 list_files <- list.files("output/vts/alignments", pattern = pattern, full.names = TRUE)
+#list_files <- list.files("/Users/user/Desktop/tmp2/trees_test", pattern = ".fasta", full.names = TRUE)
 
 list_sampleTimes <- list.files("output/vts/W", pattern = ".RData", full.names = TRUE)
+#list_sampleTimes <- list.files("/Users/user/Desktop/tmp2/trees_test", pattern = ".RDS", full.names = TRUE)
 
 #make dir to save iqtree
 iqtree_dirname <- paste("output/vts/alignments/iqtree_results_", seq_length, sep = "")

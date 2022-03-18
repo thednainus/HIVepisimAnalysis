@@ -21,7 +21,8 @@ library(stringr)
 
 #prefix for path names
 #prefix <- "/Users/user/Desktop/Imperial/newHIVproject-01Aug2020/R_projects/HIVepisimAnalysis/"
-prefix <- paste(getwd(), "/", sep = "")
+prefix_output <- paste(getwd(), "/", sep = "")
+prefix_shiver <- "/ocean/projects/bio210082p/nascimen/Programs/"
 
 # list directories
 #reads_output <- dir(path = "output_deepseq/vts/merged_trees/Illumina_reads",
@@ -34,7 +35,7 @@ reads_output <- dir(path = "shiver2/Illumina_reads",
 
 #location of shiver
 #shiver <- "/Users/user/Desktop/Imperial/newHIVproject-01Aug2020/shiver/"
-shiver <- paste(prefix, "shiver/", sep = "")
+shiver <- paste(prefix_shiver, "shiver/", sep = "")
 
 
 # location for shiver align contigs
@@ -52,12 +53,12 @@ config_file <- paste(shiver, "config_MyChanges.sh", sep = "")
 
 #subtypeB reference sequence for mapping
 #loc_subtypeB <- "/Users/user/Desktop/Imperial/newHIVproject-01Aug2020/reference_subtypeB/genome/reference_subtypeB_completeGenome.fasta"
-loc_subtypeB <- paste(prefix, "reference_subtypeB_completeGenome.fasta", sep = "")
+loc_subtypeB <- paste(prefix_output, "reference_subtypeB_completeGenome.fasta", sep = "")
 
 # shiver_output is the directory in which we will save all outputs from the
 # shiver analysis.
 shiver_output <- "shiver2"
-shiver_output <- paste(prefix, shiver_output, sep = "")
+shiver_output <- paste(prefix_output, shiver_output, sep = "")
 
 
 #run shiver_align_contigs
