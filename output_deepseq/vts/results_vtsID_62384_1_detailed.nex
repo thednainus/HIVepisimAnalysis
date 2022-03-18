@@ -1,0 +1,35 @@
+#NEXUS
+
+Begin taxa;
+	Dimensions ntax=11;
+	Taxlabels
+		'ID_116198_sampled_5_40.5178082191781'
+		'ID_116198_sampled_1_40.5178082191781'
+		'ID_116198_sampled_2_40.5178082191781'
+		'ID_116198_sampled_11_40.5178082191781'
+		'ID_116198_sampled_3_40.5178082191781'
+		'ID_116198_sampled_10_40.5178082191781'
+		'ID_116198_sampled_7_40.5178082191781'
+		'ID_116198_sampled_4_40.5178082191781'
+		'ID_116198_sampled_6_40.5178082191781'
+		'ID_116198_sampled_8_40.5178082191781'
+		'ID_116198_sampled_9_40.5178082191781'
+		;
+End;
+
+Begin trees;
+	Translate
+		1 'ID_116198_sampled_5_40.5178082191781',
+		2 'ID_116198_sampled_1_40.5178082191781',
+		3 'ID_116198_sampled_2_40.5178082191781',
+		4 'ID_116198_sampled_11_40.5178082191781',
+		5 'ID_116198_sampled_3_40.5178082191781',
+		6 'ID_116198_sampled_10_40.5178082191781',
+		7 'ID_116198_sampled_7_40.5178082191781',
+		8 'ID_116198_sampled_4_40.5178082191781',
+		9 'ID_116198_sampled_6_40.5178082191781',
+		10 'ID_116198_sampled_8_40.5178082191781',
+		11 'ID_116198_sampled_9_40.5178082191781'
+		;
+tree TREE1 [&firstCase=ID_62384] = [&R] (((((((((((((1[&Event=TransmissionTreeToVirusTree3$Event@31aab981,Unit="ID_116198"]:3.197260273972603)[&Event=TransmissionTreeToVirusTree3$Event@2d195ee4,Unit="ID_6523"]:7.36679225407471,(((2[&Event=TransmissionTreeToVirusTree3$Event@31aab981,Unit="ID_116198"]:2.957301175804062,(3[&Event=TransmissionTreeToVirusTree3$Event@31aab981,Unit="ID_116198"]:1.6676026484931934,4[&Event=TransmissionTreeToVirusTree3$Event@31aab981,Unit="ID_116198"]:1.6676026484931934)[&Unit="ID_116198"]:1.2896985273108688)[&Unit="ID_116198"]:0.16714137669148954,5[&Event=TransmissionTreeToVirusTree3$Event@31aab981,Unit="ID_116198"]:3.1244425524955517)[&Unit="ID_116198"]:0.07281772147705112)[&Event=TransmissionTreeToVirusTree3$Event@2d195ee4,Unit="ID_6523"]:7.36679225407471)[&Unit="ID_6523"]:0.8277282938704857)[&Event=TransmissionTreeToVirusTree3$Event@35f8a9d3,Unit="ID_85444"]:0.8410958904110011)[&Event=TransmissionTreeToVirusTree3$Event@a50ae65,Unit="ID_72603"]:15.682191780821901)[&Event=TransmissionTreeToVirusTree3$Event@4fcc0416,Unit="ID_83899"]:1.7479452054794997)[&Event=TransmissionTreeToVirusTree3$Event@5ca1f591,Unit="ID_32312"]:0.42739726027389935)[&Event=TransmissionTreeToVirusTree3$Event@997d532,Unit="ID_57627"]:2.743595833630632,(((((((((6[&Event=TransmissionTreeToVirusTree3$Event@31aab981,Unit="ID_116198"]:2.349408797720482,7[&Event=TransmissionTreeToVirusTree3$Event@31aab981,Unit="ID_116198"]:2.349408797720482)[&Unit="ID_116198"]:0.11135400224026881,8[&Event=TransmissionTreeToVirusTree3$Event@31aab981,Unit="ID_116198"]:2.460762799960751)[&Unit="ID_116198"]:0.2909554878861833,(9[&Event=TransmissionTreeToVirusTree3$Event@31aab981,Unit="ID_116198"]:2.7367597727936683,(10[&Event=TransmissionTreeToVirusTree3$Event@31aab981,Unit="ID_116198"]:2.039529438684139,11[&Event=TransmissionTreeToVirusTree3$Event@31aab981,Unit="ID_116198"]:2.039529438684139)[&Unit="ID_116198"]:0.6972303341095292)[&Unit="ID_116198"]:0.014958515053265842)[&Unit="ID_116198"]:0.44554198612566864)[&Event=TransmissionTreeToVirusTree3$Event@2d195ee4,Unit="ID_6523"]:8.194520547945196)[&Event=TransmissionTreeToVirusTree3$Event@35f8a9d3,Unit="ID_85444"]:0.8410958904110011)[&Event=TransmissionTreeToVirusTree3$Event@a50ae65,Unit="ID_72603"]:15.682191780821901)[&Event=TransmissionTreeToVirusTree3$Event@4fcc0416,Unit="ID_83899"]:1.7479452054794997)[&Event=TransmissionTreeToVirusTree3$Event@5ca1f591,Unit="ID_32312"]:0.42739726027389935)[&Event=TransmissionTreeToVirusTree3$Event@997d532,Unit="ID_57627"]:2.743595833630632)[&Unit="ID_57627"]:0.5385959471913182)[&Event=TransmissionTreeToVirusTree3$Event@7a18e8d,Unit="ID_71697"]:5.134246575342461)[&Event=TransmissionTreeToVirusTree3$Event@b558294,Unit="ID_28757"]:0.3452054794520598)[&Event=TransmissionTreeToVirusTree3$Event@27aae97b,Unit="ID_74430"]:1.55616438356164)[&Event=TransmissionTreeToVirusTree3$Event@5f14a673,Unit="ID_62384"]:0.10958904109589)[&TransmittedLineage=1,Event=TransmissionTreeToVirusTree3$Event@46394f65,Unit="ID_62384"];
+End;

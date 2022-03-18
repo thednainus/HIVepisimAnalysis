@@ -8,7 +8,6 @@ summaryW2(
   sim,
   tm,
   W1,
-  ID,
   tree,
   code,
   st_df,
@@ -25,8 +24,6 @@ simulated.}
 
 \item{W1}{Infector probability calculated on true trees (all region tips)}
 
-\item{ID}{ID name.}
-
 \item{code}{String to identify if W was calculated on true or simulated trees.}
 
 \item{st_df}{Dataframe for the IDs and its sampling times in decimal year.}
@@ -39,6 +36,8 @@ as W.csv.}
 
 \item{labels}{if labels = TRUE, labels of 0 or 1 will be created for ROC
 curves.}
+
+\item{ID}{ID name.}
 }
 \value{
 a data frame of 1 row with the following values:

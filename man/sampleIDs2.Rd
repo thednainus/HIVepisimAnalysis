@@ -11,6 +11,7 @@ sampleIDs2(
   art_init,
   departure,
   diag_info,
+  origin,
   tm,
   location
 )

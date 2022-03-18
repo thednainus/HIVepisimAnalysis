@@ -17,18 +17,38 @@ library(dplyr)
 library(lubridate)
 
 # percentage of population to sampled IDs
-#perc_pop_region <- commandArgs(trailingOnly = TRUE)
-#perc_pop_region <- as.numeric(perc_pop_region)
-perc_pop_region <- 0.05
+line_number <- as.numeric(commandArgs(trailingOnly = TRUE))
+
+params <- readRDS(system.file("data/simulations_imperial_cluster.RDS",
+                              package = "HIVepisimAnalysis"))[line_number,]
+
+perc_pop_region <- params$perc
 #perc_pop_global <- 3 * perc_pop_region
 perc_pop_global <- 0.05
 
 
 #untar tar file
-#teste <- "/Users/user/Desktop/Imperial/newHIVproject-01Aug2020/R_projects/Results_paper/best_trajectories_50migrants/params_1067/rep_99/sim_results.tar.gz"
-teste <- "~/Box Sync/Results_simulations_test/param1067/rep_1/sim_results.tar.gz"
+simulation_dir <- "~/Box Sync/Results_simulations_test/param1067/rep_1"
+#simulation_dir <- paste("/rds/general/user/fferre15/ephemeral/",
+#                         paste("params", params$params, sep = "_"),
+#                         "/",
+#                         paste("rep", params$rep, sep = "_"), sep = "")
+simulation_data <- paste(simulation_dir, "sim_results.tar.gz", sep = "/")
 
-untar(teste)
+mkdir_info <- paste(simulation_dir,
+                    paste("perc", params$perc, sep = "_"),
+                    sep = "/")
+where2save <- paste(mkdir_info, ".", sep = "/")
+
+write.table(mkdir_info, file = "mkdir_name.txt",
+            quote = FALSE, row.names = FALSE,
+            col.names = FALSE)
+
+write.table(where2save, file = "dir_name.txt",
+            quote = FALSE, row.names = FALSE,
+            col.names = FALSE)
+
+untar(simulation_data)
 
 
 
@@ -43,27 +63,24 @@ untar(teste)
 # Location for VirusTreeSimulator. It should be changed to the correct location on your computer.
 #Software <- "java -jar /Applications/VirusTreeSimulator/out/artifacts/VirusTreeSimulator_jar/VirusTreeSimulator.jar"
 Software <- "java -jar /Applications/VirusTreeSimulator/VirusTreeSimulator-master/out/artifacts/VirusTreeSimulator_jar/VirusTreeSimulator.jar"
-
+#Software <- "java -jar VirusTreeSimulator-master/out/artifacts/VirusTreeSimulator_jar/VirusTreeSimulator.jar"
 #parameter for VirusTreeSimulator
 #parameters <- "-demoModel Constant -N0 1"
 # parameters following Ratman et al. 2016 (Mol Biol Evol 34: 185-203)
 # parameters in Ratman et al. 2016 is per year, and below I converted it to
 # days as my simulations are in units of days
 # effective population per year growth rate (r) =  2.851904
-# then effective population per day growth rate (r) = 2.851904/365 = 0.007813436
 #  -t50 The time point, relative to the time of infection in backwards time, at
 # which the population is equal to half its final asymptotic value,
 # t50 in Ratman et al paper = -2 years
-# t50 in days = 2/(2*365) = 0.002739726
 # I think the correct here is t50 in days = 2*365 = 730 days (added this on 22Feb2022)
-#parameters <- "-demoModel Logistic -N0 1 -growthRate 0.007813436 -t50 -730"
 parameters <- "-demoModel Logistic -N0 1 -growthRate 2.851904 -t50 -2"
 
 #maximum height
 #analyse the past 15 years
 MH <-  15
 # total number of years simulated
-years <-  40
+years <-  41
 #area and max_value is used in function get_tipNames
 area <-  "all"
 max_value <-  NULL
@@ -163,11 +180,13 @@ if(!is.null(tm)){
       create_inf_csv(tm, time_tr = rep(0, length(seed_names)), prefix = output)
 
       # sample IDs from region and time of sampling
-      st_ids_region <- sampleIDs(perc = perc_pop_region, start_date = start_date_dec,
+      st_ids_region <- sampleIDs2(perc = perc_pop_region, start_date = start_date_dec,
                                  end_date = end_date_dec, art_init = art_init,
                                  departure = dep, diag_info = diag_info,
                                  origin = origin,
                                  tm = tm, location = "region")
+
+
 
       #write proportion of sampled ids that were not in region anymore
       prop_not_region <- nrow(st_ids_region[(st_ids_region$migrant == 2 |
@@ -191,7 +210,7 @@ if(!is.null(tm)){
       #here does not really matter if some individuals have migrated to region
       #because this data will be used just to set the clock rate
       #so individuals infected at the beggining of the epidemic can be sampled
-      st_ids_global <- sampleIDs(perc = perc_pop_global, start_date = decimal_date(init_sim_date),
+      st_ids_global <- sampleIDs2(perc = perc_pop_global, start_date = decimal_date(init_sim_date),
                                  end_date = decimal_date(last_sample_date), art_init = art_init,
                                  departure = dep, diag_info = diag_info,
                                  origin = origin,
@@ -234,8 +253,10 @@ if(!is.null(tm)){
   trees <- lapply(list_trees, read.nexus)
   #add root.edge
 
-  trees_rootedge <- lapply(trees, add_root_edge,
-                           total_sim_steps = decimal_date(end_sim_date) - decimal_date(init_sim_date),
+  #trees_rootedge <- lapply(trees, add_root_edge,
+  #                         total_sim_steps = decimal_date(end_sim_date) - decimal_date(init_sim_date),
+  #                         root.edge_value = 0)
+  trees_rootedge <- lapply(trees, add_root_edge2,
                            root.edge_value = 0)
   vts_tree <- merge_trees(trees_rootedge)
 
@@ -281,17 +302,19 @@ if(!is.null(tm)){
   #get which ids that have CD4 count equivalent to stage 0 (Early HIV stage
   #of infection) is at this stage for the past 6 months at time of sampling
   recent_ids <- recency_test(rbind(st_ids_region, st_ids_global), stages)
-  which(names(all_cd4s))
+  #which(names(all_cd4s) %in% recent_ids)
 
   #named logical vector, may be NA, TRUE if patient sampled with early HIV infection (6 mos )
 
-  ehis <- ifelse(all_cd4s == 1e3, TRUE, FALSE)
+  #ehis <- ifelse(all_cd4s == 1e3, TRUE, FALSE)
+  ehis <- ifelse(names(all_cd4s) %in% recent_ids, TRUE, FALSE)
+  ehis <- setNames(ehis, names(all_cd4s))
 
   #match sampled times to the order of tip names in the phylogenetic tree
   sampleTimes <- c(st_ids_region$sampled_time, st_ids_global$sampled_time)
-  sampleTimes <- setNames(sampleTimes, c(st_ids_region$sampled_ID, st_ids_global$sampled_ID))
-  sampleTimes <- sampleTimes[match(tips, names(sampleTimes))]
-  sampleTimes <- setNames(sampleTimes, tree_years$tip.label)
+  sampleTimes <- setNames(sampleTimes, c(st_ids_region$tip_name, st_ids_global$tip_name))
+  #sampleTimes <- sampleTimes[match(tips, names(sampleTimes))]
+  #sampleTimes <- setNames(sampleTimes, tree_years$tip.label)
 
 
   # to calculate infector probabilities
@@ -309,14 +332,15 @@ if(!is.null(tm)){
 
   onlyregion_tree <- drop.tip(tree_years, names(tips2drop))
 
-  W <- phylo.source.attribution.hiv.msm( onlyregion_tree, sampleTimes[onlyregion_tree$tip.label],
-                                         cd4s = all_cd4s[onlyregion_tree$tip.label],
-                                         ehi = ehis[onlyregion_tree$tip.label],
-                                         numberPeopleLivingWithHIV  = totalPLWHIV,
-                                         numberNewInfectionsPerYear = newinf_per_year,
-                                         maxHeight = MH,
-                                         res = 1e3,
-                                         treeErrorTol = Inf)
+  W <- phylo.source.attribution.hiv.msm(onlyregion_tree, sampleTimes[onlyregion_tree$tip.label],
+                                        cd4s = all_cd4s[onlyregion_tree$tip.label],
+                                        ehi = ehis[onlyregion_tree$tip.label],
+                                        numberPeopleLivingWithHIV  = totalPLWHIV,
+                                        numberNewInfectionsPerYear = newinf_per_year,
+                                        maxHeight = years,
+                                        res = 1e3,
+                                        treeErrorTol = Inf)
+
 
   #Create directory named W (to save everything related to infector probability)
   # if it does not exist
@@ -325,23 +349,18 @@ if(!is.null(tm)){
   }
 
   saveRDS(sampleTimes, paste("output/vts/W/", "sampleTimes.RDS",sep=""))
-  #prefix <- "test"
 
-  W_filename <- paste("output/vts/W/", "merged_trees_sampling", "_migrant_years_1_simple_", perc_pop_region, ".RData", sep="")
+  W_filename <- paste("output/vts/W/", "merged_trees_sampling", "_migrant_years_1_simple_",
+                      perc_pop_region, ".RData", sep="")
   save(years, MH, max_value, init_sim_date, last_sample_date, start_date,
-       end_date, tm, st_ids_region, st_ids_global,
+       end_date_dec, tm, st_ids_region, st_ids_global, prop_not_region,
        tree_years, onlyregion_tree,
        sampleTimes, all_cd4s, ehis, newinf_per_year, totalPLWHIV, W,
        file = W_filename)
 
-  #save(years, MH, max_value, init_sim_date, last_sample_date, start_date,
-  #     end_date_dec, tm, st_ids_region,
-  #     tree_years, onlyregion_tree,
-  #     sampleTimes, all_cd4s, ehis, newinf_per_year, totalPLWHIV, W,
-  #     file = W_filename)
 
   summaryW(sim = perc_pop_region, tm = tm, W, ID = "sampled",
-            tree = onlyregion_tree, code = "TrueTrees",
+           tree = onlyregion_tree, code = "TrueTrees",
            prefix = NULL, labels = TRUE)
 
 }
@@ -354,3 +373,4 @@ end_time - start_time
 
 processing_network_time <- data.frame(start = start_time, end = end_time)
 saveRDS(processing_network_time, "processing_network_time.RDS")
+

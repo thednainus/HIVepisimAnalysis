@@ -4,7 +4,7 @@
 \alias{summaryW}
 \title{Summarize infector probability (W) for phylogenetic trees}
 \usage{
-summaryW(sim, tm, W1, ID, tree, code, prefix = NULL, labels = TRUE)
+summaryW(sim, tm, W1, tree, code, prefix = NULL, labels = TRUE)
 }
 \arguments{
 \item{sim}{Simulation number to know the parameter values that network was
@@ -13,8 +13,6 @@ simulated.}
 \item{tm}{Transmission matrix.}
 
 \item{W1}{Infector probability calculated on true trees (all region tips)}
-
-\item{ID}{ID name.}
 
 \item{code}{string to identify if W was calculated on true or simulated trees.}
 

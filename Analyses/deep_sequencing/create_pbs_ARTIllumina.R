@@ -3,7 +3,7 @@ library(DescTools)
 library(stringr)
 library(HIVepisimAnalysis)
 
-#  commandArgs(trailingOnly = TRUE) allow to call Rscript with an argument
+#  commandArg s(trailingOnly = TRUE) allow to call Rscript with an argument
 # this argument will be in the form of "sim1" or "sim2", etc.
 #simulation <- commandArgs(trailingOnly = TRUE)
 simulation="5perc"

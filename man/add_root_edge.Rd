@@ -11,7 +11,7 @@ add_root_edge(tree, total_sim_steps, root.edge_value = 7665)
 
 \item{total_sim_steps}{scalar for the total number of steps of network simulations}
 
-\item{root.edge_value}{scaler for the value to use as root.edge in the phylogenetic tree}
+\item{root.edge_value}{scalar for the value to use as root.edge in the phylogenetic tree}
 }
 \value{
 

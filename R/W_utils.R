@@ -145,7 +145,6 @@ validadeW <- function(sim, run, tm, W_true, W_estimated, seed_ID, MH, true_tree,
 #'    simulated.
 #' @param tm Transmission matrix.
 #' @param W1 Infector probability calculated on true trees (all region tips)
-#' @param ID ID name.
 #' @param code string to identify if W was calculated on true or simulated trees.
 #' @param prefix prefix to save results. If prefix = NULL, results will be saved
 #'    as W.csv.
@@ -189,7 +188,7 @@ validadeW <- function(sim, run, tm, W_true, W_estimated, seed_ID, MH, true_tree,
 #'                         of all infector probability (W) values.
 #'
 #' @export
-summaryW <- function(sim, tm, W1, ID, tree, code, prefix = NULL, labels = TRUE){
+summaryW <- function(sim, tm, W1, tree, code, prefix = NULL, labels = TRUE){
 
   #browser()
 
@@ -386,7 +385,7 @@ summaryW <- function(sim, tm, W1, ID, tree, code, prefix = NULL, labels = TRUE){
 #'                         of all infector probability (W) values.
 #'
 #' @export
-summaryW2 <- function(sim, tm, W1, ID, tree, code, st_df, init_sim_date,
+summaryW2 <- function(sim, tm, W1, tree, code, st_df, init_sim_date,
                       prefix = NULL, labels = TRUE){
 
   #browser()

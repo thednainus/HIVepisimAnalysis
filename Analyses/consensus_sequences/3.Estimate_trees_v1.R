@@ -20,6 +20,7 @@ seq_length <- paste(seq_length, "bp", sep = "")
 # You have to download IQ-TREE to run this script
 # Change to the correct path of IQ-TREE on your computer
 Software <- "/Applications/iqtree-2.1.2-MacOSX/bin/iqtree2"
+#Software <- "iqtree-2.1.3-Linux/bin/iqtree2"
 #Software <- "iqtree"
 maxCPU <- 3
 
@@ -107,13 +108,15 @@ for(ali in list_files){
     dir.create("output/vts/W_estimated")
   }
 
-  W_filename <- paste("output/vts/W_estimated/", seq_length, "_migrant_years_1_simple_estimated", ".RData", sep="")
-  save(years, max_value, last_sample_date, tm, region_only_dated_tree,
+  W_filename <- paste("output/vts/W_estimated/", seq_length,
+                      "_migrant_years_1_simple_estimated", ".RData", sep="")
+
+  save(years, max_value, last_sample_date, tm, dated_tree, region_only_dated_tree,
        sampleTimes, all_cd4s, ehis, newinf_per_year, totalPLWHIV, W_estimated,
        file = W_filename)
 }
 
-#move iqtree results to diretory for iqtree
+#move iqtree results to directory for iqtree
 files <- paste(getwd(), "output/vts/alignments", "*.fasta*", sep = "/")
 iqtree_dir <- paste(getwd(), iqtree_dirname, sep = "/")
 command_args <- paste("mv", files, iqtree_dir, sep = " ")
@@ -127,5 +130,3 @@ end_time - start_time
 
 iqtree_time <- data.frame(start = start_time, end = end_time)
 saveRDS(iqtree_time, "iqtree_time.RDS")
-
-

@@ -186,10 +186,10 @@ sampleIDs <- function(perc, start_date, end_date,
 #' @return Dataframe of IDs and their sampled times
 #' @export
 sampleIDs2 <- function(perc, start_date, end_date,
-                      art_init, departure,
-                      diag_info, tm, location){
+                       art_init, departure,
+                       diag_info, origin,
+                       tm, location){
 
-  #browser()
 
   #initially assume that we will have ids to sample
   ids2sample <- "yes"
@@ -241,8 +241,6 @@ sampleIDs2 <- function(perc, start_date, end_date,
 
     if(nrow(activeIDs_before_st) > 0){
 
-      #browser()
-
       # this will make to sure to remove the sids that hev already been sampled
       if(is.null(sampled_sids)){
         sid <- get_newids(activeIDs_before_st$IDs)
@@ -254,6 +252,7 @@ sampleIDs2 <- function(perc, start_date, end_date,
       }
 
       migrant <- get_origin_at_samplingTime(tm, origin, sid, sample_time)
+
 
       sampledIDs_list[[length(sampledIDs_list)+1]] <- set_sampledIDs(sid = sid,
                                                                      st = sample_time,

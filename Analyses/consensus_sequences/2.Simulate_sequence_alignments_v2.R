@@ -9,6 +9,7 @@ library(ape)
 
 # Location for Seq-Gen. It should be changed to the correct location on your computer.
 Software <- "/Applications/Seq-Gen-1.3.4/source/seq-gen"
+#Software <- "Seq-Gen-1.3.4/source/seq-gen"
 #parameter for Seq-Gen
 #seq-gen -mHKY -t0.5 -fe -l10000 -n1 < filename > filename+'.txt'
 # values for generating sequence alignment for HIV pol as described in van der Kyl and Berkhout, 2012
