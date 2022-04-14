@@ -11,7 +11,7 @@ library(stringr)
 dir_list <- dir("/Users/user/Desktop/tmp2/osg_new_scrips/results", full.names = T)
 dir_list <- dir("/Users/user/Desktop/tmp2/osg_new_scrips/results_art_2004", full.names = T)
 dir_list <- dir("/Users/user/Desktop/tmp2/osg_new_scrips/results_narrow_parameters", full.names = T)
-
+#dir_list <- dir("/Users/user/Desktop/Imperial/newHIVproject-01Aug2020/R_projects/Results_paper/best_trajectories_50migrants", full.names = T)
 #beginning of simulation time
 init_sim_date <- ymd("1980-01-01")
 
