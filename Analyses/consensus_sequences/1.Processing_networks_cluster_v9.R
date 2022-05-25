@@ -1,6 +1,11 @@
+# 05 May 2022
 # Get transmission matrix ----
 # and run VirusTreeSimulator
 # This code has been tested on a Mac OS and might not work on windows or linux
+
+# I also only analyse the firt 30 replicates
+# In this script I use a vector for incidence and prevalece for calculation of
+#infector probabilities
 
 #start of script
 start_time <- Sys.time()
@@ -20,7 +25,20 @@ library(lubridate)
 line_number <- as.numeric(commandArgs(trailingOnly = TRUE))
 
 params <- readRDS(system.file("data/simulations_imperial_cluster.RDS",
-                              package = "HIVepisimAnalysis"))[line_number,]
+                              package = "HIVepisimAnalysis"))
+
+params <- params[c(1:30, 101:130, 201:230, 301:330, 401:430,
+                   501:530, 601:630, 701:730, 801:830, 901:930,
+                   1001:1030, 1101:1130, 1201:1230, 1301:1330, 1401:1430,
+                   1501:1530, 1601:1630, 1701:1730, 1801:1830, 1901:1930),]
+
+#params <- params[c(3:30, 101:130, 201:230, 301:330, 401:430,
+#                   501:530, 601:630, 701:730, 801:830, 901:930,
+#                   1001:1030, 1101:1130, 1201:1230, 1301:1330, 1401:1430,
+#                   1501:1530, 1601:1630, 1701:1730, 1801:1830, 1901:1930),]
+
+params <- params[line_number,]
+
 
 perc_pop_region <- params$perc
 #perc_pop_global <- 3 * perc_pop_region
@@ -28,7 +46,7 @@ perc_pop_global <- 0.05
 
 
 #untar tar file
-simulation_dir <- "~/Box Sync/Results_simulations_test/param1067/rep_1"
+simulation_dir <- "/Users/user/Desktop/Imperial/newHIVproject-01Aug2020/R_projects/Results_paper/best_trajectories_500migrants/params_1067/rep_28"
 #simulation_dir <- paste("/rds/general/user/fferre15/ephemeral/",
 #                         paste("params", params$params, sep = "_"),
 #                         "/",
@@ -67,18 +85,15 @@ Software <- "java -jar /Applications/VirusTreeSimulator/VirusTreeSimulator-maste
 #parameter for VirusTreeSimulator
 #parameters <- "-demoModel Constant -N0 1"
 # parameters following Ratman et al. 2016 (Mol Biol Evol 34: 185-203)
-# parameters in Ratman et al. 2016 is per year, and below I converted it to
-# days as my simulations are in units of days
 # effective population per year growth rate (r) =  2.851904
 #  -t50 The time point, relative to the time of infection in backwards time, at
 # which the population is equal to half its final asymptotic value,
 # t50 in Ratman et al paper = -2 years
-# I think the correct here is t50 in days = 2*365 = 730 days (added this on 22Feb2022)
 parameters <- "-demoModel Logistic -N0 1 -growthRate 2.851904 -t50 -2"
 
 #maximum height
 #analyse the past 15 years
-MH <-  15
+#MH <-  15
 # total number of years simulated
 years <-  41
 #area and max_value is used in function get_tipNames
@@ -135,14 +150,19 @@ sim_df <- as.data.frame(sim)
 sim_df["years"] <- days2years(sampleTimes = sim_df$time, init_date = init_sim_date)
 #convert days to years for tree branch lengths
 sim_df["years_branch_lengths"] <- sim_df$time * 1/365
-#get the average number of people living with HIV at end of simulation
-# (last year simulated)
+
+
+#People living with HIV (PLWHIV) in the past year
 totalPLWHIV <- sum(sim_df$i.num.pop1[tail(sim_df$time, n=365)])/365
 PLWHIV <- paste("PLWHIV", totalPLWHIV, sep="_")
+
+
+
 #get number of new infections in the past year
 newinf_per_year  <- sum(sim_df$incid.pop1[tail(sim_df$time, n=365)])
 newinf <- paste("newinf", newinf_per_year, sep="_")
 
+#get transmat
 tm <- get_transmat(sim)
 
 # get transmat by seed
@@ -180,22 +200,22 @@ if(!is.null(tm)){
       create_inf_csv(tm, time_tr = rep(0, length(seed_names)), prefix = output)
 
       # sample IDs from region and time of sampling
-      st_ids_region <- sampleIDs2(perc = perc_pop_region, start_date = start_date_dec,
-                                 end_date = end_date_dec, art_init = art_init,
-                                 departure = dep, diag_info = diag_info,
-                                 origin = origin,
-                                 tm = tm, location = "region")
+      st_ids_region_all <- sampleIDs2(perc = perc_pop_region, start_date = start_date_dec,
+                                      end_date = end_date_dec, art_init = art_init,
+                                      departure = dep, diag_info = diag_info,
+                                      origin = origin,
+                                      tm = tm, location = "region")
 
 
 
       #write proportion of sampled ids that were not in region anymore
-      prop_not_region <- nrow(st_ids_region[(st_ids_region$migrant == 2 |
-                                               st_ids_region$migrant == 12),])/nrow(st_ids_region)
+      prop_not_region <- nrow(st_ids_region_all[(st_ids_region_all$migrant == 2 |
+                                                st_ids_region_all$migrant == 12),])/nrow(st_ids_region_all)
 
       #remove rows in which individuals are not in region anymore
       #before or at time of sampling
-      st_ids_region <- st_ids_region[(st_ids_region$migrant == 1 |
-                                        st_ids_region$migrant == 21 ),]
+      st_ids_region <- st_ids_region_all[(st_ids_region_all$migrant == 1 |
+                                          st_ids_region_all$migrant == 21 ),]
 
       # sampled IDs are not on ART
 
@@ -209,12 +229,18 @@ if(!is.null(tm)){
       # sample IDs from global and time of sampling
       #here does not really matter if some individuals have migrated to region
       #because this data will be used just to set the clock rate
-      #so individuals infected at the beggining of the epidemic can be sampled
-      st_ids_global <- sampleIDs2(perc = perc_pop_global, start_date = decimal_date(init_sim_date),
+      #so individuals infected at the begining of the epidemic can be sampled
+      st_ids_global_all <- sampleIDs2(perc = perc_pop_global, start_date = decimal_date(init_sim_date),
                                  end_date = decimal_date(last_sample_date), art_init = art_init,
                                  departure = dep, diag_info = diag_info,
                                  origin = origin,
                                  tm = tm, location = "global")
+
+
+      #remove rows in which individuals are not in global anymore
+      #before or at time of sampling
+      st_ids_global <- st_ids_global_all[(st_ids_global_all$migrant == 2 |
+                                          st_ids_global_all$migrant == 12 ),]
 
 
       st_ids_global["date"] <- as.Date(date_decimal(st_ids_global$sampled_time))
@@ -226,7 +252,7 @@ if(!is.null(tm)){
       #get stage of HIV infection at time of sampling for each individual
 
 
-      # here I had to simulate 2 sequences per ID because there is not tree with
+      # here I had to simulate 2 sequences per ID because there is no tree with
       # 1 individual.
       # Because I am applying a sampling process, I may have trees with 1 individual
       # and the following scripts would not work
@@ -284,7 +310,8 @@ if(!is.null(tm)){
 
   # save tree to simulate sequence alignment using Python script
 
-  tree_filename <- paste(prefix_vts, "_merged_trees_sampling_", perc_pop_region, ".tre", sep="")
+  tree_filename <- paste(prefix_vts, "_merged_trees_sampling_",
+                         perc_pop_region, ".tre", sep="")
   write.tree(phy = tree_years, file = tree_filename)
 
 
@@ -304,6 +331,7 @@ if(!is.null(tm)){
   recent_ids <- recency_test(rbind(st_ids_region, st_ids_global), stages)
   #which(names(all_cd4s) %in% recent_ids)
 
+  #ehis = early hiv stage of infection
   #named logical vector, may be NA, TRUE if patient sampled with early HIV infection (6 mos )
 
   #ehis <- ifelse(all_cd4s == 1e3, TRUE, FALSE)
@@ -313,8 +341,6 @@ if(!is.null(tm)){
   #match sampled times to the order of tip names in the phylogenetic tree
   sampleTimes <- c(st_ids_region$sampled_time, st_ids_global$sampled_time)
   sampleTimes <- setNames(sampleTimes, c(st_ids_region$tip_name, st_ids_global$tip_name))
-  #sampleTimes <- sampleTimes[match(tips, names(sampleTimes))]
-  #sampleTimes <- setNames(sampleTimes, tree_years$tip.label)
 
 
   # to calculate infector probabilities
@@ -331,6 +357,8 @@ if(!is.null(tm)){
   tips2drop <- tipLocation[tipLocation == TRUE]
 
   onlyregion_tree <- drop.tip(tree_years, names(tips2drop))
+
+
 
   W <- phylo.source.attribution.hiv.msm(onlyregion_tree, sampleTimes[onlyregion_tree$tip.label],
                                         cd4s = all_cd4s[onlyregion_tree$tip.label],
@@ -352,14 +380,14 @@ if(!is.null(tm)){
 
   W_filename <- paste("output/vts/W/", "merged_trees_sampling", "_migrant_years_1_simple_",
                       perc_pop_region, ".RData", sep="")
-  save(years, MH, max_value, init_sim_date, last_sample_date, start_date,
-       end_date_dec, tm, st_ids_region, st_ids_global, prop_not_region,
-       tree_years, onlyregion_tree,
+  save(years, max_value, init_sim_date, last_sample_date, start_date,
+       end_date_dec, tm, st_ids_region_all, st_ids_region, st_ids_global_all,
+       st_ids_global, prop_not_region, tree_years, onlyregion_tree,
        sampleTimes, all_cd4s, ehis, newinf_per_year, totalPLWHIV, W,
        file = W_filename)
 
 
-  summaryW(sim = perc_pop_region, tm = tm, W, ID = "sampled",
+  summaryW(sim = perc_pop_region, tm = tm, W,
            tree = onlyregion_tree, code = "TrueTrees",
            prefix = NULL, labels = TRUE)
 

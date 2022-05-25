@@ -18,12 +18,29 @@ library(castor)
 library(dplyr)
 library(lubridate)
 
+param_list <- commandArgs(trailingOnly = TRUE)
+
 # percentage of population to sampled IDs
-line_number <- as.numeric(commandArgs(trailingOnly = TRUE))
+line_number <- as.numeric(param_list[1])
+
+seed_value <- as.numeric(param_list[2])
+message(seed_value)
+#seed_value <- 589634
+
+set.seed(seed_value)
 
 #to analyse only paramater 2348 (param 1067 is being analysed at xsede)
-params_all <- readRDS(system.file("data/simulations_deepseq_cluster.RDS",
-                                  package = "HIVepisimAnalysis"))[201:400,]
+#params_all <- readRDS(system.file("data/simulations_deepseq_cluster.RDS",
+#                                  package = "HIVepisimAnalysis"))[201:400,]
+
+params_all <- readRDS(system.file("data/simulations_imperial_cluster.RDS",
+                                  package = "HIVepisimAnalysis"))
+
+#params_1067
+params_all <- params_all[c(901:1000),]
+
+#params_2348
+#params_all <- params_all[c(1901:1930),]
 
 params <- params_all[line_number,]
 
@@ -32,26 +49,26 @@ perc_pop_region <- params$perc
 
 #untar tar file
 #and save filename to save data after simulation is run
-migration_variation <- as.character(params_run[2])
-migration_variation <- paste("best_trajectories", migration_variation, sep ="_")
-simulation_dir <- paste(paste("/rds/general/user/fferre15/ephemeral/", migration_variation, "/", sep = ""),
-                        paste("params", params$params, sep = "_"),
-                        "/",
-                        paste("rep", params$rep, sep = "_"), sep = "")
-simulation_data <- paste(simulation_dir, "sim_results.tar.gz", sep = "/")
+#migration_variation <- as.character(params_run[2])
+#migration_variation <- paste("best_trajectories", migration_variation, sep ="_")
+#simulation_dir <- paste(paste("/rds/general/user/fferre15/ephemeral/", migration_variation, "/", sep = ""),
+#                        paste("params", params$params, sep = "_"),
+#                        "/",
+#                        paste("rep", params$rep, sep = "_"), sep = "")
+simulation_data <- paste(getwd(), "sim_results.tar.gz", sep = "/")
 
-mkdir_info <- paste(simulation_dir,
-                    paste("perc", params$perc, sep = "_"),
-                    sep = "/")
-where2save <- paste(mkdir_info, ".", sep = "/")
+#mkdir_info <- paste(simulation_dir,
+#                    paste("perc", params$perc, sep = "_"),
+#                    sep = "/")
+#where2save <- paste(mkdir_info, ".", sep = "/")
 
-write.table(mkdir_info, file = "mkdir_name.txt",
-            quote = FALSE, row.names = FALSE,
-            col.names = FALSE)
+#write.table(mkdir_info, file = "mkdir_name.txt",
+#            quote = FALSE, row.names = FALSE,
+#            col.names = FALSE)
 
-write.table(where2save, file = "dir_name.txt",
-            quote = FALSE, row.names = FALSE,
-            col.names = FALSE)
+#write.table(where2save, file = "dir_name.txt",
+#            quote = FALSE, row.names = FALSE,
+#            col.names = FALSE)
 
 untar(simulation_data)
 
@@ -64,9 +81,8 @@ untar(simulation_data)
 # and will save results to the directory "output"
 
 # Location for VirusTreeSimulator. It should be changed to the correct location on your computer.
-Software <- "java -jar VirusTreeSimulator-master/out/artifacts/VirusTreeSimulator_jar/VirusTreeSimulator.jar"
-#Software <- "java -jar /Applications/VirusTreeSimulator/VirusTreeSimulator-master/out/artifacts/VirusTreeSimulator_jar/VirusTreeSimulator.jar"
-#Software <- "java -jar VirusTreeSimulator-master/out/artifacts/VirusTreeSimulator_jar/VirusTreeSimulator.jar"
+#Software <- "java -jar VirusTreeSimulator/out/artifacts/VirusTreeSimulator_jar/VirusTreeSimulator.jar"
+Software <- "java -jar /Applications/VirusTreeSimulator/VirusTreeSimulator-master/out/artifacts/VirusTreeSimulator_jar/VirusTreeSimulator.jar"
 #parameter for VirusTreeSimulator
 #parameters <- "-demoModel Constant -N0 1"
 # parameters following Ratman et al. 2016 (Mol Biol Evol 34: 185-203)
@@ -80,6 +96,9 @@ parameters <- "-demoModel Logistic -N0 1 -growthRate 2.851904 -t50 -2"
 
 #total number of years simulated
 years <-  41
+#Maximum height to estimate infector probability
+#past 5 years
+MH <- 5
 #area and max_value is used in function get_tipNames
 area <-  "all"
 max_value <-  NULL
@@ -168,20 +187,20 @@ if(!is.null(tm)){
       create_inf_csv(tm, time_tr = rep(0, length(seed_names)), prefix=output)
 
       # sample IDs and time of sampling
-      st_ids_region <- sampleIDs(perc = perc_pop_region, start_date = start_date_dec,
-                                 end_date = end_date_dec, art_init = art_init,
-                                 departure = dep, diag_info = diag_info,
-                                 origin = origin,
-                                 tm = tm, location = "region")
+        st_ids_region_all <- sampleIDs(perc = perc_pop_region, start_date = start_date_dec,
+                                     end_date = end_date_dec, art_init = art_init,
+                                     departure = dep, diag_info = diag_info,
+                                     origin = origin,
+                                     tm = tm, location = "region")
 
       #write proportion of sampled ids that were not in region anymore
-      prop_not_region <- nrow(st_ids_region[(st_ids_region$migrant == 2 |
-                                               st_ids_region$migrant == 12),])/nrow(st_ids_region)
+      prop_not_region <- nrow(st_ids_region_all[(st_ids_region_all$migrant == 2 |
+                                                 st_ids_region_all$migrant == 12),])/nrow(st_ids_region_all)
 
       #remove rows in which individuals are not in region anymore
       #before or at time of sampling
-      st_ids_region <- st_ids_region[(st_ids_region$migrant == 1 |
-                                        st_ids_region$migrant == 21 ),]
+      st_ids_region <- st_ids_region_all[(st_ids_region_all$migrant == 1 |
+                                          st_ids_region_all$migrant == 21 ),]
 
       # sampled IDs are not on ART
       # Sample 10 viruses per ID
@@ -339,9 +358,49 @@ if(!is.null(tm)){
                                         ehi = ehis[consensus_tree$tip.label],
                                         numberPeopleLivingWithHIV  = totalPLWHIV,
                                         numberNewInfectionsPerYear = newinf_per_year,
-                                        maxHeight = years,
+                                        maxHeight = MH,
                                         res = 1e3,
                                         treeErrorTol = Inf)
+
+  #select W > 0.7 to run phyloscanner
+  #convert list to dataframe
+  W1 <- as.data.frame(W)
+
+
+
+  W1["donor_ID"] <- unlist(lapply(W$donor, function(x) str_split(x, pattern = "_")[[1]][1]))
+  W1["recip_ID"] <- unlist(lapply(W$recip, function(x) str_split(x, pattern = "_")[[1]][1]))
+  W1$donor_ID <- as.numeric(W1$donor_ID)
+  W1$recip_ID <- as.numeric(W1$recip_ID)
+
+
+  Wsub <- data.frame(donor_ID = W1$donor_ID, recip_ID = W1$recip_ID,
+                     infectorProbability = W1$infectorProbability)
+  Wsub$donor_ID <- as.integer(Wsub$donor_ID)
+  Wsub$recip_ID <- as.integer(Wsub$recip_ID)
+
+
+  #get individuals that seroconverted in region within the transmission matrix
+  tm_region <- subset(tm, infOrigin == "region" & susOrigin == "region")
+
+  #keep_only_rows that tips are in phylogenetic tree
+  rows_to_keep <- keep_row(df = tm_region, tree = consensus_tree)
+
+  if(!is.null(rows_to_keep)){
+    tm1 <- tm_region[rows_to_keep,]
+  } else{
+    #if there is no rows to keep, assign all values of tm1 to NA
+    tm1 <- tm_region[1,]
+    tm1[1,] <- NA
+  }
+
+  #create a dataframe similar to the Wsub to use with function semi_join
+  tm_all1 <- data.frame(donor_ID = tm1$inf, recip_ID = tm1$sus,
+                        infectorProbability = 1)
+
+  #get real transmissions
+  real_trans <- semi_join(Wsub, tm_all1, by = c("donor_ID", "recip_ID"))
+
 
 
   #Create directory named W (to save everything related to infector probability)
@@ -352,14 +411,15 @@ if(!is.null(tm)){
 
   saveRDS(sampleTimes, paste("output_deepseq/vts/W/", "sampleTimes.RDS",sep=""))
 
-  deep_sequencing_processingnw <- paste("output/vts/", "merged_trees_sampling",
+  deep_sequencing_processingnw <- paste("output_deepseq/vts/", "merged_trees_sampling",
                                         "_migrant_years_1_simple_", perc_pop_region,
                                         ".RData", sep="")
 
-  save(years, max_value, init_sim_date, last_sample_date, start_date,
+  save(years, MH, max_value, init_sim_date, last_sample_date, start_date,
        end_date_dec, tm, st_ids_region, prop_not_region,
        consensus_tree, tree_years,
        sampleTimes, all_cd4s, ehis, newinf_per_year, totalPLWHIV, W,
+       W1, tm_all1, real_trans,
        file = deep_sequencing_processingnw)
 
   summaryW(sim = perc_pop_region, tm = tm, W,

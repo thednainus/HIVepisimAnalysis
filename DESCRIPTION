@@ -5,7 +5,7 @@ Version: 0.1.0
 Author: Fabricia F. Nascimento
 Maintainer: Fabricia F. Nascimento <thednainus@yahoo.com>
 Description: Functions to analyse netwok simulated with R package HIVepisim.
-Requires: EpiModel, lubridate
+Requires: EpiModel, lubridate, dplyr, caret
 License: LGPL
 Encoding: UTF-8
 LazyData: true

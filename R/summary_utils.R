@@ -102,24 +102,156 @@ get_epi_data <- function(list_dirs){
 #'
 #' @details The true data for df_true object will have 1 for a transmission pair
 #'    that have occurred and 0 for a transmission pair that did not occur. This
-#'    will be based by comparision with the transmission matrix.
+#'    will be based by comparison with the transmission matrix.
 #'
 #' @return data.frame object for values of threshold, true positive rate (TPR)
 #'    and false positive rate (FPR).
 #' @export
 get_rates <- function(threshold, df_true){
 
+  #browser()
+
   df_true["pred"] <- ifelse(df_true$infectorProbability >= threshold, "1", "0")
   df_true$pred <- as.factor(df_true$pred)
 
-  #create confusion matrix
-  cm <- confusionMatrix(df_true$pred, df_true$labels, positive = "1")
-  TPR <- cm$byClass[[1]]
-  FPR <- 1 - cm$byClass[[2]]
+  #check whether the data can be used with the function caret:confusionMatrix
 
-  rates <- data.frame(threshold = threshold, TPR = TPR, FPR = FPR)
+  check_data_cm <- check_data_cm(data = df_true$pred,
+                                 reference = df_true$labels,
+                                 positive = "1",
+                                 mode = "sens_spec")
+
+  if(check_data_cm == "ok"){
+
+    #create confusion matrix
+    cm <- confusionMatrix(df_true$pred, df_true$labels, positive = "1")
+    #true positive rate
+    TPR <- cm$byClass[[1]]
+    #false positive rate
+    FPR <- 1 - cm$byClass[[2]]
+
+    rates <- data.frame(threshold = threshold, TPR = TPR, FPR = FPR)
+
+  }
+
+  if(check_data_cm == "not_ok"){
+
+    rates <- data.frame(threshold = threshold, TPR = NA, FPR = NA)
+
+  }
 
   return(rates)
+}
+
+
+#' Get rates to construct ROC curve
+#'
+#' Get false positive rates and true positive rate for ROC curves
+#'
+#' @param threshold list object with threshold values rangng from 0 to 1
+#' @param df_true data.frame object for the infector probability and the true
+#'    classification of transmission pairs
+#'
+#' @details The true data for df_true object will have 1 for a transmission pair
+#'    that have occurred and 0 for a transmission pair that did not occur. This
+#'    will be based by comparison with the transmission matrix.
+#'
+#' @return data.frame object for values of threshold, true positive rate (TPR)
+#'    and false positive rate (FPR).
+#' @export
+get_rates2 <- function(threshold, df_true){
+
+  #browser()
+
+  df_true["pred"] <- ifelse(df_true$infectorProbability >= threshold, "1", "0")
+  df_true$pred <- as.factor(df_true$pred)
+
+  df_true$labels <- as.character(df_true$labels)
+  df_true$labels <- as.factor(df_true$labels)
+
+  #check whether the data can be used with the function caret:confusionMatrix
+
+  check_data_cm <- check_data_cm(data = df_true$pred,
+                                 reference = df_true$labels,
+                                 positive = "1",
+                                 mode = "sens_spec")
+
+  if(check_data_cm == "ok"){
+
+    #create confusion matrix
+    cm <- confusionMatrix(df_true$pred, df_true$labels, positive = "1")
+    #true positive rate
+    TPR <- cm$byClass[[1]]
+    #false positive rate
+    FPR <- 1 - cm$byClass[[2]]
+
+    rates <- data.frame(threshold = threshold, TPR = TPR, FPR = FPR,
+                        param = df_true$param, rep = df_true$rep,
+                        perc = df_true$perc)
+
+  }
+
+  if(check_data_cm == "not_ok"){
+
+    rates <- data.frame(threshold = threshold, TPR = NA, FPR = NA)
+
+  }
+
+  return(rates)
+}
+
+
+#' @export
+check_data_cm <- function(data, reference, positive = "1", mode = "sens_spec"){
+
+  # we assume here that the data is ok,
+  #if it is not ok, the results object value will change in an if below
+  results <- "ok"
+
+  if (!(mode %in% c("sens_spec", "prec_recall", "everything")))
+    stop("`mode` should be either 'sens_spec', 'prec_recall', or 'everything'")
+  if (!is.factor(data) | !is.factor(reference)) {
+    stop("`data` and `reference` should be factors with the same levels.",
+         call. = FALSE)
+  }
+  if (!is.character(positive) & !is.null(positive))
+    stop("positive argument must be character")
+  if (length(levels(data)) > length(levels(reference))){
+    #message("the data cannot have more levels than the reference")
+    results <- "not_ok"
+  }
+  if (!any(levels(data) %in% levels(reference))) {
+    #message("The data must contain some levels that overlap the reference.")
+    results <- "not_ok"
+  }
+  if (!all(levels(data) %in% levels(reference))) {
+    badLevel <- levels(data)[!levels(data) %in% levels(reference)]
+    if (sum(table(data)[badLevel]) > 0) {
+      #message("The data contain levels not found in the data.")
+      results <- "not_ok"
+    }
+    #else {
+    #  warning("The data contains levels not found in the data, but they are empty and will be dropped.")
+    #  data <- factor(as.character(data))
+    #}
+  }
+  if (any(levels(reference) != levels(data))) {
+    browser()
+    #warning("HIVepisimAnalysis function:
+    #        Levels are not in the same order for reference and data.
+    #        Refactoring data to match.")
+    data <- as.character(data)
+    data <- factor(data, levels = levels(reference))
+  }
+  classLevels <- levels(data)
+  numLevels <- length(classLevels)
+  if (numLevels < 2){
+    #message("there must be at least 2 factors levels in the data")
+    results <- "not_ok"
+  }
+
+
+  return(results)
 }
 
 

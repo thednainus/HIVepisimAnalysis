@@ -220,7 +220,7 @@ summaryW <- function(sim, tm, W1, tree, code, prefix = NULL, labels = TRUE){
 
 
 
-  # get all transmissions that has a W calculated and also occured as
+  # get all transmissions that has a W calculated and also occurred as
   # true transmission in the transmission matrix
   all_trans_W1 <- semi_join(W_stats$Wsub, tm_all1, by = c("donor_ID", "recip_ID"))
 
@@ -409,8 +409,15 @@ summaryW2 <- function(sim, tm, W1, tree, code, st_df, init_sim_date,
   tm_bst <- apply(st_df, 1, function(x) tm1[tm1$sus == x[1] & tm1$year <= x[2],])
   tm_bst <- do.call(rbind, tm_bst)
 
-  if(is.null(tm_bst)){
-    browser()
+  #if(is.null(tm_bst)){
+  #  browser()
+  #  #if there is no rows to keep, assign all values of tm_bst to NA
+  #  tm_bst <- tm_region[1,]
+  #  tm_bst[1,] <- NA
+
+  #}
+
+  if(nrow(tm_bst) == 0){
     #if there is no rows to keep, assign all values of tm_bst to NA
     tm_bst <- tm_region[1,]
     tm_bst[1,] <- NA
