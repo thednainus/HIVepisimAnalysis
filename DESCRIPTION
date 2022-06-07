@@ -9,4 +9,4 @@ Requires: EpiModel, lubridate, dplyr, caret
 License: LGPL
 Encoding: UTF-8
 LazyData: true
-RoxygenNote: 7.1.2
+RoxygenNote: 7.2.0

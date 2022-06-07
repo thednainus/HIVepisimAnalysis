@@ -40,9 +40,12 @@ windows <- paste("--windows", windows, sep = " ")
 
 
 # make read alignments
+#alignment_other_refs <- paste("--alignment-of-other-refs",
+#                              paste(phyloscanner, "InfoAndInputs",
+#                                    "2refs_HXB2_C.BW.fasta", sep = "/"), sep = " ")
+
 alignment_other_refs <- paste("--alignment-of-other-refs",
-                              paste(phyloscanner, "InfoAndInputs",
-                                    "2refs_HXB2_C.BW.fasta", sep = "/"), sep = " ")
+                              "HIV1_REF_2020_phyloscanner.fasta", sep = " ")
 
 paiwise_align_to <- paste("--pairwise-align-to",
                           "B.FR.83.HXB2_LAI_IIIB_BRU.K03455",

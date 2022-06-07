@@ -13,9 +13,6 @@ from 1982 to 2020}
 \item{diag_sim}{Frequency of estimated incidence of HIV diagnosis in MSM
 from 1982 to 2020}
 }
-\value{
-
-}
 \description{
 Calculate the log importance weight based on observed and simulated data
 }

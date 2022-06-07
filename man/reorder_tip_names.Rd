@@ -11,9 +11,6 @@ reorder_tip_names(tip_names_migrant, tip_names_vts)
 
 \item{tip_names_vts}{Tip names as returned by using the VirusTreeSimulator.}
 }
-\value{
-
-}
 \description{
 Function to reorder the tip names of a phylogenetic tree.
 }

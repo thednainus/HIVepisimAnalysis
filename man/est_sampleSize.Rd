@@ -42,9 +42,6 @@ to sample from. Location can take the value of "region" or "global".}
 include diagnosed, active and on or not on ART. If FALSE will include
 only diagnosed, active and not on ART.}
 }
-\value{
-
-}
 \description{
 Estimation sample size based on percentage
 }

@@ -11,9 +11,6 @@ convert_branches(tree, scale = 1/365)
 
 \item{scale}{numeric value to convert branch length}
 }
-\value{
-
-}
 \description{
 Scale branch length from a phylogeentic tree
 }

@@ -13,9 +13,6 @@ and stages of HIV infection.}
 \item{df_departures}{dataframe of IDs that departed the network before end of
 simulation and stages of HIV infection}
 }
-\value{
-
-}
 \description{
 Get CD4s by node IDs
 }

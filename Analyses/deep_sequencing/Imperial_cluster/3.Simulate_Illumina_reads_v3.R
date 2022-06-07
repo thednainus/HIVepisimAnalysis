@@ -25,11 +25,11 @@ library(DescTools)
 #    NOTE: the reads in the zero-error SAM file have the same alignment positions
 #    as those in the regular SAM file, but have no sequencing errors
 # -qL  the minimum base quality score
-# -qU  the maxiumum base quality score
+# -qU  the maximum base quality score
 
 
-Software <- "/Applications/art_bin_MountRainier/art_illumina"
-#Software <- "/ocean/projects/bio210082p/nascimen/Programs/art_bin_MountRainier/art_illumina"
+#Software <- "/Applications/art_bin_MountRainier/art_illumina"
+Software <- "art_bin_MountRainier/art_illumina"
 
 
 # list directories
@@ -67,8 +67,10 @@ for(i in 1:length(fasta_files)){
   out_filename <- paste(SplitPath(fasta_files[i])$filename, "_", sep = "")
   input_filename <- paste("-i", fasta_files[i], sep = " ")
   output_filename <- paste("-o", paste(where2save_reads, out_filename, sep = "/" ), sep= " ")
+  #parameters <- c("-ss MSv3", input_filename, output_filename, "-p", "-l 250",
+  #                "-amp", "-f 10000", "-qL 25", "-qU 40", "-na")
   parameters <- c("-ss MSv3", input_filename, output_filename, "-p", "-l 250",
-                  "-amp", "-f 10000", "-qL 25", "-qU 40", "-na")
+                  "-m 600", "-s 400", "-f 10000", "-qL 25", "-qU 40", "-na")
   system2(command = Software, args = parameters)
 
   #compress fastq files using gzip

@@ -11,9 +11,6 @@ get_cd4s_sampling(sampled_info, stages)
 
 \item{stages}{dataframe that tracks the stage of HIV infection for each ID.}
 }
-\value{
-
-}
 \description{
 Get CD4s by node IDs at time of sampling
 }

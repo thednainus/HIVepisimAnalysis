@@ -16,9 +16,6 @@ time that migration happened. Time must be in decimal year.}
 
 \item{st}{sampled time}
 }
-\value{
-
-}
 \description{
 Get the origin code at time of sampling.
 }

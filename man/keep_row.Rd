@@ -11,9 +11,6 @@ keep_row(df, tree)
 
 \item{tm}{transmission matrix}
 }
-\value{
-
-}
 \description{
 Get index of rows to keep in trasmission matrix
 }

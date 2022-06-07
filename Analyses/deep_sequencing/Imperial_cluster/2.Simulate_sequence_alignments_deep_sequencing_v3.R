@@ -34,6 +34,8 @@ number_trees <- "tree_number.txt"
 # values of -t8.75 based on Chen et al 2004
 # Updated parameters values based on sequences for San Diego + background sequences
 
+#untar file
+untar("processing_network_results.tar.gz")
 
 #load file with infector probability information and phylogenetic trees
 w_and_trees_filename <- list.files(path = "output_deepseq/vts",

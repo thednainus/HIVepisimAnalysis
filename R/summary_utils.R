@@ -236,7 +236,7 @@ check_data_cm <- function(data, reference, positive = "1", mode = "sens_spec"){
     #}
   }
   if (any(levels(reference) != levels(data))) {
-    browser()
+    #browser()
     #warning("HIVepisimAnalysis function:
     #        Levels are not in the same order for reference and data.
     #        Refactoring data to match.")

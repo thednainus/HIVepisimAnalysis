@@ -67,8 +67,10 @@ for(i in 1:length(fasta_files)){
   out_filename <- paste(SplitPath(fasta_files[i])$filename, "_", sep = "")
   input_filename <- paste("-i", fasta_files[i], sep = " ")
   output_filename <- paste("-o", paste(where2save_reads, out_filename, sep = "/" ), sep= " ")
+  #parameters <- c("-ss MSv3", input_filename, output_filename, "-p", "-l 250",
+  #                "-amp", "-f 10000", "-qL 25", "-qU 40", "-na")
   parameters <- c("-ss MSv3", input_filename, output_filename, "-p", "-l 250",
-                  "-amp", "-f 10000", "-qL 25", "-qU 40", "-na")
+                  "-m 600", "-s 400", "-f 10000", "-qL 25", "-qU 40", "-na")
   system2(command = Software, args = parameters)
 
   #compress fastq files using gzip
@@ -78,8 +80,8 @@ for(i in 1:length(fasta_files)){
   read2 <- paste(out_filename, "2.fq", sep = "")
   read2 <- paste(where2save_reads, read2, sep = "/")
 
-  #system(paste("gzip", read1, sep = " "))
-  #system(paste("gzip", read2, sep = " "))
+  system(paste("gzip", read1, sep = " "))
+  system(paste("gzip", read2, sep = " "))
 
 
 }
