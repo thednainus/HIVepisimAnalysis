@@ -34,12 +34,8 @@ multifurcation <- "--multifurcationThreshold g"
 multtrans <- "--allowMultiTrans"
 
 #allow all classifications
-#classification <- "--allClassifications"
+classification <- "--allClassifications"
 
-#multinomial method
-multinomial <- "--multinomial"
-
-confidenceCut <- "--confidence.cut 0.5"
 
 #distance threshold
 #summarize all paiwise relationships in csv summary file
@@ -75,7 +71,7 @@ treefile_extension <- "--treeFileExtension .treefile"
 #                    multifurcation, classification, multtrans, norm, sep = " ")
 
 parameters <- paste(iqtree_dir, treefile_extension, output_label, splitsRule, outgroup,
-                    multifurcation, multtrans, multinomial, distance, norm, sep = " ")
+                    multifurcation, multtrans, classification, distance, norm, sep = " ")
 
 command_analyse_trees <- paste("cd", iqtree_dir, "&&", analyse_trees, sep = " ")
 analyseTrees_and_args <- paste(command_analyse_trees, parameters, sep = " ")

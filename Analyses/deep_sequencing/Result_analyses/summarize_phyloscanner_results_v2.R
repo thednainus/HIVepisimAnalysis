@@ -4,6 +4,17 @@ library(stringr)
 library(lubridate)
 library(dplyr)
 
+#beginning of simulations
+init_sim_date <- ymd("1980-01-01")
+
+common_dir <- "/Users/user/Desktop/Imperial/newHIVproject-01Aug2020/R_projects/Results_paper/best_trajectories_500migrants/params_1067/rep_1/iqtree/phyloscanner_results1"
+
+
+#load transmission matrix
+untar("/Users/user/Desktop/Imperial/newHIVproject-01Aug2020/R_projects/Results_paper/best_trajectories_500migrants/params_1067/rep_1/processing_network_results.tar.gz")
+load("output_deepseq/vts/merged_trees_sampling_migrant_years_1_simple_0.9.RData")
+#real_trans_W <- readRDS("real_trans_W_tm.RDS")
+
 phyloscanner_results <- data.frame()
 
 #get all tips that was analysed
@@ -18,7 +29,7 @@ tips_tm <- unlist(lapply(tips, function(x) str_split(x, pattern = "_")[[1]][1]))
 
 #get all pairs involving any individuals in which W >= threshold
 tm_subset_list <- lapply(tips_tm, function(x) tm[tm$sus == x | tm$inf == x ,])
-tm_subset_df <- do.call(rbind, tm_subset)
+tm_subset_df <- do.call(rbind, tm_subset_list)
 
 #get sampling time of all individuals in tips
 sample_times <- lapply(tips, function(x) st_ids_region[st_ids_region$tip_name == x,])
@@ -27,21 +38,25 @@ sample_times <- do.call(rbind, sample_times)
 #estimate difference between sampling time and time of infection
 get_difference <- function(df1, df2){
   #df1=dataframe of sampling times
-  #df2=datafame of sampling time
+  #df2=datafame of tm (transmission matrix)
+
+  time_trans <- lapply(df1$sampled_ID, function(x) df2[df2$sus == x,][1:3])
+  time_trans <- do.call(rbind, time_trans)
+
+  time_trans["sampled_time"] <- df1$time_days
+  time_trans["difference"] <- time_trans$sampled_time - time_trans$at
+  time_trans["difference_months"] <- time_trans$difference/30
+
+  return(time_trans)
+
+
 }
 
-lapply(sample_times$sampled_ID, function(x) tm_subset_df[tm_subset_df$sus == x,])
-
-#beginning of simulations
-init_sim_date <- ymd("1980-01-01")
-
-common_dir <- "/Users/user/Desktop/Imperial/newHIVproject-01Aug2020/R_projects/Results_paper/best_trajectories_500migrants/params_1067/rep_1/iqtree"
+difference_trans <- get_difference(df1 = sample_times, df2 = tm)
 
 
-#load transmission matrix
-untar("/Users/user/Desktop/Imperial/newHIVproject-01Aug2020/R_projects/Results_paper/best_trajectories_500migrants/params_1067/rep_1/processing_network_results.tar.gz")
-load("output_deepseq/vts/merged_trees_sampling_migrant_years_1_simple_0.9.RData")
-#real_trans_W <- readRDS("real_trans_W_tm.RDS")
+
+
 
 trans_by_W <- real_trans
 names(trans_by_W)[1:2] <- c("host.1", "host.2")
@@ -49,7 +64,7 @@ trans_by_W$host.1 <- paste("ID", trans_by_W$host.1, sep = "_")
 trans_by_W$host.2 <- paste("ID", trans_by_W$host.2, sep = "_")
 
 #rep 1 , params 1067 (example for 1 replicate only)
-results <- read.csv(paste(common_dir, "results_rep_1__hostRelationshipSummary.csv", sep = "/"))
+results <- read.csv(paste(common_dir, "results_rep__hostRelationshipSummary.csv", sep = "/"))
 results_subset <- subset(results, ancestry != "noAncestry")
 
 #correct donor and recipient
