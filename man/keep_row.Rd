@@ -2,7 +2,7 @@
 % Please edit documentation in R/W_utils.R
 \name{keep_row}
 \alias{keep_row}
-\title{Get index of rows to keep in trasmission matrix}
+\title{Get index of rows to keep in transmission matrix}
 \usage{
 keep_row(df, tree)
 }
@@ -11,6 +11,9 @@ keep_row(df, tree)
 
 \item{tm}{transmission matrix}
 }
+\value{
+Dataframe of rows to keep.
+}
 \description{
-Get index of rows to keep in trasmission matrix
+Get index of rows to keep in transmission matrix
 }

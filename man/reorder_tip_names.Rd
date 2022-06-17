@@ -7,9 +7,12 @@
 reorder_tip_names(tip_names_migrant, tip_names_vts)
 }
 \arguments{
-\item{tip_names_migrant}{Tip names in the form of ID_migrant}
+\item{tip_names_migrant}{Vector of tip names in the form of ID_migrant}
 
-\item{tip_names_vts}{Tip names as returned by using the VirusTreeSimulator.}
+\item{tip_names_vts}{Vector of tip names as returned by using the VirusTreeSimulator.}
+}
+\value{
+A vector with the reordered tip names
 }
 \description{
 Function to reorder the tip names of a phylogenetic tree.

@@ -579,12 +579,12 @@ W_manipulations <- function(W, code){
 }
 
 
-#' Get index of rows to keep in trasmission matrix
+#' Get index of rows to keep in transmission matrix
 #'
 #' @param tm transmission matrix
 #' @param tree object of class phylo
 #'
-#' @return
+#' @return Dataframe of rows to keep.
 #' @export
 keep_row <- function(df, tree){
   tip_IDs <- as.numeric(unlist(lapply(tree$tip.label, function(x) str_split(x, "_")[[1]][1])))

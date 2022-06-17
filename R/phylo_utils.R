@@ -260,12 +260,13 @@ replace_dups <- function(dup_tip, origNodes, tipNamesOri, tip_names_toInsert, ti
 }
 
 
-#' Scale branch length from a phylogeentic tree
+#' Scale branch length from a phylogenetic tree
 #'
 #' @param tree a phylo object
 #' @param scale numeric value to convert branch length
 #'
-#' @return
+#' @return a phylogenetic tree with the branch lengths
+#'   scaled to vale of scale.
 #' @export
 convert_branches <- function(tree, scale = 1/365){
 
@@ -284,13 +285,13 @@ convert_branches <- function(tree, scale = 1/365){
 #'
 #' Function to reorder the tip names of a phylogenetic tree.
 #'
-#' @param tip_names_migrant Tip names in the form of ID_migrant
-#' @param tip_names_vts Tip names as returned by using the VirusTreeSimulator.
+#' @param tip_names_migrant Vector of tip names in the form of ID_migrant
+#' @param tip_names_vts Vector of tip names as returned by using the VirusTreeSimulator.
 #'
 #' @details Vector of tip_names_migrant will be reordered according to
 #'    vector tip_names_vts.
 #'
-#' @return
+#' @return A vector with the reordered tip names
 #' @export
 reorder_tip_names <- function(tip_names_migrant, tip_names_vts){
   # Get tip names in the form of ID_migrant
@@ -353,7 +354,7 @@ merge_trees <- function(trees){
 #' @param total_sim_steps scalar for the total number of steps of network simulations
 #' @param root.edge_value scalar for the value to use as root.edge in the phylogenetic tree
 #'
-#' @return
+#' @return A phylogenetic tree with a value for the root.edge.
 #' @export
 add_root_edge <- function(tree, total_sim_steps, root.edge_value = 7665){
   #browser()
@@ -373,7 +374,7 @@ add_root_edge <- function(tree, total_sim_steps, root.edge_value = 7665){
 #' @param root.edge_value scalar for the value to use as root.edge in the
 #'    phylogenetic tree
 #'
-#' @return
+#' @return A phylogenetic tree with a value for root.edge.
 #' @export
 add_root_edge2 <- function(tree, root.edge_value = 0){
   #browser()

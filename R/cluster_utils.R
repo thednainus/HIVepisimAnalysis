@@ -10,7 +10,8 @@
 #'    the first object in the list will have 10 element, and the second object
 #'    in the list will have 5 elements.
 #'
-#' @return
+#' @return A list or a list of lists of total number of directories split
+#'    in the value for size.
 #' @export
 split_dirs <- function(dirs, size){
 

@@ -12,6 +12,10 @@ split_dirs(dirs, size)
 
 \item{size}{Size to divide vector.}
 }
+\value{
+A list or a list of lists of total number of directories split
+   in the value for size.
+}
 \description{
 Function to split vector of with names of directories into chunks of
 specific size

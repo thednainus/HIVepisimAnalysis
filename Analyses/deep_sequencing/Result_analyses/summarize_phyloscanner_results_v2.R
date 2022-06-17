@@ -7,11 +7,12 @@ library(dplyr)
 #beginning of simulations
 init_sim_date <- ymd("1980-01-01")
 
-common_dir <- "/Users/user/Desktop/Imperial/newHIVproject-01Aug2020/R_projects/Results_paper/best_trajectories_500migrants/params_1067/rep_1/iqtree/phyloscanner_results1"
-
+common_dir <- "/Users/user/Desktop/Imperial/newHIVproject-01Aug2020/R_projects/Results_paper/deepseq/best_trajectories_250migrants/params_2348/rep_4"
+phyloscanner_dir <- paste(common_dir, "phyloscanner_results", sep = "/")
+filename <- "processing_network_results.tar.gz"
 
 #load transmission matrix
-untar("/Users/user/Desktop/Imperial/newHIVproject-01Aug2020/R_projects/Results_paper/best_trajectories_500migrants/params_1067/rep_1/processing_network_results.tar.gz")
+untar(paste(common_dir, filename, sep = "/"))
 load("output_deepseq/vts/merged_trees_sampling_migrant_years_1_simple_0.9.RData")
 #real_trans_W <- readRDS("real_trans_W_tm.RDS")
 
@@ -35,51 +36,80 @@ tm_subset_df <- do.call(rbind, tm_subset_list)
 sample_times <- lapply(tips, function(x) st_ids_region[st_ids_region$tip_name == x,])
 sample_times <- do.call(rbind, sample_times)
 
-#estimate difference between sampling time and time of infection
-get_difference <- function(df1, df2){
-  #df1=dataframe of sampling times
-  #df2=datafame of tm (transmission matrix)
 
-  time_trans <- lapply(df1$sampled_ID, function(x) df2[df2$sus == x,][1:3])
-  time_trans <- do.call(rbind, time_trans)
-
-  time_trans["sampled_time"] <- df1$time_days
-  time_trans["difference"] <- time_trans$sampled_time - time_trans$at
-  time_trans["difference_months"] <- time_trans$difference/30
-
-  return(time_trans)
-
-
-}
 
 difference_trans <- get_difference(df1 = sample_times, df2 = tm)
 
 
 
 
-
+#trans_by_W: all transmission that happened with correct direction of transmission
 trans_by_W <- real_trans
 names(trans_by_W)[1:2] <- c("host.1", "host.2")
 trans_by_W$host.1 <- paste("ID", trans_by_W$host.1, sep = "_")
 trans_by_W$host.2 <- paste("ID", trans_by_W$host.2, sep = "_")
 
 #rep 1 , params 1067 (example for 1 replicate only)
-results <- read.csv(paste(common_dir, "results_rep__hostRelationshipSummary.csv", sep = "/"))
+results <- read.csv(paste(phyloscanner_dir, "results_hostRelationshipSummary.csv", sep = "/"))
 results_subset <- subset(results, ancestry != "noAncestry")
 
-#correct donor and recipient
-all_trans <- semi_join(results_subset, trans_by_W, by = c("host.1", "host.2"))
-#semi_join(tm_region1, all_trans_5perc, by = c("host.1", "host.2"))
-#convert fraction to decimal number
-all_trans$fraction.math <- sapply(all_trans$fraction, function(x) eval(parse(text=x)))
-#all_trans_subset <- subset(all_trans, ancestry != "noAncestry" & ancestry != "multiTrans")
+
+#results_subset$fraction.math <- sapply(results_subset$fraction, function(x) eval(parse(text=x)))
+
+
+
+
+#transmission phyloscanner
+trans_phy <- results_subset %>%
+  group_by(host.1, host.2) %>%
+  group_modify(~ summarize_trans(.x))
+
+#check whether the direction of transmission in phyloscanner corresponds to
+#true transmission
+all_trans <- semi_join(trans_phy[trans_phy$prop_trans>0,],
+                       trans_by_W, by = c("host.1", "host.2"))
+
+true_pairs_phylo <- check_true_transmissions(trans_phy, all_trans)
+
+
+
+
 
 
 #swap of donor and recipient
-trans_by_W_trunc <- data.frame(host.1 = trans_by_W$host.2, host.2 = trans_by_W$host.1)
-all_trans2 <- semi_join(results_subset, trans_by_W_trunc, by = c("host.1", "host.2"))
-all_trans2$fraction.math <- sapply(all_trans2$fraction, function(x) eval(parse(text=x)))
-all_trans2_subset <- subset(all_trans_5perc2, ancestry != "noAncestry" & ancestry != "multiTrans")
+trans_by_W_trunc <- data.frame(host.1 = trans_by_W$host.2,
+                               host.2 = trans_by_W$host.1)
+all_trans2 <- semi_join(trans_phy, trans_by_W_trunc,
+                        by = c("host.1", "host.2"))
+
+swap_pairs_phylo <- check_swap_transmissions(trans_phy, all_trans2)
+
+#tibble of true and swap pairs
+true_swap <- rbind(true_pairs_phylo, swap_pairs_phylo)
+true_swap <- true_swap[,-1]
+
+#remove from tibble trans_phy (transmissions by phyloscanner)
+#and check whether pairs represents real linked pairs of transmissions
+#pairs that still need to be analysed
+to_analyse <- anti_join(trans_phy, true_swap,
+                        by = c("host.1", "host.2"))
+
+
+
+to_analyse["order"] <- 1:nrow(to_analyse)
+linked_trans <- to_analyse %>%
+  group_by(order) %>%
+  group_modify(~check_linked_transmissions(.x, tm))
+linked_trans <- linked_trans[,2:8]
+
+
+all_trans_type <- rbind(true_pairs_phylo,
+                        true_swap,
+                        linked_trans)
+
+
+#all_trans2$fraction.math <- sapply(all_trans2$fraction, function(x) eval(parse(text=x)))
+#all_trans2_subset <- subset(all_trans_5perc2, ancestry != "noAncestry" & ancestry != "multiTrans")
 
 
 perc5 <- data.frame(total_pairs = nrow(sp5perc),

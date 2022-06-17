@@ -12,6 +12,9 @@ add_root_edge2(tree, root.edge_value = 0)
 \item{root.edge_value}{scalar for the value to use as root.edge in the
 phylogenetic tree}
 }
+\value{
+A phylogenetic tree with a value for root.edge.
+}
 \description{
 Add root edge to phylogenetic tree
 }
