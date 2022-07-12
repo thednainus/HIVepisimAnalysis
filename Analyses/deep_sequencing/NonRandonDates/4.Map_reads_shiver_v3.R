@@ -29,7 +29,7 @@ reads_output <- dir(path = "output_deepseq/vts/merged_trees/Illumina_reads",
 # will be copied using the pbs file.
 #reads_output <- dir(path = "shiver2/Illumina_reads",
 #                 full.names = TRUE)
-reads_output <- reads_output[1]
+reads_output <- reads_output[2]
 
 #location of shiver
 #shiver <- "/Users/user/Desktop/Imperial/newHIVproject-01Aug2020/shiver/"
