@@ -4,15 +4,13 @@
 \alias{check_true_transmissions}
 \title{Check whether a pair of individuals represent a true transmission.}
 \usage{
-check_true_transmissions(df1, tm)
+check_true_transmissions(df1, df2)
 }
 \arguments{
 \item{df1}{Dataframe containing information of summarized results obtained
 with phyloscanner after running the function summarize_trans.}
 
-\item{tm}{Dataframe containing information of the transmission matrix (tm).
-The tm have information of who transmitted to whom and what time that
-happened.}
+\item{df2}{Dataframe containing information of the true transmissions.}
 }
 \value{
 Dataframe with a new column "trans" with only the individuals that

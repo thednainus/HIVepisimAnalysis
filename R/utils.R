@@ -96,7 +96,7 @@ get.transmat.phylo <- function(x, vertex.exit.times, by_areas = "all", max_value
 #' @details
 #' If a prefix is not provided, csv file will be saved as inf.csv
 #'
-#' @return
+#' @return Write data to csv file.
 #' @export
 create_inf_csv <- function(tm, time_tr, prefix = NULL){
 
@@ -104,7 +104,7 @@ create_inf_csv <- function(tm, time_tr, prefix = NULL){
 
   if(length(time_tr) == 1){
     seed_idtr <- data.frame(seed_names, rep(NA, length(seed_names)),
-                            rep(0, length(seed_names)))
+                            rep(1980, length(seed_names)))
   }else if(length(time_tr)!= 1 & length(time_tr) == length(seed_names)){
     seed_idtr <- data.frame(seed_names, rep(NA, length(seed_names)), time_tr)
   }else{
@@ -114,7 +114,8 @@ create_inf_csv <- function(tm, time_tr, prefix = NULL){
 
   colnames(seed_idtr) <- c("IDREC", "IDTR", "TIME_TR")
 
-  inf_sus <- data.frame(tm$sus, tm$inf, (tm$at * (1/365)))
+  #inf_sus <- data.frame(tm$sus, tm$inf, (tm$at * (1/365)))
+  inf_sus <- data.frame(tm$sus, tm$inf, tm$year)
   colnames(inf_sus) <- c("IDREC", "IDTR", "TIME_TR")
 
   all_data <- rbind(seed_idtr, inf_sus)
@@ -145,7 +146,7 @@ create_inf_csv <- function(tm, time_tr, prefix = NULL){
 #' @details
 #' If a prefix is not provided, csv file will be saved as sample.csv
 #'
-#' @return
+#' @return Write data to csv file.
 #' @export
 #'
 #' @examples
@@ -197,7 +198,7 @@ create_sample_csv <- function(tm, time_seq, seq_count, prefix = NULL){
 #' @details
 #' If a prefix is not provided, csv file will be saved as sample.csv
 #'
-#' @return
+#' @return Write data to csv file.
 #' @export
 create_sample_csv2 <- function(ids, time_seq, seq_count, prefix = NULL){
 
@@ -255,7 +256,7 @@ cd4s <- function(stage){
 #' @param df_departures dataframe of IDs that departed the network before end of
 #'    simulation and stages of HIV infection
 #'
-#' @return
+#' @return Vector of CD4 count.
 #' @export
 #'
 get_cd4s <- function(IDPOP, df_actives, df_departures){
@@ -294,7 +295,7 @@ get_cd4s <- function(IDPOP, df_actives, df_departures){
 #'
 #' @details This function will get the stage of HIV infection at time of sampling.
 #'
-#' @return
+#' @return Vector of CD4 count.
 #' @export
 #'
 get_cd4s_sampling <- function(sampled_info, stages){
@@ -324,7 +325,7 @@ get_cd4s_sampling <- function(sampled_info, stages){
 #'
 #' @inheritParams get_cd4s_sampling
 #'
-#' @return
+#' @return Vector of IDs.
 #' @export
 recency_test <- function(sampled_info, stages){
 

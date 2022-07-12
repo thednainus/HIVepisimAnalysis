@@ -65,23 +65,23 @@ sampleIDs <- function(perc, start_date, end_date,
 
   #browser()
 
-  #initially assume that we will have ids to sample
+  # initially assume that we will have ids to sample
   ids2sample <- "yes"
   sampledIDs_list <- NULL
 
-  #vector of sids already sampled
+  # vector of sids already sampled
   sampled_sids <- NULL
 
 
-  #get vector of IDs from location to sample from
+  # get vector of IDs from location to sample from
   IDs <- get_id_by_location(tm = tm, location = location)
 
   # from IDs vector, get those IDs that have been diagnosed
   diag_ids <- diag_info[diag_info$IDs %in% IDs,]
 
-  #estimate the total number of individuals to sample based on percentage
-  #of total diagnosed and active individuals
-  #count for sample time
+  # estimate the total number of individuals to sample based on percentage
+  # of total diagnosed and active individuals
+  # count for sample time
   count <- est_sampleSize(perc, start_date, end_date,
                           art_init, departure,
                           diag_info, tm, location, IncludeOnART = FALSE)
@@ -92,6 +92,7 @@ sampleIDs <- function(perc, start_date, end_date,
 
       #sample a time within start_date and end_date
       sample_time <- runif(n = 1, min = start_date, max = end_date)
+      #print(sample_time)
 
       # then from diag_ids, get the ids that have been diagnosed before the sampled
       # time
@@ -102,7 +103,6 @@ sampleIDs <- function(perc, start_date, end_date,
 
       #from departed ids, get the ids that are active before sampled time
       activeIDs_before_st <- diagIDs_before_st[!(diagIDs_before_st$IDs %in% dep_before_st$infID),]
-      #activeIDs_before_st <- active_ids[active_ids$time_decimal <= sample_time,]
 
       #from activeIDs_before_st, get ids that is on ART before sampled time
       ids_onART <- selectIDs(activeIDs_before_st$IDs, art_init, sample_time)
@@ -281,6 +281,10 @@ sampleIDs2 <- function(perc, start_date, end_date,
 #' @export
 selectIDs <- function(IDs, metadata, st){
 
+  #message(st)
+
+  #browser()
+
   selectedIDs <- metadata[metadata$IDs %in% IDs,]
 
   selectedIDs_before_st <- selectedIDs[selectedIDs$time_decimal <= st,]
@@ -401,7 +405,7 @@ set_sampledIDs <- function(sid, st, migrant_code){
   return(sampledID)
 }
 
-#' Estimation sample size based on percentage
+#' Estimation sample size based on percentage provided by user.
 #'
 #' @inheritParams sampleIDs
 #' @param IncludeOnART It can take the value of TRUE or FALSE. If TRUE will
@@ -416,7 +420,7 @@ set_sampledIDs <- function(sid, st, migrant_code){
 #' HIV studies. However, we can only sample diagnosed and active (and on ART)
 #' individuals, it is hard to estimate the exact number of individuals based on
 #' the sampling times that will be randomly sampled.
-#' @return
+#' @return scalar of number of individuas to sample based on percentage
 #' @export
 est_sampleSize <- function(perc, start_date, end_date, art_init,
                            departure, diag_info, tm, location = "region",
@@ -471,7 +475,8 @@ est_sampleSize <- function(perc, start_date, end_date, art_init,
 #' @param sid sampled ID
 #' @param st sampled time
 #'
-#' @return
+#' @return Character of code for migrant (to determine if individual is
+#'    from region or global).
 #' @export
 get_origin_at_samplingTime <- function(tm, origin, sid, st){
 

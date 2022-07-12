@@ -18,6 +18,9 @@ the transmission matrix (tm).}
 
 \item{prefix}{Text for prefix to use when saving filename.}
 }
+\value{
+Write data to csv file.
+}
 \description{
 In this function, the sample file for VirusTreeSimulator program
 will contain only the sampled individuals (to mimic a real HIV study)

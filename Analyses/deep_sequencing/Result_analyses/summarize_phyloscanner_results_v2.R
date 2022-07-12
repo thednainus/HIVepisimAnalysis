@@ -3,109 +3,156 @@ library(ape)
 library(stringr)
 library(lubridate)
 library(dplyr)
+library(HIVepisimAnalysis)
 
 #beginning of simulations
 init_sim_date <- ymd("1980-01-01")
-
-common_dir <- "/Users/user/Desktop/Imperial/newHIVproject-01Aug2020/R_projects/Results_paper/deepseq/best_trajectories_250migrants/params_2348/rep_4"
-phyloscanner_dir <- paste(common_dir, "phyloscanner_results", sep = "/")
-filename <- "processing_network_results.tar.gz"
-
-#load transmission matrix
-untar(paste(common_dir, filename, sep = "/"))
-load("output_deepseq/vts/merged_trees_sampling_migrant_years_1_simple_0.9.RData")
-#real_trans_W <- readRDS("real_trans_W_tm.RDS")
-
-phyloscanner_results <- data.frame()
 
 #get all tips that was analysed
 #I used a threshold for W of 0.55
 threshold <- 0.55
 
-#get all pairs in which W >= 0.55
-W_55 <- W1[W1$infectorProbability >= 0.55,]
+phyloscanner_results <- data.frame()
 
-tips <- unique(c(W_55$donor, W_55$recip))
-tips_tm <- unlist(lapply(tips, function(x) str_split(x, pattern = "_")[[1]][1]))
+common_dir <- "/Users/user/Desktop/Imperial/newHIVproject-01Aug2020/R_projects/Results_paper/deepseq"
 
-#get all pairs involving any individuals in which W >= threshold
-tm_subset_list <- lapply(tips_tm, function(x) tm[tm$sus == x | tm$inf == x ,])
-tm_subset_df <- do.call(rbind, tm_subset_list)
+all_dirs <- list.files(list.files(list.files(common_dir, full.names = TRUE),
+                                  full.names = TRUE),
+                       full.names = TRUE)
 
-#get sampling time of all individuals in tips
-sample_times <- lapply(tips, function(x) st_ids_region[st_ids_region$tip_name == x,])
-sample_times <- do.call(rbind, sample_times)
+#all_dirs <- all_dirs[1:23]
+#all_dirs <- all_dirs[1]
 
+phyloscanner_results_dir <- "phyloscanner_results"
 
-
-difference_trans <- get_difference(df1 = sample_times, df2 = tm)
+all_phyloscanner_results <- tibble()
 
 
+for(i in 1:length(all_dirs)){
+
+  phyloscanner_dir <- paste(all_dirs[i], phyloscanner_results_dir, sep = "/")
+  print(i)
+  print(all_dirs[i])
+
+  params <- str_split(phyloscanner_dir, pattern = "/")
+  mig <- str_split(params[[1]][10], pattern = "_")[[1]][3]
+  param <- str_split(params[[1]][11], pattern = "_")[[1]][2]
+  rep <- str_split(params[[1]][12], pattern = "_")[[1]][2]
+
+  filename <- "processing_network_results.tar.gz"
+
+  #load transmission matrix
+  untar(paste(all_dirs[i], filename, sep = "/"))
+  load("output_deepseq/vts/merged_trees_sampling_migrant_years_1_simple_0.9.RData")
+  #real_trans_W <- readRDS("real_trans_W_tm.RDS")
+
+  tm["year"] <- days2years(sampleTimes = tm$at, init_date = init_sim_date)
 
 
-#trans_by_W: all transmission that happened with correct direction of transmission
-trans_by_W <- real_trans
-names(trans_by_W)[1:2] <- c("host.1", "host.2")
-trans_by_W$host.1 <- paste("ID", trans_by_W$host.1, sep = "_")
-trans_by_W$host.2 <- paste("ID", trans_by_W$host.2, sep = "_")
+  #get all pairs in which W >= 0.55
+  W_55 <- W1[W1$infectorProbability >= threshold,]
 
-#rep 1 , params 1067 (example for 1 replicate only)
-results <- read.csv(paste(phyloscanner_dir, "results_hostRelationshipSummary.csv", sep = "/"))
-results_subset <- subset(results, ancestry != "noAncestry")
+  tips <- unique(c(W_55$donor, W_55$recip))
+  tips_tm <- unlist(lapply(tips, function(x) str_split(x, pattern = "_")[[1]][1]))
 
+  #get all pairs involving any individuals in which W >= threshold
+  #tm_subset_list <- lapply(tips_tm, function(x) tm[tm$sus == x | tm$inf == x ,])
+  #tm_subset_df <- do.call(rbind, tm_subset_list)
 
-#results_subset$fraction.math <- sapply(results_subset$fraction, function(x) eval(parse(text=x)))
-
-
-
-
-#transmission phyloscanner
-trans_phy <- results_subset %>%
-  group_by(host.1, host.2) %>%
-  group_modify(~ summarize_trans(.x))
-
-#check whether the direction of transmission in phyloscanner corresponds to
-#true transmission
-all_trans <- semi_join(trans_phy[trans_phy$prop_trans>0,],
-                       trans_by_W, by = c("host.1", "host.2"))
-
-true_pairs_phylo <- check_true_transmissions(trans_phy, all_trans)
-
-
-
-
-
-
-#swap of donor and recipient
-trans_by_W_trunc <- data.frame(host.1 = trans_by_W$host.2,
-                               host.2 = trans_by_W$host.1)
-all_trans2 <- semi_join(trans_phy, trans_by_W_trunc,
-                        by = c("host.1", "host.2"))
-
-swap_pairs_phylo <- check_swap_transmissions(trans_phy, all_trans2)
-
-#tibble of true and swap pairs
-true_swap <- rbind(true_pairs_phylo, swap_pairs_phylo)
-true_swap <- true_swap[,-1]
-
-#remove from tibble trans_phy (transmissions by phyloscanner)
-#and check whether pairs represents real linked pairs of transmissions
-#pairs that still need to be analysed
-to_analyse <- anti_join(trans_phy, true_swap,
-                        by = c("host.1", "host.2"))
+  #get sampling time of all individuals in tips
+  sample_times <- lapply(tips, function(x) st_ids_region[st_ids_region$tip_name == x,])
+  sample_times <- do.call(rbind, sample_times)
 
 
 
-to_analyse["order"] <- 1:nrow(to_analyse)
-linked_trans <- to_analyse %>%
-  group_by(order) %>%
-  group_modify(~check_linked_transmissions(.x, tm))
-linked_trans <- linked_trans[,2:8]
+  #trans_by_W: all transmission that happened with correct direction of transmission
+  trans_by_W <- real_trans
+  names(trans_by_W)[1:2] <- c("host.1", "host.2")
+  trans_by_W$host.1 <- paste("ID", trans_by_W$host.1, sep = "_")
+  trans_by_W$host.2 <- paste("ID", trans_by_W$host.2, sep = "_")
+
+  #get the difference of sampled time and time of transmission
+  trans_phyloscanner <- real_trans[real_trans$donor_ID %in% tips_tm,]
+  trans_phyloscanner <- trans_phyloscanner[trans_phyloscanner$recip_ID %in% tips_tm,]
+
+  trans_phyloscanner["st_donor_ID"] <-unlist(lapply(trans_phyloscanner$donor_ID, function(x)
+    st_ids_region[st_ids_region$sampled_ID == x,]$sampled_time))
+
+  trans_phyloscanner["st_recip_ID"] <-unlist(lapply(trans_phyloscanner$recip_ID, function(x)
+    st_ids_region[st_ids_region$sampled_ID == x,]$sampled_time))
+
+  trans_phyloscanner["time_trans"] <- apply(trans_phyloscanner, 1, function(x) tm[tm$sus == x[[2]] & tm$inf == x[[1]],]$year)
 
 
-all_trans_type <- rbind(true_pairs_phylo,
-                        true_swap,
-                        linked_trans)
+  #rep 1 , params 1067 (example for 1 replicate only)
+  results <- read.csv(paste(phyloscanner_dir, "results_hostRelationshipSummary.csv", sep = "/"))
+  results_subset <- subset(results, ancestry != "noAncestry")
+
+
+  #results_subset$fraction.math <- sapply(results_subset$fraction, function(x) eval(parse(text=x)))
+
+  #transmission phyloscanner
+  trans_phy <- results_subset %>%
+    group_by(host.1, host.2) %>%
+    group_modify(~ summarize_trans(.x))
+
+  #check whether the direction of transmission in phyloscanner corresponds to
+  #true transmission
+  all_trans <- semi_join(trans_phy,
+                         trans_by_W, by = c("host.1", "host.2"))
+
+  true_pairs_phylo <- check_true_transmissions(trans_phy, all_trans)
+
+
+  #swap of donor and recipient
+  trans_by_W_trunc <- data.frame(host.1 = trans_by_W$host.2,
+                                 host.2 = trans_by_W$host.1)
+  all_trans2 <- semi_join(trans_phy, trans_by_W_trunc,
+                          by = c("host.1", "host.2"))
+
+  swap_pairs_phylo <- check_swap_transmissions(trans_phy, all_trans2)
+
+  #tibble of true and swap pairs
+  true_swap <- rbind(true_pairs_phylo, swap_pairs_phylo)
+
+
+  #remove from tibble trans_phy (transmissions by phyloscanner)
+  #and check whether pairs represents real linked pairs of transmissions
+  #pairs that still need to be analysed
+  to_analyse <- anti_join(trans_phy, true_swap,
+                          by = c("host.1", "host.2"))
+
+
+  if(nrow(to_analyse) > 0){
+    to_analyse["order"] <- 1:nrow(to_analyse)
+    linked_trans <- to_analyse %>%
+      group_by(order) %>%
+      group_modify(~check_linked_transmissions(.x, tm))
+    linked_trans <- linked_trans[,2:8]
+
+    all_trans_type <- rbind(true_swap,
+                            linked_trans)
+
+  } else {
+
+    all_trans_type <- true_swap
+
+  }
+
+  all_trans_type["mig"] <- mig
+  all_trans_type["param"] <- param
+  all_trans_type["rep"] <- rep
+
+  all_phyloscanner_results <- rbind(all_phyloscanner_results, all_trans_type)
+
+
+
+
+
+
+}
+
+#common_dir <- "/Users/user/Desktop/Imperial/newHIVproject-01Aug2020/R_projects/Results_paper/deepseq/best_trajectories_250migrants/params_2348/rep_4"
 
 
 #all_trans2$fraction.math <- sapply(all_trans2$fraction, function(x) eval(parse(text=x)))

@@ -2,7 +2,7 @@
 % Please edit documentation in R/sampling_utils.R
 \name{est_sampleSize}
 \alias{est_sampleSize}
-\title{Estimation sample size based on percentage}
+\title{Estimation sample size based on percentage provided by user.}
 \usage{
 est_sampleSize(
   perc,
@@ -42,8 +42,11 @@ to sample from. Location can take the value of "region" or "global".}
 include diagnosed, active and on or not on ART. If FALSE will include
 only diagnosed, active and not on ART.}
 }
+\value{
+scalar of number of individuas to sample based on percentage
+}
 \description{
-Estimation sample size based on percentage
+Estimation sample size based on percentage provided by user.
 }
 \details{
 This function will estimate the sample size based on a percentage

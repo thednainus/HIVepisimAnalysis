@@ -70,8 +70,8 @@ get_tipNames <- function(x, format = "migrant", by_areas = "region",
     # get tip names in the form of inf_infOri or sus_susOri
     #browser()
     tipNamesOri <- unique(as.vector(el_ori[,c(4:5)]))
-    # get tip names only without the origin. This will allow to determine duplications
-    # when a tip was region and changed to global (or vice versa, for example)
+    # get the ID name of tips without the origin. This will allow to determine duplication
+    # when a tip was region and changed to global (or vice-versa, for example)
     # or when using the different values for the "migrant" option (that can be 1
     # for region, 2 for global, 21 indicating a global that migrated to region and
     # 12 indicating a region that migrated to global)
@@ -117,6 +117,10 @@ time_atSeroconversion <- function(dup_rows, get_time){
   #browser()
   dup_rows <- as.data.frame(dup_rows)
   row_int <- dup_rows[dup_rows$at == get_time,]
+
+  if(nrow(row_int) > 1){
+    browser()
+  }
 
   return(row_int)
 }
@@ -183,10 +187,11 @@ get_newTip_names <- function(dup_tip, el_ori){
 #' @export
 name_of_tips <- function(dup_tip, row_int){
 
-  if(dup_tip %in% row_int$inf){
-    infs_values <- row_int$inf_ori
-  }else if(dup_tip %in% row_int$sus){
+
+  if(dup_tip %in% row_int$sus){
     infs_values <- row_int$sus_ori
+  }else if(dup_tip %in% row_int$inf){
+    infs_values <- row_int$inf_ori
   }
 
   return(infs_values)
@@ -216,6 +221,7 @@ name_of_tips <- function(dup_tip, row_int){
 #'
 #' @export
 replace_dups <- function(dup_tip, origNodes, tipNamesOri, tip_names_toInsert, tip_names){
+
   #get index of duplicated IDs in tip_names vector
   index_to_remove <- which(tip_names %in% dup_tip)
 
@@ -224,7 +230,7 @@ replace_dups <- function(dup_tip, origNodes, tipNamesOri, tip_names_toInsert, ti
 
   tipNamesOri <- tip_tmp[-index_to_remove]
   # add new tip names
-  #index to add tip name(s) in relation to the original vector of vertex IDs
+  # index to add tip name(s) in relation to the original vector of vertex IDs
   # origNodes does not have any duplicates
   index_to_add <- match(dup_tip, origNodes)
   # subtract 1 of the index to use with function append

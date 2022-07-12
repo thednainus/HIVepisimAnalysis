@@ -15,6 +15,9 @@ should be provided in the tm dataframe.}
 
 \item{prefix}{Text for prefix to use when saving filename.}
 }
+\value{
+Write data to csv file.
+}
 \description{
 Create a transmission matrix file to be used with the
    VirusTreeSimulator. VirusTreeSimulator requires that seeds are included

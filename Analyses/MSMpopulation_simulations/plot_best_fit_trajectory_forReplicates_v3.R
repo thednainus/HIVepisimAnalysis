@@ -35,7 +35,7 @@ dir_list <- dir("../Results_paper/best_trajectories_75migrants/params_2348", ful
 
 #25 migrants
 dir_list <- dir("../Results_paper/best_trajectories_25migrants/params_1067", full.names = T)
-dir_list <- dir("../Results_paper/best_trajectories_25migrants/params_2348", full.names = T)
+dir_list <- dir("../Results_paper/best_trajectories_250migrants/params_2348", full.names = T)
 
 #beginning of simulation time
 init_sim_date <- ymd("1980-01-01")

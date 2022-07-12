@@ -1,10 +1,24 @@
-#summarizing results for consensus sequences
+# Summarize results for consensus sequences
+# the code used here had been described in https://www.youtube.com/watch?v=UFvL2NXLvD8&list=LL&index=2&t=797s
+# and here https://acutecaretesting.org/en/articles/roc-curves-what-are-they-and-how-are-they-used#:~:text=An%20ROC%20curve%20shows%20the,TP%2F(TP%2BFN))
 library(tidyverse)
 get_sens_spec_lookup <- function(data){
 
   total <- data %>%
     count(observed) %>%
     pivot_wider(names_from=observed, values_from=n)
+
+  if(ncol(total) == 1){
+
+    #browser()
+
+    if(!"1" %in% names(total)){
+      total$'1' <- 0
+    } else{
+      total$'2' <- 0
+    }
+
+  }
 
   print(total)
 
@@ -15,10 +29,12 @@ get_sens_spec_lookup <- function(data){
            fp = cumsum(!is_1),
            sensitivity = tp / total$`1`,
            fpr = fp / total$`0`,
-           specificity = 1-fpr) %>%
+           specificity = 1 - fpr) %>%
     select(sensitivity, specificity, fpr, code, sampler, param, perc, mig, param_mig)
 
 }
+#sensitivity = true positive rate
+#false positive rate (FPR)
 
 
 get_sensitivity <- function(x, data){
@@ -40,7 +56,8 @@ get_pooled_sens_spec <- function(data, specificity){
 }
 
 
-specificity <- seq(0, 1, 0.01)
+#specificity <- seq(0, 1, 0.01)
+threshold <- seq(0, 1, 0.01)
 
 
 # True Trees: sampler 1----
@@ -53,7 +70,22 @@ mig750_true <- readRDS("~/Box Sync/HIV_SanDiego/data_simulations/sampler1/all_ro
 mig750_true["mig"] <- "750"
 true_trees <- rbind(mig250_true, mig500_true, mig750_true)
 
-
+# trueTrees_df <- data.frame(probs = true_trees$infectorProbability,
+#                            observed = true_trees$labels,
+#                            code = true_trees$Code,
+#                            sampler = true_trees$sampler,
+#                            param = true_trees$param,
+#                            perc = true_trees$perc,
+#                            mig = true_trees$mig,
+#                            param_mig = paste(true_trees$param,
+#                                              true_trees$mig,
+#                                              sep = "_"),
+#                            tag = paste(true_trees$Code,
+#                                        true_trees$sampler,
+#                                        true_trees$param,
+#                                        true_trees$perc,
+#                                        true_trees$mig,
+#                                        sep = "_"))
 
 trueTrees_df <- data.frame(probs = true_trees$infectorProbability,
                            observed = true_trees$labels,
@@ -70,13 +102,35 @@ trueTrees_df <- data.frame(probs = true_trees$infectorProbability,
                                        true_trees$param,
                                        true_trees$perc,
                                        true_trees$mig,
+                                       true_trees$rep,
                                        sep = "_"))
+
+
+teste_df <- data.frame(probs = teste$infectorProbability,
+                           observed = teste$labels,
+                           code = teste$Code,
+                           sampler = teste$sampler,
+                           param = teste$param,
+                           perc = teste$perc,
+                           mig = teste$mig,
+                           param_mig = paste(teste$param,
+                                             teste$mig,
+                                             sep = "_"),
+                           tag = paste(teste$Code,
+                                       teste$sampler,
+                                       teste$param,
+                                       teste$perc,
+                                       teste$mig,
+                                       teste$rep,
+                                       sep = "_"))
+
 
 roc_treeTrees <- trueTrees_df %>%
   group_by(tag) %>%
   group_modify(~(get_pooled_sens_spec(.x, specificity)))
 
-saveRDS(roc_treeTrees, "roc_treeTrees_s1.RDS")
+#saveRDS(roc_treeTrees, "roc_treeTrees_s1.RDS")
+saveRDS(roc_treeTrees, "roc_treeTrees_s1_CI.RDS")
 
 rm(roc_treeTrees)
 # True Trees: sampler 2----
@@ -91,6 +145,23 @@ true_trees <- rbind(mig250_true, mig500_true, mig750_true)
 
 
 
+# trueTrees_df <- data.frame(probs = true_trees$infectorProbability,
+#                            observed = true_trees$labels,
+#                            code = true_trees$Code,
+#                            sampler = true_trees$sampler,
+#                            param = true_trees$param,
+#                            perc = true_trees$perc,
+#                            mig = true_trees$mig,
+#                            param_mig = paste(true_trees$param,
+#                                              true_trees$mig,
+#                                              sep = "_"),
+#                            tag = paste(true_trees$Code,
+#                                        true_trees$sampler,
+#                                        true_trees$param,
+#                                        true_trees$perc,
+#                                        true_trees$mig,
+#                                        sep = "_"))
+
 trueTrees_df <- data.frame(probs = true_trees$infectorProbability,
                            observed = true_trees$labels,
                            code = true_trees$Code,
@@ -106,18 +177,20 @@ trueTrees_df <- data.frame(probs = true_trees$infectorProbability,
                                        true_trees$param,
                                        true_trees$perc,
                                        true_trees$mig,
+                                       true_trees$rep,
                                        sep = "_"))
-
 
 roc_treeTrees <- trueTrees_df %>%
   group_by(tag) %>%
   group_modify(~(get_pooled_sens_spec(.x, specificity)))
 
-saveRDS(roc_treeTrees, "roc_treeTrees_s2.RDS")
+#saveRDS(roc_treeTrees, "roc_treeTrees_s2.RDS")
+saveRDS(roc_treeTrees, "roc_treeTrees_s2_CI.RDS")
 
 
 
 # ML trees 1000bp: sampler 1----
+rm(roc_treeTrees)
 
 mig250 <- readRDS("~/Box Sync/HIV_SanDiego/data_simulations/sampler1/all_roc_data_s1_1000bp_250mig.RDS")
 mig250["mig"] <- "250"
@@ -128,6 +201,23 @@ mig750["mig"] <- "750"
 ml_1000bp <- rbind(mig250, mig500, mig750)
 
 
+
+# ml_1000bp_df <- data.frame(probs = ml_1000bp$infectorProbability,
+#                            observed = ml_1000bp$labels,
+#                            code = ml_1000bp$Code,
+#                            sampler = ml_1000bp$sampler,
+#                            param = ml_1000bp$param,
+#                            perc = ml_1000bp$perc,
+#                            mig = ml_1000bp$mig,
+#                            param_mig = paste(ml_1000bp$param,
+#                                              ml_1000bp$mig,
+#                                              sep = "_"),
+#                            tag = paste(ml_1000bp$Code,
+#                                        ml_1000bp$sampler,
+#                                        ml_1000bp$param,
+#                                        ml_1000bp$perc,
+#                                        ml_1000bp$mig,
+#                                        sep = "_"))
 
 ml_1000bp_df <- data.frame(probs = ml_1000bp$infectorProbability,
                            observed = ml_1000bp$labels,
@@ -144,13 +234,15 @@ ml_1000bp_df <- data.frame(probs = ml_1000bp$infectorProbability,
                                        ml_1000bp$param,
                                        ml_1000bp$perc,
                                        ml_1000bp$mig,
+                                       ml_1000bp$rep,
                                        sep = "_"))
 
 roc_Ml1000bp <- ml_1000bp_df %>%
   group_by(tag) %>%
   group_modify(~(get_pooled_sens_spec(.x, specificity)))
 
-saveRDS(roc_Ml1000bp, "roc_ML1000bp_s1.RDS")
+#saveRDS(roc_Ml1000bp, "roc_ML1000bp_s1.RDS")
+saveRDS(roc_Ml1000bp, "roc_ML1000bp_s1_CI.RDS")
 
 
 # ML trees 10000bp: sampler 1----
@@ -165,77 +257,22 @@ ml_10000bp <- rbind(mig250, mig500, mig750)
 
 
 
-ml_10000bp_df <- data.frame(probs = ml_10000bp$infectorProbability,
-                           observed = ml_10000bp$labels,
-                           code = ml_10000bp$Code,
-                           sampler = ml_10000bp$sampler,
-                           param = ml_10000bp$param,
-                           perc = ml_10000bp$perc,
-                           mig = ml_10000bp$mig,
-                           param_mig = paste(ml_10000bp$param,
-                                             ml_10000bp$mig,
-                                             sep = "_"),
-                           tag = paste(ml_10000bp$Code,
-                                       ml_10000bp$sampler,
-                                       ml_10000bp$param,
-                                       ml_10000bp$perc,
-                                       ml_10000bp$mig,
-                                       sep = "_"))
-
-roc_Ml10000bp <- ml_10000bp_df %>%
-  group_by(tag) %>%
-  group_modify(~(get_pooled_sens_spec(.x, specificity)))
-
-saveRDS(roc_Ml10000bp, "roc_ML10000bp_s1.RDS")
-
-
-# ML trees 1000bp: sampler 2----
-rm(mig250, mig500, mig750, roc_Ml10000bp, ml_10000bp_df)
-mig250 <- readRDS("~/Box Sync/HIV_SanDiego/data_simulations/sampler2/all_roc_data_s2_1000bp_250mig.RDS")
-mig250["mig"] <- "250"
-mig500 <- readRDS("~/Box Sync/HIV_SanDiego/data_simulations/sampler2/all_roc_data_s2_1000bp_500mig.RDS")
-mig500["mig"] <- "500"
-mig750 <- readRDS("~/Box Sync/HIV_SanDiego/data_simulations/sampler2/all_roc_data_s2_1000bp_750mig.RDS")
-mig750["mig"] <- "750"
-ml_1000bp <- rbind(mig250, mig500, mig750)
-
-
-
-ml_1000bp_df <- data.frame(probs = ml_1000bp$infectorProbability,
-                           observed = ml_1000bp$labels,
-                           code = ml_1000bp$Code,
-                           sampler = ml_1000bp$sampler,
-                           param = ml_1000bp$param,
-                           perc = ml_1000bp$perc,
-                           mig = ml_1000bp$mig,
-                           param_mig = paste(ml_1000bp$param,
-                                             ml_1000bp$mig,
-                                             sep = "_"),
-                           tag = paste(ml_1000bp$Code,
-                                       ml_1000bp$sampler,
-                                       ml_1000bp$param,
-                                       ml_1000bp$perc,
-                                       ml_1000bp$mig,
-                                       sep = "_"))
-
-roc_Ml1000bp <- ml_1000bp_df %>%
-  group_by(tag) %>%
-  group_modify(~(get_pooled_sens_spec(.x, specificity)))
-
-saveRDS(roc_Ml1000bp, "roc_ML1000bp_s2.RDS")
-
-
-# ML trees 10000bp: sampler 2----
-rm(mig250, mig500, mig750, roc_Ml1000bp, ml_1000bp_df)
-mig250 <- readRDS("~/Box Sync/HIV_SanDiego/data_simulations/sampler2/all_roc_data_s2_10000bp_250mig.RDS")
-mig250["mig"] <- "250"
-mig500 <- readRDS("~/Box Sync/HIV_SanDiego/data_simulations/sampler2/all_roc_data_s2_10000bp_500mig.RDS")
-mig500["mig"] <- "500"
-mig750 <- readRDS("~/Box Sync/HIV_SanDiego/data_simulations/sampler2/all_roc_data_s2_10000bp_750mig.RDS")
-mig750["mig"] <- "750"
-ml_10000bp <- rbind(mig250, mig500, mig750)
-
-
+# ml_10000bp_df <- data.frame(probs = ml_10000bp$infectorProbability,
+#                            observed = ml_10000bp$labels,
+#                            code = ml_10000bp$Code,
+#                            sampler = ml_10000bp$sampler,
+#                            param = ml_10000bp$param,
+#                            perc = ml_10000bp$perc,
+#                            mig = ml_10000bp$mig,
+#                            param_mig = paste(ml_10000bp$param,
+#                                              ml_10000bp$mig,
+#                                              sep = "_"),
+#                            tag = paste(ml_10000bp$Code,
+#                                        ml_10000bp$sampler,
+#                                        ml_10000bp$param,
+#                                        ml_10000bp$perc,
+#                                        ml_10000bp$mig,
+#                                        sep = "_"))
 
 ml_10000bp_df <- data.frame(probs = ml_10000bp$infectorProbability,
                             observed = ml_10000bp$labels,
@@ -252,13 +289,125 @@ ml_10000bp_df <- data.frame(probs = ml_10000bp$infectorProbability,
                                         ml_10000bp$param,
                                         ml_10000bp$perc,
                                         ml_10000bp$mig,
+                                        ml_10000bp$rep,
                                         sep = "_"))
 
 roc_Ml10000bp <- ml_10000bp_df %>%
   group_by(tag) %>%
   group_modify(~(get_pooled_sens_spec(.x, specificity)))
 
-saveRDS(roc_Ml10000bp, "roc_ML10000bp_s2.RDS")
+#saveRDS(roc_Ml10000bp, "roc_ML10000bp_s1.RDS")
+saveRDS(roc_Ml10000bp, "roc_ML10000bp_s1_CI.RDS")
+
+
+# ML trees 1000bp: sampler 2----
+rm(mig250, mig500, mig750, roc_Ml10000bp, ml_10000bp_df)
+mig250 <- readRDS("~/Box Sync/HIV_SanDiego/data_simulations/sampler2/all_roc_data_s2_1000bp_250mig.RDS")
+mig250["mig"] <- "250"
+mig500 <- readRDS("~/Box Sync/HIV_SanDiego/data_simulations/sampler2/all_roc_data_s2_1000bp_500mig.RDS")
+mig500["mig"] <- "500"
+mig750 <- readRDS("~/Box Sync/HIV_SanDiego/data_simulations/sampler2/all_roc_data_s2_1000bp_750mig.RDS")
+mig750["mig"] <- "750"
+ml_1000bp <- rbind(mig250, mig500, mig750)
+
+
+
+# ml_1000bp_df <- data.frame(probs = ml_1000bp$infectorProbability,
+#                            observed = ml_1000bp$labels,
+#                            code = ml_1000bp$Code,
+#                            sampler = ml_1000bp$sampler,
+#                            param = ml_1000bp$param,
+#                            perc = ml_1000bp$perc,
+#                            mig = ml_1000bp$mig,
+#                            param_mig = paste(ml_1000bp$param,
+#                                              ml_1000bp$mig,
+#                                              sep = "_"),
+#                            tag = paste(ml_1000bp$Code,
+#                                        ml_1000bp$sampler,
+#                                        ml_1000bp$param,
+#                                        ml_1000bp$perc,
+#                                        ml_1000bp$mig,
+#                                        sep = "_"))
+
+ml_1000bp_df <- data.frame(probs = ml_1000bp$infectorProbability,
+                           observed = ml_1000bp$labels,
+                           code = ml_1000bp$Code,
+                           sampler = ml_1000bp$sampler,
+                           param = ml_1000bp$param,
+                           perc = ml_1000bp$perc,
+                           mig = ml_1000bp$mig,
+                           param_mig = paste(ml_1000bp$param,
+                                             ml_1000bp$mig,
+                                             sep = "_"),
+                           tag = paste(ml_1000bp$Code,
+                                       ml_1000bp$sampler,
+                                       ml_1000bp$param,
+                                       ml_1000bp$perc,
+                                       ml_1000bp$mig,
+                                       ml_1000bp$rep,
+                                       sep = "_"))
+
+roc_Ml1000bp <- ml_1000bp_df %>%
+  group_by(tag) %>%
+  group_modify(~(get_pooled_sens_spec(.x, specificity)))
+
+#saveRDS(roc_Ml1000bp, "roc_ML1000bp_s2.RDS")
+saveRDS(roc_Ml1000bp, "roc_ML1000bp_s2_CI.RDS")
+
+
+# ML trees 10000bp: sampler 2----
+rm(mig250, mig500, mig750, roc_Ml1000bp, ml_1000bp_df)
+mig250 <- readRDS("~/Box Sync/HIV_SanDiego/data_simulations/sampler2/all_roc_data_s2_10000bp_250mig.RDS")
+mig250["mig"] <- "250"
+mig500 <- readRDS("~/Box Sync/HIV_SanDiego/data_simulations/sampler2/all_roc_data_s2_10000bp_500mig.RDS")
+mig500["mig"] <- "500"
+mig750 <- readRDS("~/Box Sync/HIV_SanDiego/data_simulations/sampler2/all_roc_data_s2_10000bp_750mig.RDS")
+mig750["mig"] <- "750"
+ml_10000bp <- rbind(mig250, mig500, mig750)
+
+
+
+# ml_10000bp_df <- data.frame(probs = ml_10000bp$infectorProbability,
+#                             observed = ml_10000bp$labels,
+#                             code = ml_10000bp$Code,
+#                             sampler = ml_10000bp$sampler,
+#                             param = ml_10000bp$param,
+#                             perc = ml_10000bp$perc,
+#                             mig = ml_10000bp$mig,
+#                             param_mig = paste(ml_10000bp$param,
+#                                               ml_10000bp$mig,
+#                                               sep = "_"),
+#                             tag = paste(ml_10000bp$Code,
+#                                         ml_10000bp$sampler,
+#                                         ml_10000bp$param,
+#                                         ml_10000bp$perc,
+#                                         ml_10000bp$mig,
+#                                         sep = "_"))
+
+ml_10000bp_df <- data.frame(probs = ml_10000bp$infectorProbability,
+                            observed = ml_10000bp$labels,
+                            code = ml_10000bp$Code,
+                            sampler = ml_10000bp$sampler,
+                            param = ml_10000bp$param,
+                            perc = ml_10000bp$perc,
+                            mig = ml_10000bp$mig,
+                            param_mig = paste(ml_10000bp$param,
+                                              ml_10000bp$mig,
+                                              sep = "_"),
+                            tag = paste(ml_10000bp$Code,
+                                        ml_10000bp$sampler,
+                                        ml_10000bp$param,
+                                        ml_10000bp$perc,
+                                        ml_10000bp$mig,
+                                        ml_10000bp$rep,
+                                        sep = "_"))
+
+roc_Ml10000bp <- ml_10000bp_df %>%
+  group_by(tag) %>%
+  group_modify(~(get_pooled_sens_spec(.x, specificity)))
+
+#saveRDS(roc_Ml10000bp, "roc_ML10000bp_s2.RDS")
+saveRDS(roc_Ml10000bp, "roc_ML10000bp_s2_CI.RDS")
 
 
 roc_treeTrees %>%

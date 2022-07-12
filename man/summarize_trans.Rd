@@ -20,7 +20,7 @@ Summarize results obtained with phyloscanner.
 Here we summarized the results obtained with phyloscanner.
    The summary is based on the summary results that phyloscanner returns
    in which it summarizes the "ancestry" type by window.
-   We consired that two individuals are linked if proportion of values for
+   We considered that two individuals are linked if proportion of values for
    ancestry is complex, multiTrans and trans are >= 0.50
    On the other hand, we considered that two individuals represent a true
    direction of transmission from host.1 to host.2 if the proportion of

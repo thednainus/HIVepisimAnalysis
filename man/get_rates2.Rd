@@ -4,7 +4,7 @@
 \alias{get_rates2}
 \title{Get rates to construct ROC curve}
 \usage{
-get_rates2(threshold, df_true)
+get_rates2(threshold, df_true, byReplicate = FALSE)
 }
 \arguments{
 \item{threshold}{list object with threshold values rangng from 0 to 1}

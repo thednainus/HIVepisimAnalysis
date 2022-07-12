@@ -12,6 +12,9 @@ compute_log_importance_weight_incidence(incid_obs, incid_sim)
 
 \item{diag_sim}{Frequency of estimated incidence in MSM from 1980 to 2020}
 }
+\value{
+Scalar for the log importance weight
+}
 \description{
 Calculate the log importance weight based on observed and simulated data
 for incidence

@@ -159,9 +159,23 @@ get_rates <- function(threshold, df_true){
 #' @return data.frame object for values of threshold, true positive rate (TPR)
 #'    and false positive rate (FPR).
 #' @export
-get_rates2 <- function(threshold, df_true){
+get_rates2 <- function(threshold, df_true, byReplicate = FALSE){
 
   #browser()
+
+  param <- unique(df_true$param)
+  mig <- unique(df_true$mig)
+  perc = unique(df_true$perc)
+  code = unique(df_true$code)
+  sampler = unique(df_true$sampler)
+  mig = unique(df_true$mig)
+
+  if(byReplicate == FALSE){
+    rep = "merged"
+  } else {
+    rep = unique(df_true$rep)
+  }
+
 
   df_true["pred"] <- ifelse(df_true$infectorProbability >= threshold, "1", "0")
   df_true$pred <- as.factor(df_true$pred)
@@ -185,15 +199,21 @@ get_rates2 <- function(threshold, df_true){
     #false positive rate
     FPR <- 1 - cm$byClass[[2]]
 
+    #browser()
+
     rates <- data.frame(threshold = threshold, TPR = TPR, FPR = FPR,
-                        param = df_true$param, rep = df_true$rep,
-                        perc = df_true$perc)
+                        param = param, rep = rep,
+                        perc = perc, code = code,
+                        sampler = sampler, mig = mig)
 
   }
 
   if(check_data_cm == "not_ok"){
 
-    rates <- data.frame(threshold = threshold, TPR = NA, FPR = NA)
+    rates <- data.frame(threshold = threshold, TPR = NA, FPR = NA,
+                        param = param, rep = rep,
+                        perc = perc, code = code,
+                        sampler = sampler, mig = mig)
 
   }
 
@@ -227,6 +247,7 @@ check_data_cm <- function(data, reference, positive = "1", mode = "sens_spec"){
   if (!all(levels(data) %in% levels(reference))) {
     badLevel <- levels(data)[!levels(data) %in% levels(reference)]
     if (sum(table(data)[badLevel]) > 0) {
+      #browser()
       #message("The data contain levels not found in the data.")
       results <- "not_ok"
     }
@@ -255,6 +276,86 @@ check_data_cm <- function(data, reference, positive = "1", mode = "sens_spec"){
 }
 
 
+#' Get rates to construct ROC curve
+#'
+#' Get false positive rates and true positive rate for ROC curves
+#'
+#' @param threshold list object with threshold values rangng from 0 to 1
+#' @param df_true data.frame object for the infector probability and the true
+#'    classification of transmission pairs
+#'
+#' @details The true data for df_true object will have 1 for a transmission pair
+#'    that have occurred and 0 for a transmission pair that did not occur. This
+#'    will be based by comparison with the transmission matrix.
+#'
+#' @return data.frame object for values of threshold, true positive rate (TPR)
+#'    and false positive rate (FPR).
+#' @export
+get_precision_recall <- function(threshold, df_true, byReplicate = FALSE){
+
+  #browser()
+
+  param <- unique(df_true$param)
+  mig <- unique(df_true$mig)
+  perc = unique(df_true$perc)
+  code = unique(df_true$code)
+  sampler = unique(df_true$sampler)
+  mig = unique(df_true$mig)
+
+  if(byReplicate == FALSE){
+    rep = "merged"
+  } else {
+    rep = unique(df_true$rep)
+  }
+
+
+  df_true["pred"] <- ifelse(df_true$infectorProbability >= threshold, "1", "0")
+  df_true$pred <- as.factor(df_true$pred)
+
+  df_true$labels <- as.character(df_true$labels)
+  df_true$labels <- as.factor(df_true$labels)
+
+  #check whether the data can be used with the function caret:confusionMatrix
+
+  #check_data_cm <- check_data_cm(data = df_true$pred,
+  #                               reference = df_true$labels,
+  #                               positive = "1",
+  #                               mode = "prec_recall")
+  check_data_cm <- "ok"
+  if(check_data_cm == "ok"){
+
+    #create confusion matrix
+    cm <- confusionMatrix(df_true$pred, df_true$labels,
+                          positive = "1",
+                          mode = "prec_recall")
+    #true positive rate
+    precision <- cm$byClass[[5]]
+    #false positive rate
+    recall <- cm$byClass[[6]]
+
+    #browser()
+
+    rates <- data.frame(threshold = threshold, precision = precision,
+                        recall = recall,
+                        param = param, rep = rep,
+                        perc = perc, code = code,
+                        sampler = sampler, mig = mig)
+
+  }
+
+  if(check_data_cm == "not_ok"){
+
+    rates <- data.frame(threshold = threshold, precision = precision,
+                        recall = recall,
+                        param = param, rep = rep,
+                        perc = perc, code = code,
+                        sampler = sampler, mig = mig)
+
+  }
+
+  return(rates)
+}
+
 #' Calculate the log importance weight based on observed and simulated data
 #'
 #' @param diag_obs Frequency of observed incidence of HIV diagnosis in MSM
@@ -262,7 +363,7 @@ check_data_cm <- function(data, reference, positive = "1", mode = "sens_spec"){
 #' @param diag_sim Frequency of estimated incidence of HIV diagnosis in MSM
 #'    from 1982 to 2020
 #'
-#' @return
+#' @return Scalar for the log importance weight
 #' @export
 compute_log_importance_weight_newDx <- function ( diag_obs, diag_sim )
 {
@@ -286,7 +387,7 @@ compute_log_importance_weight_newDx <- function ( diag_obs, diag_sim )
 #' @param diag_obs Frequency of observed incidence in MSM from 1980 to 2020
 #' @param diag_sim Frequency of estimated incidence in MSM from 1980 to 2020
 #'
-#' @return
+#' @return Scalar for the log importance weight
 #' @export
 compute_log_importance_weight_incidence <- function ( incid_obs, incid_sim )
 {
@@ -335,7 +436,7 @@ get_difference <- function(df1, df2){
 #' @details Here we summarized the results obtained with phyloscanner.
 #'    The summary is based on the summary results that phyloscanner returns
 #'    in which it summarizes the "ancestry" type by window.
-#'    We consired that two individuals are linked if proportion of values for
+#'    We considered that two individuals are linked if proportion of values for
 #'    ancestry is complex, multiTrans and trans are >= 0.50
 #'    On the other hand, we considered that two individuals represent a true
 #'    direction of transmission from host.1 to host.2 if the proportion of
@@ -374,6 +475,55 @@ summarize_trans <- function(data){
 
 }
 
+#' Summarize results obtained with phyloscanner.
+#'
+#'
+#' @param data
+#'
+#' @details Here we summarized the results obtained with phyloscanner.
+#'    The summary is based on the summary results that phyloscanner returns
+#'    in which it summarizes the "ancestry" type by window.
+#'    We considered that two individuals are linked if proportion of values for
+#'    ancestry is complex, multiTrans and trans are >= 0.50
+#'    On the other hand, we considered that two individuals represent a true
+#'    direction of transmission from host.1 to host.2 if the proportion of
+#'    multiTrans, trans, and complex are >= 0.375.
+#'    Here, we are interested to understand whether including complex transmissions
+#'    would make it better to detect direction of transmission.
+#'    Note that to carry out this summary, we pre-removed all
+#'    ancestry = noAncestry.
+#'
+#' @return Dataframe containing information of whether host.1 and host.2
+#'    are linked and whether there direction of transmission is also correct.
+#' @export
+summarize_trans_compl <- function(data){
+
+  prop_linked <- sum(data$ancestry.tree.count)/(sum(data$both.exist)/nrow(data))
+  linked <- ifelse(prop_linked >= 0.5, "yes", "no")
+  transmission <- data[data$ancestry == "trans" | data$ancestry == "multiTrans",]
+
+  if(nrow(transmission) != 0){
+    prop_trans <- sum(transmission$ancestry.tree.count)/(sum(transmission$both.exist)/nrow(transmission))
+    #pairs were considered linked if prop_trans >= 0.375
+    direction <- ifelse(prop_trans >= 0.375, "yes", "no")
+
+
+  } else {
+    prop_trans <- 0
+    direction <- "no"
+
+  }
+
+  pair_information <- tibble(prop_trans = prop_trans,
+                             prop_linked = prop_linked,
+                             direction = direction,
+                             linked = linked)
+
+  return(pair_information)
+
+}
+
+
 
 #' Check whether a pair of individuals represent a true transmission.
 #'
@@ -383,18 +533,16 @@ summarize_trans <- function(data){
 #'
 #' @param df1 Dataframe containing information of summarized results obtained
 #'    with phyloscanner after running the function summarize_trans.
-#' @param tm Dataframe containing information of the transmission matrix (tm).
-#'    The tm have information of who transmitted to whom and what time that
-#'    happened.
+#' @param df2 Dataframe containing information of the true transmissions.
 #'
 #' @return Dataframe with a new column "trans" with only the individuals that
 #'    represent a true transmission with correct direction of transmission.
 #'    The value for column "trans" will be "true" (for true transmission).
 #' @export
-check_true_transmissions <- function(df1, tm){
+check_true_transmissions <- function(df1, df2){
 
 
-  pairs <- paste(tm$host.1, tm$host.2, sep = ",")
+  pairs <- paste(df2$host.1, df2$host.2, sep = ",")
 
   df1$hosts_to_check <- paste(df1$host.1, df1$host.2, sep = ",")
 
@@ -423,10 +571,10 @@ check_true_transmissions <- function(df1, tm){
 #'    The value for column "trans" will be "swap" (for transmission from
 #'    host.2 to host.1).
 #' @export
-check_swap_transmissions <- function(df1, tm){
+check_swap_transmissions <- function(df1, df2){
 
 
-  pairs <- paste(tm$host.1, tm$host.2, sep = ",")
+  pairs <- paste(df2$host.1, df2$host.2, sep = ",")
 
   df1$hosts_to_check <- paste(df1$host.1, df1$host.2, sep = ",")
 
@@ -447,6 +595,8 @@ check_swap_transmissions <- function(df1, tm){
 #' infected host.1 and host.2.
 #'
 #' @inheritParams check_true_transmissions
+#' @param tm Dataframe of transmission matrix containing information of who
+#'    transmitted to whom and at what time transmission happened.
 #'
 #' @return Dataframe with a new column "trans" with only the pair of individuals
 #'    that are linked.
@@ -454,25 +604,73 @@ check_swap_transmissions <- function(df1, tm){
 #' @export
 check_linked_transmissions <- function(df1, tm){
 
-  tips <- c(df1$host.1, df1$host.2)
-  tips_tm <- unlist(lapply(tips, function(x) str_split(x, pattern = "_")[[1]][2]))
 
-  tm_subset_list <- lapply(tips_tm, function(x) tm[tm$sus == x | tm$inf == x ,])
+  tips_init <- c(df1$host.1, df1$host.2)
+  tips_tm_init <- unlist(lapply(tips_init, function(x) str_split(x, pattern = "_")[[1]][2]))
 
-  if(any(tm_subset_list[[1]]$inf %in% tm_subset_list[[2]]$inf) == TRUE |
-     any(tm_subset_list[[1]]$inf %in% tm_subset_list[[2]]$sus) == TRUE) {
+  tm_subset_list <- get_subset_tips(tips_tm_init, tm)
 
-    df1["trans"] <- "linked"
-  } else if (any(tm_subset_list[[2]]$inf %in% tm_subset_list[[1]]$inf) == TRUE |
-             any(tm_subset_list[[2]]$inf %in% tm_subset_list[[1]]$sus) == TRUE) {
+  linked <- "unknown"
 
-    df1["trans"] <- "linked"
+  while(linked == "unknown"){
+
+    #tm_subset_list <- lapply(tips_tm, function(x) tm[tm$sus == x | tm$inf == x ,])
+
+    if(any(tm_subset_list[[1]]$inf %in% tm_subset_list[[2]]$inf) == TRUE |
+       any(tm_subset_list[[1]]$inf %in% tm_subset_list[[2]]$sus) == TRUE) {
+
+      df1["trans"] <- "linked"
+      linked <- "yes"
+
+    } else if (any(tm_subset_list[[2]]$inf %in% tm_subset_list[[1]]$inf) == TRUE |
+               any(tm_subset_list[[2]]$inf %in% tm_subset_list[[1]]$sus) == TRUE) {
+
+      df1["trans"] <- "linked"
+
+      linked <- "yes"
+    }
+
+    else {
+
+
+      subset_tm <- do.call(rbind, tm_subset_list)
+      tips <- c(subset_tm$sus, subset_tm$inf)
+      tips <- tips[!tips %in% tips_tm]
+
+      tm_subset_list <- get_subset_tips(tips, tm)
+
+
+
+      df1["trans"] <- "not_linked"
+
+      linked <- "no"
+
+    }
+
   }
 
-  else {
-    df1["trans"] <- "not_linked"
-  }
+
 
   return(df1)
 
 }
+
+
+#' Get subset of susceptibles and infected individuals
+#'
+#' This function get the pairs of inf and sus individuals given a transmission
+#' matrix.
+#'
+#' @inheritParams check_linked_transmissions
+#' @param tips Vector of tip names (without the "ID")
+#'
+#' @return List of pairs of sus and inf individuals
+#' @export
+get_subset_tips <- function(tips, tm){
+
+  tm_subset_list <- lapply(tips, function(x) tm[tm$sus == x | tm$inf == x ,])
+
+  return(tm_subset_list)
+}
+
+

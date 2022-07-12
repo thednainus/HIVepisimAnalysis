@@ -10,9 +10,8 @@ check_linked_transmissions(df1, tm)
 \item{df1}{Dataframe containing information of summarized results obtained
 with phyloscanner after running the function summarize_trans.}
 
-\item{tm}{Dataframe containing information of the transmission matrix (tm).
-The tm have information of who transmitted to whom and what time that
-happened.}
+\item{tm}{Dataframe of transmission matrix containing information of who
+transmitted to whom and at what time transmission happened.}
 }
 \value{
 Dataframe with a new column "trans" with only the pair of individuals

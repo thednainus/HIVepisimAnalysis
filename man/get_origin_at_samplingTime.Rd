@@ -16,6 +16,10 @@ time that migration happened. Time must be in decimal year.}
 
 \item{st}{sampled time}
 }
+\value{
+Character of code for migrant (to determine if individual is
+   from region or global).
+}
 \description{
 Get the origin code at time of sampling.
 }

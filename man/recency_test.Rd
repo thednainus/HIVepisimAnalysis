@@ -11,6 +11,9 @@ recency_test(sampled_info, stages)
 
 \item{stages}{dataframe that tracks the stage of HIV infection for each ID.}
 }
+\value{
+Vector of IDs.
+}
 \description{
 This function mimics the idea of the recency test. It selects the IDs of
 individuals with recent HIV infection (in the past 6 months)
