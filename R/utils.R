@@ -129,6 +129,53 @@ create_inf_csv <- function(tm, time_tr, prefix = NULL){
   write.csv(x = all_data, file = filename, row.names = FALSE)
 }
 
+
+#' Create transmission matrix csv
+#'
+#' @description Create a transmission matrix file to be used with the
+#'    VirusTreeSimulator. VirusTreeSimulator requires that seeds are included
+#'    in the file.
+#'
+#' @inheritParams create_sample_csv
+#' @param time_tr Time of transmission for seeds. The other time of transmission
+#'    should be provided in the tm dataframe.
+#'
+#' @details
+#' If a prefix is not provided, csv file will be saved as inf.csv
+#'
+#' @return Write data to csv file.
+#' @export
+create_inf_csv2 <- function(tm, time_tr, prefix = NULL){
+
+  seed_names <- setdiff(unique(tm$inf), unique(tm$sus))
+
+  if(length(time_tr) == 1){
+    seed_idtr <- data.frame(seed_names, rep(NA, length(seed_names)),
+                            rep(0, length(seed_names)))
+  }else if(length(time_tr)!= 1 & length(time_tr) == length(seed_names)){
+    seed_idtr <- data.frame(seed_names, rep(NA, length(seed_names)), time_tr)
+  }else{
+    stop("`time_tr` should be of length 1 or length of number of seeds")
+  }
+
+
+  colnames(seed_idtr) <- c("IDREC", "IDTR", "TIME_TR")
+
+  inf_sus <- data.frame(tm$sus, tm$inf, (tm$at * (1/365)))
+  #inf_sus <- data.frame(tm$sus, tm$inf, tm$year)
+  colnames(inf_sus) <- c("IDREC", "IDTR", "TIME_TR")
+
+  all_data <- rbind(seed_idtr, inf_sus)
+
+  if(is.null(prefix)){
+    filename <- "inf.csv"
+  } else {
+    filename <- paste(prefix, "inf.csv", sep = "_")
+  }
+
+  write.csv(x = all_data, file = filename, row.names = FALSE)
+}
+
 #' Get sample csv file
 #'
 #' In this function the sample file for VirusTreeSimulator program
@@ -236,6 +283,102 @@ create_sample_csv2 <- function(ids, time_seq, seq_count, prefix = NULL){
   write.csv(x = all_data, file = filename, row.names = FALSE)
 
 }
+
+
+#' Get tsv for times
+#'
+#' In this function, the times file for CoaTrans program
+#' will contain only the sampled individuals (to mimic a real HIV study)
+#'
+#' @param ids Vector of samples IDs.
+#' @inheritParams create_sample_csv
+#'
+#' @details
+#' If a prefix is not provided, tab delimited file file will be saved as times.tsv
+#'
+#' @return Write data to tsv file.
+#' @export
+create_times_tsv <- function(ids, time_seq, seq_count, prefix = NULL){
+
+  IDPOP <- ids
+
+  if(length(time_seq) == 1){
+    TIME_SEQ <- rep(time_seq, length(IDPOP))
+  } else if (length(time_seq) == length(IDPOP)){
+    TIME_SEQ <- time_seq
+  }else if (length(time_seq) != length(IDPOP)){
+    stop("`time_seq` should be of length 1 or length of samples in
+         the transmission matrix")
+  }
+
+  all_data <- data.frame(IDPOP, TIME_SEQ)
+
+  if(seq_count > 1){
+    rows <- c(1:nrow(all_data))
+    times <- seq_count
+    all_data <- all_data[rep(rows, times),]
+  }
+
+  if(is.null(prefix)){
+    filename <- "times.tsv"
+  } else {
+    filename <- paste(prefix, "times.tsv", sep = "_")
+  }
+
+
+  write.table(x = all_data, file = filename, sep = "\t",
+              row.names = FALSE, col.names = FALSE)
+
+}
+
+
+#' Create transmission matrix tsv
+#'
+#' @description Create a transmission matrix file to be used with the
+#'    CoaTrans. CoaTrans. requires that seeds are included
+#'    in the file.
+#'
+#' @inheritParams create_sample_csv
+#' @param time_tr Time of transmission for seeds. The other time of transmission
+#'    should be provided in the tm dataframe.
+#'
+#' @details
+#' If a prefix is not provided, tsv file will be saved as transmissions.tsv
+#'
+#' @return Write data to tsv file.
+#' @export
+create_transmissions_tsv <- function(tm, time_tr, prefix = NULL){
+
+  seed_names <- setdiff(unique(tm$inf), unique(tm$sus))
+
+  if(length(time_tr) == 1){
+    seed_idtr <- data.frame(rep("None", length(seed_names)), seed_names,
+                            rep(1980, length(seed_names)))
+  }else if(length(time_tr)!= 1 & length(time_tr) == length(seed_names)){
+    seed_idtr <- data.frame(rep("None", length(seed_names)), seed_names, time_tr)
+  }else{
+    stop("`time_tr` should be of length 1 or length of number of seeds")
+  }
+
+
+  colnames(seed_idtr) <- c("IDTR", "IDREC", "TIME_TR")
+
+  #inf_sus <- data.frame(tm$sus, tm$inf, (tm$at * (1/365)))
+  sus_inf <- data.frame(tm$inf, tm$sus, tm$year)
+  colnames(sus_inf) <- c("IDTR", "IDREC", "TIME_TR")
+
+  all_data <- rbind(seed_idtr, sus_inf)
+
+  if(is.null(prefix)){
+    filename <- "transmissions.tsv"
+  } else {
+    filename <- paste(prefix, "transmissions.tsv", sep = "_")
+  }
+
+  write.table(x = all_data, file = filename, quote = FALSE,
+              sep = "\t", row.names = FALSE, col.names = FALSE)
+}
+
 
 
 #' @export

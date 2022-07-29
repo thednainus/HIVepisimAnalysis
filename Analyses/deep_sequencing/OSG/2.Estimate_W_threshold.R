@@ -1,7 +1,7 @@
 #Script to estimate the best W threshold to be use in subsequent analysis
 
 
-targz_files <- list.files(list.files(list.files(list.files("/Users/user/Desktop/Imperial/newHIVproject-01Aug2020/R_projects/Results_paper",
+targz_files <- list.files(list.files(list.files(list.files("/Users/user/Desktop/Imperial/newHIVproject-01Aug2020/R_projects/Results_paper/deepseq",
                          full.names = TRUE, pattern = "best_trajectories"),
                          full.names = TRUE),
                          full.names = TRUE),
@@ -17,9 +17,9 @@ for (i in 1:length(targz_files)){
   if(length(real_trans$donor_ID) != 0 ){
     params <- str_split(targz_files[i], pattern = "/")
 
-    real_trans["params"] <- params[[1]][10]
-    real_trans["rep"] <- params[[1]][11]
-    real_trans["migrants"] <- str_split(params[[1]][9], pattern = "_")[[1]][3]
+    real_trans["params"] <- params[[1]][11]
+    real_trans["rep"] <- params[[1]][12]
+    real_trans["migrants"] <- str_split(params[[1]][10], pattern = "_")[[1]][3]
 
 
 
@@ -54,3 +54,5 @@ mig250_2348 <- subset(real_trans_W_tm, migrants == "250migrants" & params == "pa
 mig500_2348 <- subset(real_trans_W_tm, migrants == "500migrants" & params == "params_2348")
 mig750_2348 <- subset(real_trans_W_tm, migrants == "750migrants" & params == "params_2348")
 
+ggplot(mig500_1067, aes(x=params_mig, y=infectorProbability, fill=migrants)) +
+  geom_boxplot()

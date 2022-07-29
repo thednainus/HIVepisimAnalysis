@@ -1,4 +1,6 @@
 # Get transmission matrix ----
+#In this script I get max of 15 pairs that represent a transmission pair in which
+#sample date of sus individual is time of infection + 1 month
 # and run VirusTreeSimulator
 # This code has been tested on a Mac OS and might not work on windows or linux
 
@@ -92,7 +94,9 @@ Software <- "java -jar /Applications/VirusTreeSimulator/VirusTreeSimulator-maste
 #  -t50 The time point, relative to the time of infection in backwards time, at
 # which the population is equal to half its final asymptotic value,
 # t50 in Ratman et al paper = -2 years
-parameters <- "-demoModel Logistic -N0 1 -growthRate 2.851904 -t50 -2"
+#parameters <- "-demoModel Logistic -N0 1 -growthRate 2.851904 -t50 -2 -forceCoalescence"
+parameters <- "-demoModel Logistic -N0 0.002739726 -growthRate 2.851904 -t50 -2 -forceCoalescence"
+parameters <- "-demoModel Constant -N0 1"
 
 #total number of years simulated
 years <-  41
@@ -159,76 +163,100 @@ newinf_per_year  <- sum(sim_df$incid.pop1[tail(sim_df$time, n=365)])
 newinf <- paste("newinf", newinf_per_year, sep="_")
 
 tm <- get_transmat(sim)
+tm["year"] <-days2years(tm$at, init_date = init_sim_date)
 
 
 if(!is.null(tm)){
 
-    # Get tip names in the form of ID_migrant
-    tip_names <- get_tipNames(tm, format = "migrant",
-                                   by_areas = area, max_value = max_value)
+  # Get tip names in the form of ID_migrant
+  tip_names <- get_tipNames(tm, format = "migrant",
+                            by_areas = area, max_value = max_value)
 
-    # check number of individual within "region"
-    # region is code as 1 and 21
-    tip_names_migrant_ID <- unlist(lapply(tip_names, function(x) str_split(x, "_")[[1]][2]))
+  # check number of individual within "region"
+  # region is code as 1 and 21
+  tip_names_migrant_ID <- unlist(lapply(tip_names, function(x) str_split(x, "_")[[1]][2]))
 
-    if(length(tip_names_migrant_ID) > 0){
+  if(length(tip_names_migrant_ID) > 0){
 
 
-      output <- paste("output_deepseq", "output", sep ="/")
-      #output <- paste(output, PLWHIV, newinf, sep = "_")
+    output <- paste("output_deepseq", "output", sep ="/")
+    #output <- paste(output, PLWHIV, newinf, sep = "_")
 
-      #inf file name for VirusTreeSimulator
-      inf_file <- paste(output, "_inf.csv", sep = "")
-      #sample file name for VirusTreeSimulator
-      sample_file <- paste(output, "_sample.csv", sep = "")
+    #inf file name for VirusTreeSimulator
+    inf_file <- paste(output, "_inf.csv", sep = "")
+    #sample file name for VirusTreeSimulator
+    sample_file <- paste(output, "_sample.csv", sep = "")
 
-      seed_names <- setdiff(unique(tm$inf), unique(tm$sus))
+    seed_names <- setdiff(unique(tm$inf), unique(tm$sus))
 
-      create_inf_csv(tm, time_tr = rep(0, length(seed_names)), prefix=output)
+    create_inf_csv2(tm, time_tr = rep(0, length(seed_names)), prefix=output)
 
-      # sample IDs and time of sampling
-        st_ids_region_all <- sampleIDs(perc = perc_pop_region, start_date = start_date_dec,
-                                     end_date = end_date_dec, art_init = art_init,
-                                     departure = dep, diag_info = diag_info,
-                                     origin = origin,
-                                     tm = tm, location = "region")
+    # sample IDs and time of sampling
+    st_ids_region_all <- sampleIDs(perc = perc_pop_region, start_date = start_date_dec,
+                                   end_date = end_date_dec, art_init = art_init,
+                                   departure = dep, diag_info = diag_info,
+                                   origin = origin,
+                                   tm = tm, location = "region")
 
-      #write proportion of sampled ids that were not in region anymore
-      prop_not_region <- nrow(st_ids_region_all[(st_ids_region_all$migrant == 2 |
+    #write proportion of sampled ids that were not in region anymore
+    prop_not_region <- nrow(st_ids_region_all[(st_ids_region_all$migrant == 2 |
                                                  st_ids_region_all$migrant == 12),])/nrow(st_ids_region_all)
 
-      #remove rows in which individuals are not in region anymore
-      #before or at time of sampling
-      st_ids_region <- st_ids_region_all[(st_ids_region_all$migrant == 1 |
+    #remove rows in which individuals are not in region anymore
+    #before or at time of sampling
+    st_ids_region <- st_ids_region_all[(st_ids_region_all$migrant == 1 |
                                           st_ids_region_all$migrant == 21 ),]
 
-      # sampled IDs are not on ART
-      # Sample 10 viruses per ID
-      # note that this is just to start the simulations
-      # but I should try to find real values for those
 
-      st_ids_region["date"] <- as.Date(date_decimal(st_ids_region$sampled_time))
-      st_ids_region["time_days"] <- as.numeric(st_ids_region$date - init_sim_date)
-      st_ids_region["time_years"] <- st_ids_region$time_days * (1/365)
-      st_ids_region["tip_name"] <- paste(st_ids_region$sampled_ID, st_ids_region$migrant,
-                                         sep = "_")
 
-      create_sample_csv2(ids = st_ids_region$sampled_ID,
-                         time_seq = st_ids_region$time_years,
-                         seq_count = 11, prefix = output)
+    list_samplesToAnalyse <- data.frame()
 
-      #Create directory named VTS (for VirusTreeSimulator) if it does not exist
-      if (!dir.exists("output_deepseq/vts/")) {
-        dir.create("output_deepseq/vts/")
+    #get 10 pairs the sample time of sus is the time of infection
+    for(i in 1:15){
+
+      print(i)
+      tm_sampled <- tm[tm$inf == st_ids_region$sampled_ID[i],]
+      if(nrow(tm_sampled) != 0){
+        pair_sus <- sample_n(tm_sampled, 1)
+        migrant_sus <- get_origin_at_samplingTime(tm, origin,
+                                                  pair_sus$sus,
+                                                  (pair_sus$year + 0.1))
+        new_data <- data.frame(sampled_ID = c(st_ids_region$sampled_ID[i], pair_sus$sus),
+                               sampled_time = c(st_ids_region$sampled_time[i], (pair_sus$year + 0.1)),
+                               migrant = c(st_ids_region$migrant[i], migrant_sus))
+        list_samplesToAnalyse <- rbind(list_samplesToAnalyse, new_data)
       }
-
-      #prefix with location of output directory to save results of VirusTreeSimulator
-      prefix_vts <-  "output_deepseq/vts/results_vts"
-
-      # Run VirusTreeSimulator
-      cmd <- paste(Software, parameters, inf_file, sample_file, prefix_vts, sep = " ")
-      system(cmd)
     }
+
+    # sampled IDs are not on ART
+    # Sample 10 viruses per ID
+    # note that this is just to start the simulations
+    # but I should try to find real values for those
+
+    st_ids_region <- list_samplesToAnalyse
+
+    st_ids_region["date"] <- as.Date(date_decimal(st_ids_region$sampled_time))
+    st_ids_region["time_days"] <- as.numeric(st_ids_region$date - init_sim_date)
+    st_ids_region["time_years"] <- st_ids_region$time_days * (1/365)
+    st_ids_region["tip_name"] <- paste(st_ids_region$sampled_ID, st_ids_region$migrant,
+                                       sep = "_")
+
+    create_sample_csv2(ids = st_ids_region$sampled_ID,
+                       time_seq = st_ids_region$time_years,
+                       seq_count = 101, prefix = output)
+
+    #Create directory named VTS (for VirusTreeSimulator) if it does not exist
+    if (!dir.exists("output_deepseq/vts/")) {
+      dir.create("output_deepseq/vts/")
+    }
+
+    #prefix with location of output directory to save results of VirusTreeSimulator
+    prefix_vts <-  "output_deepseq/vts/results_vts"
+
+    # Run VirusTreeSimulator
+    cmd <- paste(Software, parameters, inf_file, sample_file, prefix_vts, sep = " ")
+    system(cmd)
+  }
 
   #Create directory to save phylogenetic trees
   if (!dir.exists("output_deepseq/vts/merged_trees/")) {
@@ -247,34 +275,52 @@ if(!is.null(tm)){
   #trees_rootedge <- lapply(trees, add_root_edge,
   #                         total_sim_steps = as.numeric(last_sample_date - init_sim_date),
   #                         root.edge_value = 0)
-  trees_rootedge <- lapply(trees, add_root_edge2,
-                           root.edge_value = 0)
-  vts_tree <- merge_trees(trees_rootedge)
+  #add root.edge
+  if(length(trees) > 1){
+    trees_rootedge <- lapply(trees, add_root_edge2,
+                             root.edge_value = 0)
+    vts_tree <- merge_trees(trees_rootedge)
+  } else{
+    trees_rootedge <- add_root_edge2(tree = trees[[1]], root.edge_value = 0)
+    vts_tree <- trees_rootedge
+  }
+
+
 
   #now keep only one sequence per ID
   #to filter tree by infector probability
-  all_IDs <- grepl(pattern = "sampled_10", x = vts_tree$tip.label)
-  all_IDs <- setNames(all_IDs, vts_tree$tip.label)
-  toDrop <- all_IDs[all_IDs == FALSE]
+  #all_IDs <- grepl(pattern = "sampled_10", x = vts_tree$tip.label)
+  #all_IDs <- setNames(all_IDs, vts_tree$tip.label)
+  #toDrop <- all_IDs[all_IDs == FALSE]
   #to run the infector probability analysis
-  consensus_tree <- drop.tip(vts_tree, names(toDrop))
+  #consensus_tree <- drop.tip(vts_tree, names(toDrop))
 
   # Change tip names from vts format to ID_migrant format
   # change the tips names returned by VirusTreeSimulator to those tip_names
   # in the form of ID_migrant
-  tip_names_migrant <- st_ids_region$tip_name
-  consensus_tree$tip.label <- reorder_tip_names(tip_names_migrant, consensus_tree$tip.label)
+  #tip_names_migrant <- st_ids_region$tip_name
+  #consensus_tree$tip.label <- reorder_tip_names(tip_names_migrant, consensus_tree$tip.label)
 
 
   #now remove only sampled_11. I simulated 11 sequences per ID
   #because the detailed version of the virustreesimulator
   #output file when read into R generated a weird number of internal numbers
   #but removing some sequences, it fixes the number of internal nodes in the tree
-  all_IDs2 <- grepl(pattern = "sampled_11_", x = vts_tree$tip.label)
+  all_IDs2 <- grepl(pattern = "sampled_101", x = vts_tree$tip.label)
   all_IDs2 <- setNames(all_IDs2, vts_tree$tip.label)
   toDrop2 <- all_IDs2[all_IDs2 == TRUE]
   #to run the infector probability analysis
   tree_years <- drop.tip(vts_tree, names(toDrop2))
+
+
+  all_IDs1 <- grepl(pattern = "ID_140339", x = tree_years$tip.label)
+  all_IDs1 <- setNames(all_IDs1, tree_years$tip.label)
+  toDrop2 <- all_IDs1[all_IDs1 == FALSE]
+  #to run the infector probability analysis
+  tree_years1 <- drop.tip(tree_years, names(toDrop2))
+
+  fit <- mlskygrid(tree_years1, model=3)
+  plot( fit, logy=FALSE)
 
 
   #get tip names from VirusTreeSimulator tree
@@ -294,7 +340,7 @@ if(!is.null(tm)){
   sample_numbers <- unlist(lapply(tip_names_vts, function(x) paste("sample",
                                                                    str_split(x, pattern = "_")[[1]][4],
                                                                    sep = "_")
-    ))
+  ))
 
 
   #tree_years$tip.label <- paste(tip_names1, sample_numbers, "count_1", sep = "_")
@@ -310,7 +356,7 @@ if(!is.null(tm)){
 
   migrant_ID <- unlist(lapply(tree_years$tip.label,
                               function(x) ifelse(str_split(x, "_")[[1]][3] == "1" |
-                                                 str_split(x, "_")[[1]][3] == "21",
+                                                   str_split(x, "_")[[1]][3] == "21",
                                                  FALSE, TRUE)))
   if(sum(migrant_ID) != 0){
     stop("there are mix region and global samples together. Something wrong with
@@ -345,71 +391,13 @@ if(!is.null(tm)){
   sampleTimes <- setNames(sampleTimes, st_ids_region$tip_name)
 
 
-  # to calculate infector probabilities
-  # sampleTimes: must use years
-  # cd4s: named numeric vector, cd4 at time of sampling
-  # ehi: named logical vector, may be NA, TRUE if patient sampled with early HIV infection (6 mos )
-  # numberPeopleLivingWithHIV: scalar
-  # numberNewInfectionsPerYear: scalar
-
-
-  W <- phylo.source.attribution.hiv.msm(consensus_tree, sampleTimes[consensus_tree$tip.label],
-                                        cd4s = all_cd4s[consensus_tree$tip.label],
-                                        ehi = ehis[consensus_tree$tip.label],
-                                        numberPeopleLivingWithHIV  = totalPLWHIV,
-                                        numberNewInfectionsPerYear = newinf_per_year,
-                                        maxHeight = MH,
-                                        res = 1e3,
-                                        treeErrorTol = Inf)
-
-  #select W > 0.7 to run phyloscanner
-  #convert list to dataframe
-  W1 <- as.data.frame(W)
-
-
-
-  W1["donor_ID"] <- unlist(lapply(W$donor, function(x) str_split(x, pattern = "_")[[1]][1]))
-  W1["recip_ID"] <- unlist(lapply(W$recip, function(x) str_split(x, pattern = "_")[[1]][1]))
-  W1$donor_ID <- as.numeric(W1$donor_ID)
-  W1$recip_ID <- as.numeric(W1$recip_ID)
-
-
-  Wsub <- data.frame(donor_ID = W1$donor_ID, recip_ID = W1$recip_ID,
-                     infectorProbability = W1$infectorProbability)
-  Wsub$donor_ID <- as.integer(Wsub$donor_ID)
-  Wsub$recip_ID <- as.integer(Wsub$recip_ID)
-
-
-  #get individuals that seroconverted in region within the transmission matrix
-  tm_region <- subset(tm, infOrigin == "region" & susOrigin == "region")
-
-  #keep_only_rows that tips are in phylogenetic tree
-  rows_to_keep <- keep_row(df = tm_region, tree = consensus_tree)
-
-  if(!is.null(rows_to_keep)){
-    tm1 <- tm_region[rows_to_keep,]
-  } else{
-    #if there is no rows to keep, assign all values of tm1 to NA
-    tm1 <- tm_region[1,]
-    tm1[1,] <- NA
-  }
-
-  #create a dataframe similar to the Wsub to use with function semi_join
-  tm_all1 <- data.frame(donor_ID = tm1$inf, recip_ID = tm1$sus,
-                        infectorProbability = 1)
-
-  #get real transmissions
-  real_trans <- semi_join(Wsub, tm_all1, by = c("donor_ID", "recip_ID"))
-
-
-
   #Create directory named W (to save everything related to infector probability)
   # if it does not exist
-  if (!dir.exists("output_deepseq/vts/W")) {
-    dir.create("output_deepseq/vts/W")
+  if (!dir.exists("output_deepseq/vts/nonRandom")) {
+    dir.create("output_deepseq/vts/nonRandom")
   }
 
-  saveRDS(sampleTimes, paste("output_deepseq/vts/W/", "sampleTimes.RDS",sep=""))
+  saveRDS(sampleTimes, paste("output_deepseq/vts/nonRandom/", "sampleTimes.RDS",sep=""))
 
   deep_sequencing_processingnw <- paste("output_deepseq/vts/", "merged_trees_sampling",
                                         "_migrant_years_1_simple_", perc_pop_region,
@@ -418,21 +406,7 @@ if(!is.null(tm)){
   save(years, MH, max_value, init_sim_date, last_sample_date, start_date,
        end_date_dec, tm, st_ids_region, prop_not_region,
        consensus_tree, tree_years,
-       sampleTimes, all_cd4s, ehis, newinf_per_year, totalPLWHIV, W,
-       W1, tm_all1, real_trans,
+       sampleTimes, all_cd4s, ehis, newinf_per_year, totalPLWHIV,
        file = deep_sequencing_processingnw)
 
-  summaryW(sim = perc_pop_region, tm = tm, W,
-           tree = consensus_tree, code = "TrueTrees",
-           prefix = NULL, labels = TRUE)
-
 }
-
-#end of script
-end_time <- Sys.time()
-print("Simulation took:")
-end_time - start_time
-
-processing_network_time <- data.frame(start = start_time, end = end_time)
-saveRDS(processing_network_time, "processing_network_time_deepseq.RDS")
-
