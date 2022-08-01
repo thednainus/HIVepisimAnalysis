@@ -71,7 +71,7 @@ no_trees <- "--no-trees"
 
 # list directories
 # phyloscanner directory (with the bam files)
-phyloscanner_dir_fullPath <- paste(reps, "shiver_results", sep = "/")
+phyloscanner_dir_fullPath <- paste(reps, "shiver_results_35", sep = "/")
 
 BamsRefsAndIds <- paste(phyloscanner_dir_fullPath, "BamsRefsAndIDs.csv", sep = "/")
 
@@ -90,33 +90,34 @@ BamsRefsAndIds <- paste(phyloscanner_dir_fullPath, "BamsRefsAndIDs.csv", sep = "
 #get argument of window to generate alignmets
 #in the form of 800,1049 (will generate alignment from 800 to 1049)
 #read csv with window coordinate
-windows <- read.table(system.file("data/phyloscanner_windows_30Sep2021.csv",
-                                  package = "HIVepisimAnalysis"))
+window_width <- "340,"
+window_overlap <- "170,"
+start_pos <- "800,"
+end_pos <- "9400"
+#windows <- read.table(system.file("data/phyloscanner_windows_30Sep2021.csv",
+#                                package = "HIVepisimAnalysis"))
 
-for(i in 1:nrow(windows)){
+windows <- paste("--auto-window-params ", window_width, window_overlap, start_pos, end_pos, sep = "")
 
-  window <- paste("--windows", windows[i,], sep = " ")
-  parameters <- paste(BamsRefsAndIds, window, alignment_other_refs,
-                      paiwise_align_to, merge_pairs, quality_trim_ends,
-                      min_internal_quality,
-                      excision_ref, excision_coords,
-                      merging_threshold, min_read_count, no_trees, sep = " ")
-
-
-  #command_make_trees <- paste("cd", phyloscanner_dir_fullPath, "&&", make_trees, sep = " ")
-  #makeTrees_and_args <- paste(command_make_trees, parameters, sep = " ")
-  makeTrees_and_args <- paste(make_trees, parameters, sep = " ")
-
-  system(makeTrees_and_args)
+parameters <- paste(BamsRefsAndIds, windows, alignment_other_refs,
+                    paiwise_align_to, merge_pairs, quality_trim_ends,
+                    min_internal_quality,
+                    excision_ref, excision_coords,
+                    merging_threshold, min_read_count, no_trees, sep = " ")
 
 
+#command_make_trees <- paste("cd", phyloscanner_dir_fullPath, "&&", make_trees, sep = " ")
+#makeTrees_and_args <- paste(command_make_trees, parameters, sep = " ")
+makeTrees_and_args <- paste(make_trees, parameters, sep = " ")
 
-}
+system(makeTrees_and_args)
+
+
 
 
 
 #where to save files to mknew dir
-where2save_files <- paste(reps, "phyloscanner_ali", sep = "/")
+where2save_files <- paste(reps, "phyloscanner_ali_35_340", sep = "/")
 write.table(where2save_files, file = "where2save_files.txt", quote = FALSE, row.names = FALSE, col.names = FALSE)
 
 
@@ -131,3 +132,4 @@ write.table(where2save_files, file = "where2save_files.txt", quote = FALSE, row.
 #saveRDS(read_alignments_time, paste(as.character(row_number),
 #                                    "phyloscanner_read_alignments_time.RDS",
 #                                    sep = "_"))
+
