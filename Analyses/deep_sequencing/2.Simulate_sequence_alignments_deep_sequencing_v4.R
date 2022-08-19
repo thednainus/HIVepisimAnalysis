@@ -73,7 +73,7 @@ input_seqgen <- paste("output_deepseq/vts/merged_trees/input_SeqGen",
 vts_tree <- read.tree(tree_name)
 
 #remove tips from the tree that will not be analysed with phyloscanner
-all_IDs <- grepl(pattern = paste(tipsToAnalyse, collapse="|"),
+all_IDs <- grepl(pattern = paste(paste("ID", tipsToAnalyse, sep="_"), collapse="|"),
                  x = vts_tree$tip.label)
 all_IDs <- setNames(all_IDs, vts_tree$tip.label)
 

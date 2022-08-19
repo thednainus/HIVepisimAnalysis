@@ -1,7 +1,7 @@
 # Estimate phylogenetic tree using IQ-TREE
 # to use with phyloscanner
-# input file will be the read alignmnets created using script
-# 6.Run_phyloscanner_read_alignments_v2.R
+# input file will be the read alignments created using script
+# 6.Run_phyloscanner_read_alignments_v7.R
 
 #start of script
 start_time <- Sys.time()

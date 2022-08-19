@@ -1,5 +1,5 @@
 # map simulated Illumina reads using shiver (https://github.com/ChrisHIV/shiver)
-# this script uses subtype reference sequece for mapping
+# this script uses subtype B reference sequece for mapping
 
 # INFORMATION:
 # Because this is an analysis in the cluster, I will analyse each ID with shiver
@@ -23,12 +23,10 @@ library(stringr)
 prefix <- paste(getwd(), "/", sep = "")
 
 # list directories
-reads_output <- dir(path = "output_deepseq/vts/merged_trees/Illumina_reads",
-                  full.names = TRUE)
+reads_output <- dir(path = "shiver2/Illumina_reads",
+                    full.names = TRUE)
 # This will return the fastq files located in directory shiver2. These files
 # will be copied using the pbs file.
-#reads_output <- dir(path = "shiver2/Illumina_reads",
- #                 full.names = TRUE)
 reads_output <- reads_output[1]
 
 #location of shiver
@@ -70,12 +68,12 @@ if (!dir.exists(shiver_output)) {
 # We will get this ID from the fastq filename that is in the form of ID_427_1.fq.gz
 
 #list fq.gz files
-SID_shiver <- list.files(reads_output, full.names = TRUE)[1]
-#SID_shiver <- reads_output[1]
-#SID_shiver <- str_split(SID_shiver, "/")[[1]][3]
-SID_shiver <- str_split(SID_shiver, "/")[[1]][5]
-#SID_shiver <- str_split(SID_shiver, "_")[[1]][2]
-#SID_shiver <- paste("ID", SID_shiver, sep = "_")
+#SID_shiver <- list.files(reads_output, full.names = TRUE)[1]
+SID_shiver <- reads_output[1]
+SID_shiver <- str_split(SID_shiver, "/")[[1]][3]
+#SID_shiver <- str_split(SID_shiver, "/")[[1]][5]
+SID_shiver <- str_split(SID_shiver, "_")[[1]][2]
+SID_shiver <- paste("ID", SID_shiver, sep = "_")
 
 parameters1 <- paste(MyInitDir, config_file, loc_subtypeB, SID_shiver, sep = " ")
 command_shiver <- paste("cd", shiver_output, "&&", "bash", shiver_align_contigs, sep = " ")
@@ -97,15 +95,15 @@ SID_blast <- paste(SID_shiver, "blast", sep = ".")
 SID_blast_fullPath <- paste(shiver_output, SID_blast, sep = "/")
 
 reads_1 <- paste(SID_shiver, "1.fq.gz", sep = "_")
-reads_1_fullPath <- paste(getwd(),reads_output, reads_1, sep = "/")
+reads_1_fullPath <- paste(shiver_output, "Illumina_reads", reads_1, sep = "/")
 
 reads_2 <- paste(SID_shiver, "2.fq.gz", sep = "_")
-#reads_2_fullPath <- paste(shiver_output, "Illumina_reads", reads_2, sep = "/")
-reads_2_fullPath <- paste(getwd(), reads_output, reads_2, sep = "/")
+reads_2_fullPath <- paste(shiver_output, "Illumina_reads", reads_2, sep = "/")
+
 
 parameters2 <- paste(MyInitDir, config_file, loc_subtypeB, SID_shiver,
-                    SID_blast_fullPath, SID_wRefs_fullPath,
-                    reads_1_fullPath, reads_2_fullPath,  sep = " ")
+                     SID_blast_fullPath, SID_wRefs_fullPath,
+                     reads_1_fullPath, reads_2_fullPath,  sep = " ")
 
 command_shiver_map <- paste("cd", shiver_output, "&&", "bash", shiver_map_reads, sep = " ")
 shiver_and_args2 <- paste(command_shiver_map, parameters2, sep = " ")
@@ -119,4 +117,5 @@ print("Simulation took:")
 end_time - start_time
 
 shiver_time <- data.frame(start = start_time, end = end_time)
-saveRDS(shiver_time, "shiver_time.RDS")
+filename_shiver <- paste(SID_shiver, "shiver_time.RDS", sep = "_")
+saveRDS(shiver_time, filename_shiver)

@@ -38,7 +38,7 @@ classification <- "--allClassifications"
 
 
 #distance threshold
-#summarize all paiwise relationships in csv summary file
+#summarize all pairwise relationships in csv summary file
 # I did not used the value for distance threshold and phyloscanner then assumes
 #it is Inf (shows all transmission pairs)
 distance <- "--distanceThreshold 0.05"
@@ -49,9 +49,6 @@ distance <- "--distanceThreshold 0.05"
 norm_file_location <- paste(getwd(),"output_all_ByPosition.csv", sep ="/")
 #norm_file_location <- "/Users/user/Desktop/Imperial/newHIVproject-01Aug2020/shiver/HIV_REF_alignment/norm_resultscanner_ByPosition.csv"
 norm <- paste("--normRefFileName", norm_file_location, sep = " ")
-
-# downsamplig option
-#downsampling <- "--maxReadsPerHost 50"
 
 
 # list directories

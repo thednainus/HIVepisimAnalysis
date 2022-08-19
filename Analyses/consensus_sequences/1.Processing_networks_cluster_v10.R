@@ -20,7 +20,8 @@ library(dplyr)
 library(lubridate)
 
 # percentage of population to sampled IDs
-line_number <- as.numeric(commandArgs(trailingOnly = TRUE))
+params_run <- commandArgs(trailingOnly = TRUE)
+line_number <- as.numeric(params_run[1])
 
 params <- readRDS(system.file("data/simulations_imperial_cluster.RDS",
                               package = "HIVepisimAnalysis"))
@@ -44,10 +45,12 @@ perc_pop_global <- 0.02
 
 #untar tar file
 #simulation_dir <- "/Users/user/Desktop/Imperial/newHIVproject-01Aug2020/R_projects/Results_paper/best_trajectories_500migrants/params_1067/rep_28"
-#simulation_dir <- paste("/rds/general/user/fferre15/ephemeral/",
-#                         paste("params", params$params, sep = "_"),
-#                         "/",
-#                         paste("rep", params$rep, sep = "_"), sep = "")
+migration_variation <- as.character(params_run[2])
+migration_variation <- paste("best_trajectories", migration_variation, sep ="_")
+simulation_dir <- paste(paste("/rds/general/user/fferre15/ephemeral/", migration_variation, "/", sep = ""),
+                        paste("params", params$params, sep = "_"),
+                        "/",
+                        paste("rep", params$rep, sep = "_"), sep = "")
 simulation_data <- paste(simulation_dir, "sim_results.tar.gz", sep = "/")
 
 mkdir_info <- paste(simulation_dir,
@@ -75,7 +78,7 @@ untar(simulation_data)
 # to save all relevant results.
 
 # Location for VirusTreeSimulator. It should be changed to the correct location on your computer.
-#Software <- "java -jar VirusTreeSimulator/out/artifacts/VirusTreeSimulator_jar/VirusTreeSimulator.jar"
+#Software <- "java -jar VirusTreeSimulator-master/out/artifacts/VirusTreeSimulator_jar/VirusTreeSimulator.jar"
 Software <- "java -jar /Applications/VirusTreeSimulator/out/artifacts/VirusTreeSimulator_jar/VirusTreeSimulator.jar"
 #Software <- "java -jar VirusTreeSimulator-master/out/artifacts/VirusTreeSimulator_jar/VirusTreeSimulator.jar"
 # parameter for VirusTreeSimulator
@@ -178,7 +181,7 @@ seed_names <- setdiff(unique(tm$inf), unique(tm$sus))
 create_inf_csv(tm, time_tr = rep(1980, length(seed_names)), prefix = output)
 
 # sample IDs from region and time of sampling
-st_ids_region_all <- sampleIDs2(perc = perc_pop_region,
+st_ids_region_all <- sampleIDs(perc = perc_pop_region,
                                 start_date = start_date_dec,
                                 end_date = end_date_dec,
                                 art_init = art_init,
@@ -205,7 +208,7 @@ st_ids_region["tip_name"] <- paste(st_ids_region$sampled_ID,
                                    sep = "_")
 
 #sample IDs from global and time of sampling
-st_ids_global_all <- sampleIDs2(perc = perc_pop_global,
+st_ids_global_all <- sampleIDs(perc = perc_pop_global,
                                 start_date = decimal_date(init_sim_date),
                                 end_date = decimal_date(last_sample_date),
                                 art_init = art_init,

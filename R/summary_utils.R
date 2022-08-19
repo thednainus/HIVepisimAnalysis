@@ -450,14 +450,19 @@ get_difference <- function(df1, df2){
 #' @export
 summarize_trans <- function(data){
 
-  prop_linked <- sum(data$ancestry.tree.count)/(sum(data$both.exist)/nrow(data))
+  #browser()
+
+  #data <- subset(data, ancestry != "noAncestry")
+
+  #prop_linked <- sum(data$ancestry.tree.count)/(sum(data$both.exist)/nrow(data))
+  prop_linked <- sum(data[data$ancestry != "noAncestry",]$ancestry.tree.count)/(sum(data$both.exist)/nrow(data))
   linked <- ifelse(prop_linked >= 0.5, "yes", "no")
   transmission <- data[data$ancestry == "trans" | data$ancestry == "multiTrans",]
 
   if(nrow(transmission) != 0){
     prop_trans <- sum(transmission$ancestry.tree.count)/(sum(transmission$both.exist)/nrow(transmission))
     #pairs were considered linked if prop_trans >= 0.375
-    direction <- ifelse(prop_trans >= 0.375, "yes", "no")
+    direction <- ifelse(prop_linked >= 0.5 & prop_trans >= 0.375, "yes", "no")
 
 
   } else {
@@ -466,8 +471,11 @@ summarize_trans <- function(data){
 
   }
 
+  prop_noAncestry <- sum(data[data$ancestry == "noAncestry",]$ancestry.tree.count)/(sum(data$both.exist)/nrow(data))
+
   pair_information <- tibble(prop_trans = prop_trans,
                              prop_linked = prop_linked,
+                             prop_noAncestry = prop_noAncestry,
                              direction = direction,
                              linked = linked)
 
@@ -616,6 +624,7 @@ check_linked_transmissions <- function(df1, tm){
 
     #tm_subset_list <- lapply(tips_tm, function(x) tm[tm$sus == x | tm$inf == x ,])
 
+
     if(any(tm_subset_list[[1]]$inf %in% tm_subset_list[[2]]$inf) == TRUE |
        any(tm_subset_list[[1]]$inf %in% tm_subset_list[[2]]$sus) == TRUE) {
 
@@ -673,4 +682,63 @@ get_subset_tips <- function(tips, tm){
   return(tm_subset_list)
 }
 
+
+
+#' Summarize all results obtained with phyloscanner
+#'
+#' @param results_phylo Dataframe containing the values for number of transmission
+#'    pairs analysed, number of true pairs within the total pairs analysed, number
+#'    of true transmission pairs identified by phyloscanner, etc. by replicate,
+#'    combination of parameter values and migration rate.
+#'
+#' @return Tibble object with the total number of pairs analysed, total number of
+#'    true transmissions, total number of true positives as identified by phyloscanner,
+#'    total number of false negatives by phyloscanner, total number of swaps
+#'    (host.2 infected host.1, instead of host.1 infected host.2), and total
+#'    number of false positives as identified by phyloscanner.
+#'
+#' @details This function is used in the R script summarize_phyloscanner_results_v2
+#'    (check scripts in \href{https://github.com/thednainus/HIVepisimAnalysis/blob/main/Analyses/deep_sequencing/Result_analyses/summarize_phyloscanner_results_v2.R}{HIVepisimAnalysis GitHub})
+#' @export
+summarize_all_data <- function(results_phylo){
+
+  total <- results_phylo %>%
+    group_by(reps_groups) %>%
+    summarize(total_pairs_analysed = total_pairs_analysed[[1]],
+              true_pairs_all = true_pairs_all[[1]])
+
+  total_pairs_analysed <- sum(total$total_pairs_analysed)
+  total_true_pairs_all <- sum(total$true_pairs_all)
+
+  #total pairs that phyloscanner correctly identified the direction of transmissions
+  true_phyloscanner <- subset(results_phylo, trans == "true" & direction == "yes")
+
+  #total number of pairs that is a true transmission but phyloscanner identified
+  #as not
+  false_negative_phyloscanner <- subset(results_phylo, trans == "true" & direction == "no")
+
+  #total number of pairs that phyloscanner identified as a transmission pair
+  # but it is not
+  false_trans_phyloscanner <- subset(results_phylo, (trans != "true" | is.na(trans)) & direction == "yes")
+
+  #number of pairs that phyloscanner identified as correct direction of transmission
+  #but it is a swap
+  swap_phyloscanner <- subset(results_phylo, trans == "swap" & direction == "yes")
+  if(nrow(swap_phyloscanner) == 0){
+    swap_phyloscanner <- 0
+  } else {
+    swap_phyloscanner <- nrow(swap_phyloscanner)
+  }
+
+  summary_results <-data.frame(total_pairs_analysed = total_pairs_analysed,
+                               total_true_pairs_all = total_true_pairs_all,
+                               n_true_phyloscanner = nrow(true_phyloscanner),
+                               n_false_negative_phyloscanner = nrow(false_negative_phyloscanner),
+                               n_false_trans_phyloscanner = nrow(false_trans_phyloscanner),
+                               swap_phyloscanner = swap_phyloscanner
+  )
+
+  return(summary_results)
+
+}
 
