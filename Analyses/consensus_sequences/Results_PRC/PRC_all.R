@@ -1,12 +1,12 @@
-#plot results from prc curves
+#plot results from PRC (precision recall curve)
 library(DescTools)
 library(caret)
 
 
 #true trees
-true_tree_s1 <- readRDS("~/Box Sync/HIV_SanDiego/data_simulations/PRC_data_myScript/merged_replicate_data/prc_trueTrees_s1.RDS")
+true_tree_s1 <- readRDS("prc_trueTrees_s1.RDS")
 true_tree_s1 <- do.call(rbind, true_tree_s1)
-true_tree_s2 <- readRDS("~/Box Sync/HIV_SanDiego/data_simulations/PRC_data_myScript/merged_replicate_data/prc_trueTrees_s2.RDS")
+true_tree_s2 <- readRDS("prc_trueTrees_s2.RDS")
 true_tree_s2 <- do.call(rbind, true_tree_s2)
 
 #ML tree: 1000bp

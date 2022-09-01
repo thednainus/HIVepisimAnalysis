@@ -4,23 +4,23 @@ library(caret)
 
 
 #true trees
-true_tree_s1 <- readRDS("~/Box Sync/HIV_SanDiego/data_simulations/PRC_data_myScript/merged_replicate_data/prc_trueTrees_s1.RDS")
+true_tree_s1 <- readRDS("results_PRC/prc_trueTrees_s1.RDS")
 true_tree_s1 <- do.call(rbind, true_tree_s1)
-true_tree_s2 <- readRDS("~/Box Sync/HIV_SanDiego/data_simulations/PRC_data_myScript/merged_replicate_data/prc_trueTrees_s2.RDS")
+true_tree_s2 <- readRDS("results_PRC/prc_trueTrees_s2.RDS")
 true_tree_s2 <- do.call(rbind, true_tree_s2)
 
 #ML tree: 1000bp
-ml1000bp_s1 <- readRDS("~/Box Sync/HIV_SanDiego/data_simulations/PRC_data_myScript/merged_replicate_data/prc_ML1000bp_s1.RDS")
+ml1000bp_s1 <- readRDS("results_PRC/prc_ML1000bp_s1.RDS")
 ml1000bp_s1 <- do.call(rbind, ml1000bp_s1)
 
-ml1000bp_s2 <- readRDS("~/Box Sync/HIV_SanDiego/data_simulations/PRC_data_myScript/merged_replicate_data/prc_ML1000bp_s2.RDS")
+ml1000bp_s2 <- readRDS("results_PRC/prc_ML1000bp_s2.RDS")
 ml1000bp_s2 <- do.call(rbind, ml1000bp_s2)
 
 #ML tree: 10000bp
-ml10000bp_s1 <- readRDS("~/Box Sync/HIV_SanDiego/data_simulations/PRC_data_myScript/merged_replicate_data/prc_ML10000bp_s1.RDS")
+ml10000bp_s1 <- readRDS("results_PRC/prc_ML10000bp_s1.RDS")
 ml10000bp_s1 <- do.call(rbind, ml10000bp_s1)
 
-ml10000bp_s2 <- readRDS("~/Box Sync/HIV_SanDiego/data_simulations/PRC_data_myScript/merged_replicate_data/prc_ML10000bp_s2.RDS")
+ml10000bp_s2 <- readRDS("results_PRC/prc_ML10000bp_s2.RDS")
 ml10000bp_s2 <- do.call(rbind, ml10000bp_s2)
 
 
@@ -65,11 +65,19 @@ sampler2_2348_750mig <- subset(sampler2_2348, mig == "750")
 
 
 #plot sampler 1, param 1067, 500mig ----
+testando <- sampler1_1067_500mig %>%
+  group_by(code, sampler, param, perc, mig, param_mig_code) %>%
+  mutate(yintercept = positives/(positives + negatives),
+         yintercept0.5=(positives/(positives + negatives)) + 0.5,
+         pos = positives)
+
+sampler1_1067_500mig_1000bp <- subset(sampler1_1067_500mig, code == "1000bp" | code == "10000bp")
+
 quartz()
 sampler1_1067_500mig %>%
   group_by(code, sampler, param, perc, mig, param_mig_code) %>%
   ggplot(aes(x = recall, y = precision)) +
-  geom_abline(slope = 0, intercept= 0, linetype = 4) +
+  geom_hline(aes(yintercept = positives/(positives + negatives)), linetype = 4) +
   geom_line(aes(color = param_mig_code), size = 0.8) +
   facet_wrap(~ perc, scales = "free", ncol = 5) +
   theme_bw() +
@@ -82,12 +90,14 @@ sampler1_1067_500mig %>%
                                  '1067_500_10000bp'),
                       labels = c('True trees', 'ML 1,000bp', 'ML 10,000bp'))
 
+
+
 #plot sampler 1, param 2348, 500mig ----
 quartz()
 sampler1_2348_500mig %>%
   group_by(code, sampler, param, perc, mig, param_mig_code) %>%
   ggplot(aes(x = recall, y = precision)) +
-  geom_abline(slope = 0, intercept= 0, linetype = 4) +
+  geom_hline(aes(yintercept = positives/(positives + negatives)), linetype = 4) +
   geom_line(aes(color = param_mig_code), size = 0.8) +
   facet_wrap(~ perc, scales = "free", ncol = 5) +
   theme_bw() +
@@ -107,7 +117,7 @@ quartz()
 sampler1_1067_250mig %>%
   group_by(code, sampler, param, perc, mig, param_mig_code) %>%
   ggplot(aes(x = recall, y = precision)) +
-  geom_abline(slope = 1, intercept= 0, linetype = 4) +
+  geom_hline(aes(yintercept = positives/(positives + negatives)), linetype = 4) +
   geom_step(aes(color = param_mig_code), size = 0.8) +
   facet_wrap(~ perc, scales = "free", ncol = 5) +
   theme_bw() +
@@ -124,8 +134,8 @@ sampler1_1067_250mig %>%
 quartz()
 sampler1_2348_250mig %>%
   group_by(code, sampler, param, perc, mig, param_mig_code) %>%
-  ggplot(aes(x = FPR, y = TPR)) +
-  geom_abline(slope = 1, intercept= 0, linetype = 4) +
+  ggplot(aes(x = recall, y = precision)) +
+  geom_hline(aes(yintercept = positives/(positives + negatives)), linetype = 4) +
   geom_step(aes(color = param_mig_code), size = 0.8) +
   facet_wrap(~ perc, scales = "free", ncol = 5) +
   theme_bw() +
@@ -143,8 +153,8 @@ sampler1_2348_250mig %>%
 quartz()
 sampler1_1067_750mig %>%
   group_by(code, sampler, param, perc, mig, param_mig_code) %>%
-  ggplot(aes(x = FPR, y = TPR)) +
-  geom_abline(slope = 1, intercept= 0, linetype = 4) +
+  ggplot(aes(x = recall, y = precision)) +
+  geom_hline(aes(yintercept = positives/(positives + negatives)), linetype = 4) +
   geom_step(aes(color = param_mig_code), size = 0.8) +
   facet_wrap(~ perc, scales = "free", ncol = 5) +
   theme_bw() +
@@ -161,8 +171,8 @@ sampler1_1067_750mig %>%
 quartz()
 sampler1_2348_750mig %>%
   group_by(code, sampler, param, perc, mig, param_mig_code) %>%
-  ggplot(aes(x = FPR, y = TPR)) +
-  geom_abline(slope = 1, intercept= 0, linetype = 4) +
+  ggplot(aes(x = precision, y = recall)) +
+  geom_hline(aes(yintercept = positives/(positives + negatives)), linetype = 4) +
   geom_step(aes(color = param_mig_code), size = 0.8) +
   facet_wrap(~ perc, scales = "free", ncol = 5) +
   theme_bw() +
@@ -182,8 +192,8 @@ sampler1_2348_750mig %>%
 quartz()
 sampler2_1067_500mig %>%
   group_by(code, sampler, param, perc, mig, param_mig_code) %>%
-  ggplot(aes(x = FPR, y = TPR)) +
-  geom_abline(slope = 1, intercept= 0, linetype = 4) +
+  ggplot(aes(x = precision, y = recall)) +
+  geom_hline(aes(yintercept = positives/(positives + negatives)), linetype = 4) +
   geom_step(aes(color = param_mig_code), size = 0.8) +
   facet_wrap(~ perc, scales = "free", ncol = 5) +
   theme_bw() +
@@ -220,8 +230,8 @@ sampler2_2348_500mig %>%
 quartz()
 sampler2_1067_250mig %>%
   group_by(code, sampler, param, perc, mig, param_mig_code) %>%
-  ggplot(aes(x = FPR, y = TPR)) +
-  geom_abline(slope = 1, intercept= 0, linetype = 4) +
+  ggplot(aes(x = precision, y = recall)) +
+  geom_hline(aes(yintercept = positives/(positives + negatives)), linetype = 4) +
   geom_step(aes(color = param_mig_code), size = 0.8) +
   facet_wrap(~ perc, scales = "free", ncol = 5) +
   theme_bw() +
@@ -238,8 +248,8 @@ sampler2_1067_250mig %>%
 quartz()
 sampler2_2348_250mig %>%
   group_by(code, sampler, param, perc, mig, param_mig_code) %>%
-  ggplot(aes(x = FPR, y = TPR)) +
-  geom_abline(slope = 1, intercept= 0, linetype = 4) +
+  ggplot(aes(x = precision, y = recall)) +
+  geom_hline(aes(yintercept = positives/(positives + negatives)), linetype = 4) +
   geom_step(aes(color = param_mig_code), size = 0.8) +
   facet_wrap(~ perc, scales = "free", ncol = 5) +
   theme_bw() +
@@ -257,8 +267,8 @@ sampler2_2348_250mig %>%
 quartz()
 sampler2_1067_750mig %>%
   group_by(code, sampler, param, perc, mig, param_mig_code) %>%
-  ggplot(aes(x = FPR, y = TPR)) +
-  geom_abline(slope = 1, intercept= 0, linetype = 4) +
+  ggplot(aes(x = precision, y = recall)) +
+  geom_hline(aes(yintercept = positives/(positives + negatives)), linetype = 4) +
   geom_step(aes(color = param_mig_code), size = 0.8) +
   facet_wrap(~ perc, scales = "free", ncol = 5) +
   theme_bw() +
@@ -275,8 +285,8 @@ sampler2_1067_750mig %>%
 quartz()
 sampler2_2348_750mig %>%
   group_by(code, sampler, param, perc, mig, param_mig_code) %>%
-  ggplot(aes(x = FPR, y = TPR)) +
-  geom_abline(slope = 1, intercept= 0, linetype = 4) +
+  ggplot(aes(x = precision, y = recall)) +
+  geom_hline(aes(yintercept = positives/(positives + negatives)), linetype = 4) +
   geom_step(aes(color = param_mig_code), size = 0.8) +
   facet_wrap(~ perc, scales = "free", ncol = 5) +
   theme_bw() +

@@ -6,7 +6,7 @@ library(caret)
 
 get_roc_data <- function(df_data){
 
-  thresholds <- seq(from = 0, to = 1, by = 0.01)
+  thresholds <- seq(from = 0, to = 1, by = 0.001)
   rates <- lapply(thresholds, get_rates2, df_data)
   rates <- do.call(rbind, rates)
 
@@ -16,11 +16,11 @@ get_roc_data <- function(df_data){
 
 # True Trees: sampler 1----
 #for true trees
-mig250_true <- readRDS("~/Box Sync/HIV_SanDiego/data_simulations/sampler1/all_roc_data_s1_250mig.RDS")
+mig250_true <- readRDS("results_roc_simulations/sampler1/all_roc_data_s1_250mig.RDS")
 mig250_true["mig"] <- "250"
-mig500_true <- readRDS("~/Box Sync/HIV_SanDiego/data_simulations/sampler1/all_roc_data_s1_500mig.RDS")
+mig500_true <- readRDS("results_roc_simulations/sampler1/all_roc_data_s1_500mig.RDS")
 mig500_true["mig"] <- "500"
-mig750_true <- readRDS("~/Box Sync/HIV_SanDiego/data_simulations/sampler1/all_roc_data_s1_750mig.RDS")
+mig750_true <- readRDS("results_roc_simulations/sampler1/all_roc_data_s1_750mig.RDS")
 mig750_true["mig"] <- "750"
 true_trees <- rbind(mig250_true, mig500_true, mig750_true)
 
@@ -54,16 +54,16 @@ roc_true_trees <- trueTrees_df %>%
 
 
 
-saveRDS(roc_true_trees, "roc_trueTrees_s1.RDS")
+saveRDS(roc_true_trees, "roc_trueTrees_s1_250.RDS")
 
 rm(roc_true_trees)
 # True Trees: sampler 2----
 #for true trees
-mig250_true <- readRDS("~/Box Sync/HIV_SanDiego/data_simulations/sampler2/all_roc_data_s2_250mig.RDS")
+mig250_true <- readRDS("results_roc_simulations/sampler2/all_roc_data_s2_250mig.RDS")
 mig250_true["mig"] <- "250"
-mig500_true <- readRDS("~/Box Sync/HIV_SanDiego/data_simulations/sampler2/all_roc_data_s2_500mig.RDS")
+mig500_true <- readRDS("results_roc_simulations/sampler2/all_roc_data_s2_500mig.RDS")
 mig500_true["mig"] <- "500"
-mig750_true <- readRDS("~/Box Sync/HIV_SanDiego/data_simulations/sampler2/all_roc_data_s2_750mig.RDS")
+mig750_true <- readRDS("results_roc_simulations/sampler2/all_roc_data_s2_750mig.RDS")
 mig750_true["mig"] <- "750"
 true_trees <- rbind(mig250_true, mig500_true, mig750_true)
 
@@ -103,11 +103,11 @@ saveRDS(roc_true_trees, "roc_trueTrees_s2.RDS")
 # ML trees 1000bp: sampler 1----
 rm(roc_true_trees)
 
-mig250 <- readRDS("~/Box Sync/HIV_SanDiego/data_simulations/sampler1/all_roc_data_s1_1000bp_250mig.RDS")
+mig250 <- readRDS("results_roc_simulations/sampler1/all_roc_data_s1_1000bp_250mig.RDS")
 mig250["mig"] <- "250"
-mig500 <- readRDS("~/Box Sync/HIV_SanDiego/data_simulations/sampler1/all_roc_data_s1_1000bp_500mig.RDS")
+mig500 <- readRDS("results_roc_simulations/sampler1/all_roc_data_s1_1000bp_500mig.RDS")
 mig500["mig"] <- "500"
-mig750 <- readRDS("~/Box Sync/HIV_SanDiego/data_simulations/sampler1/all_roc_data_s1_1000bp_750mig.RDS")
+mig750 <- readRDS("results_roc_simulations/sampler1/all_roc_data_s1_1000bp_750mig.RDS")
 mig750["mig"] <- "750"
 ml_1000bp <- rbind(mig250, mig500, mig750)
 
@@ -143,16 +143,16 @@ roc_Ml1000bp <- ml_1000bp_df %>%
 
 
 
-saveRDS(roc_Ml1000bp, "roc_ML1000bp_s1.RDS")
+saveRDS(roc_Ml1000bp, "roc_ML1000bp_s1_t.RDS")
 
 
 # ML trees 10000bp: sampler 1----
 rm(mig250, mig500, mig750, roc_Ml1000bp, ml_1000bp_df)
-mig250 <- readRDS("~/Box Sync/HIV_SanDiego/data_simulations/sampler1/all_roc_data_s1_10000bp_250mig.RDS")
+mig250 <- readRDS("results_roc_simulations/sampler1/all_roc_data_s1_10000bp_250mig.RDS")
 mig250["mig"] <- "250"
-mig500 <- readRDS("~/Box Sync/HIV_SanDiego/data_simulations/sampler1/all_roc_data_s1_10000bp_500mig.RDS")
+mig500 <- readRDS("results_roc_simulations/sampler1/all_roc_data_s1_10000bp_500mig.RDS")
 mig500["mig"] <- "500"
-mig750 <- readRDS("~/Box Sync/HIV_SanDiego/data_simulations/sampler1/all_roc_data_s1_10000bp_750mig.RDS")
+mig750 <- readRDS("results_roc_simulations/sampler1/all_roc_data_s1_10000bp_750mig.RDS")
 mig750["mig"] <- "750"
 ml_10000bp <- rbind(mig250, mig500, mig750)
 
@@ -187,16 +187,16 @@ roc_Ml10000bp <- ml_10000bp_df %>%
 
 
 
-saveRDS(roc_Ml10000bp, "roc_ML10000bp_s1.RDS")
+saveRDS(roc_Ml10000bp, "roc_ML10000bp_s1_t.RDS")
 
 
 # ML trees 1000bp: sampler 2----
 rm(mig250, mig500, mig750, roc_Ml10000bp, ml_10000bp_df)
-mig250 <- readRDS("~/Box Sync/HIV_SanDiego/data_simulations/sampler2/all_roc_data_s2_1000bp_250mig.RDS")
+mig250 <- readRDS("results_roc_simulations/sampler2/all_roc_data_s2_1000bp_250mig.RDS")
 mig250["mig"] <- "250"
-mig500 <- readRDS("~/Box Sync/HIV_SanDiego/data_simulations/sampler2/all_roc_data_s2_1000bp_500mig.RDS")
+mig500 <- readRDS("results_roc_simulations/sampler2/all_roc_data_s2_1000bp_500mig.RDS")
 mig500["mig"] <- "500"
-mig750 <- readRDS("~/Box Sync/HIV_SanDiego/data_simulations/sampler2/all_roc_data_s2_1000bp_750mig.RDS")
+mig750 <- readRDS("results_roc_simulations/sampler2/all_roc_data_s2_1000bp_750mig.RDS")
 mig750["mig"] <- "750"
 ml_1000bp <- rbind(mig250, mig500, mig750)
 
@@ -238,11 +238,11 @@ saveRDS(roc_Ml1000bp, "roc_ML1000bp_s2.RDS")
 
 # ML trees 10000bp: sampler 2----
 rm(mig250, mig500, mig750, roc_Ml1000bp, ml_1000bp_df)
-mig250 <- readRDS("~/Box Sync/HIV_SanDiego/data_simulations/sampler2/all_roc_data_s2_10000bp_250mig.RDS")
+mig250 <- readRDS("results_roc_simulations/sampler2/all_roc_data_s2_10000bp_250mig.RDS")
 mig250["mig"] <- "250"
-mig500 <- readRDS("~/Box Sync/HIV_SanDiego/data_simulations/sampler2/all_roc_data_s2_10000bp_500mig.RDS")
+mig500 <- readRDS("results_roc_simulations/sampler2/all_roc_data_s2_10000bp_500mig.RDS")
 mig500["mig"] <- "500"
-mig750 <- readRDS("~/Box Sync/HIV_SanDiego/data_simulations/sampler2/all_roc_data_s2_10000bp_750mig.RDS")
+mig750 <- readRDS("results_roc_simulations/sampler2/all_roc_data_s2_10000bp_750mig.RDS")
 mig750["mig"] <- "750"
 ml_10000bp <- rbind(mig250, mig500, mig750)
 
@@ -281,28 +281,4 @@ roc_Ml10000bp <- ml_10000bp_df %>%
 saveRDS(roc_Ml10000bp, "roc_ML10000bp_s2.RDS")
 
 
-roc_treeTrees %>%
-  group_by(code, param, perc, mig, param_mig, specificity) %>%
-  ggplot(aes(x = 1 - specificity, y = sensitivity)) +
-  geom_abline(slope = 1, intercept= 0, linetype = 4) +
-  geom_step(aes(color=param_mig)) +
-  facet_wrap(~ perc, scales = "free", ncol = 4) +
-  theme_bw() +
-  theme(legend.position = c(0.8, 0.2))
 
-
-
-pooled_sens_spec %>%
-  group_by(model, specificity) %>%
-  summarize(lquartile = quantile(sensitivity, prob=0.25),
-            uquartile = quantile(sensitivity, prob=0.75),
-            sensitivity = median(sensitivity),
-            .groups="drop") %>%
-  ggplot(aes(x=1-specificity, y=sensitivity,
-             ymin=lquartile, ymax=uquartile))+
-  geom_ribbon(alpha=0.25, aes(fill=model)) +
-  geom_step(aes(color=model)) +
-  theme_classic() +
-  theme(legend.position = c(0.8, 0.2))
-
-ggsave("figures/roc_curve.tiff", width=5, height=5)

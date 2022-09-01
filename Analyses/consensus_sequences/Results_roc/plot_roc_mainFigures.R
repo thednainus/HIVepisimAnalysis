@@ -4,23 +4,23 @@ library(caret)
 
 
 #true trees
-true_tree_s1 <- readRDS("~/Box Sync/HIV_SanDiego/data_simulations/ROC_data_myScript/merged_replicate_data/roc_trueTrees_s1.RDS")
+true_tree_s1 <- readRDS("results_roc_simulations/roc_trueTrees_s1.RDS")
 true_tree_s1 <- do.call(rbind, true_tree_s1)
-true_tree_s2 <- readRDS("~/Box Sync/HIV_SanDiego/data_simulations/ROC_data_myScript/merged_replicate_data/roc_trueTrees_s2.RDS")
+true_tree_s2 <- readRDS("results_roc_simulations/roc_trueTrees_s2.RDS")
 true_tree_s2 <- do.call(rbind, true_tree_s2)
 
 #ML tree: 1000bp
-ml1000bp_s1 <- readRDS("~/Box Sync/HIV_SanDiego/data_simulations/ROC_data_myScript/merged_replicate_data/roc_ML1000bp_s1.RDS")
+ml1000bp_s1 <- readRDS("results_roc_simulations/roc_ML1000bp_s1.RDS")
 ml1000bp_s1 <- do.call(rbind, ml1000bp_s1)
 
-ml1000bp_s2 <- readRDS("~/Box Sync/HIV_SanDiego/data_simulations/ROC_data_myScript/merged_replicate_data/roc_ML1000bp_s2.RDS")
+ml1000bp_s2 <- readRDS("results_roc_simulations/roc_ML1000bp_s2.RDS")
 ml1000bp_s2 <- do.call(rbind, ml1000bp_s2)
 
 #ML tree: 10000bp
-ml10000bp_s1 <- readRDS("~/Box Sync/HIV_SanDiego/data_simulations/ROC_data_myScript/merged_replicate_data/roc_ML10000bp_s1.RDS")
+ml10000bp_s1 <- readRDS("results_roc_simulations/roc_ML10000bp_s1.RDS")
 ml10000bp_s1 <- do.call(rbind, ml10000bp_s1)
 
-ml10000bp_s2 <- readRDS("~/Box Sync/HIV_SanDiego/data_simulations/ROC_data_myScript/merged_replicate_data/roc_ML10000bp_s2.RDS")
+ml10000bp_s2 <- readRDS("results_roc_simulations/roc_ML10000bp_s2.RDS")
 ml10000bp_s2 <- do.call(rbind, ml10000bp_s2)
 
 
@@ -309,8 +309,8 @@ sampler1["param_mig_code_perc"] <- paste(sampler1$param,
                                          sep = "_")
 
 sampler1_AUC <- sampler1
-sampler1_AUC["FPR"] <- 1 - sampler1_AUC$specificity
-sampler1_AUC["TPR"] <- sampler1_AUC$sensitivity
+#sampler1_AUC["FPR"] <- 1 - sampler1_AUC$specificity
+#sampler1_AUC["TPR"] <- sampler1_AUC$sensitivity
 
 auc_sampler1 <- sampler1_AUC %>%
   group_by(param, param_mig_code, mig, code, perc, param_mig_code_perc) %>%
@@ -330,8 +330,8 @@ sampler2["param_mig_code_perc"] <- paste(sampler2$param,
                                          sep = "_")
 
 sampler2_AUC <- sampler2
-sampler2_AUC["FPR"] <- 1 - sampler2_AUC$specificity
-sampler2_AUC["TPR"] <- sampler2_AUC$sensitivity
+#sampler2_AUC["FPR"] <- 1 - sampler2_AUC$specificity
+#sampler2_AUC["TPR"] <- sampler2_AUC$sensitivity
 
 auc_sampler2 <- sampler2_AUC %>%
   group_by(param, param_mig_code, mig, code, perc, param_mig_code_perc) %>%

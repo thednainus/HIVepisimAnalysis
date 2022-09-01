@@ -183,6 +183,9 @@ get_rates2 <- function(threshold, df_true, byReplicate = FALSE){
   df_true$labels <- as.character(df_true$labels)
   df_true$labels <- as.factor(df_true$labels)
 
+  positives <- sum(df_true$labels == 1)
+  negatives <- length(df_true$labels) - positives
+
   #check whether the data can be used with the function caret:confusionMatrix
 
   check_data_cm <- check_data_cm(data = df_true$pred,
@@ -199,9 +202,20 @@ get_rates2 <- function(threshold, df_true, byReplicate = FALSE){
     #false positive rate
     FPR <- 1 - cm$byClass[[2]]
 
+    TN <- cm$table[1] #true negative
+    FP <- cm$table[2] #false positive
+    FN <- cm$table[3] #false negative
+    TP <- cm$table[4] #true positive
+
     #browser()
 
     rates <- data.frame(threshold = threshold, TPR = TPR, FPR = FPR,
+                        positives = positives,
+                        negatives = negatives,
+                        TN = TN,
+                        FP = FP,
+                        FN = FN,
+                        TP = TP,
                         param = param, rep = rep,
                         perc = perc, code = code,
                         sampler = sampler, mig = mig)
@@ -209,6 +223,7 @@ get_rates2 <- function(threshold, df_true, byReplicate = FALSE){
   }
 
   if(check_data_cm == "not_ok"){
+
 
     rates <- data.frame(threshold = threshold, TPR = NA, FPR = NA,
                         param = param, rep = rep,
@@ -315,6 +330,9 @@ get_precision_recall <- function(threshold, df_true, byReplicate = FALSE){
   df_true$labels <- as.character(df_true$labels)
   df_true$labels <- as.factor(df_true$labels)
 
+  positives <- sum(df_true$labels == 1)
+  negatives <- length(df_true$labels) - positives
+
   #check whether the data can be used with the function caret:confusionMatrix
 
   #check_data_cm <- check_data_cm(data = df_true$pred,
@@ -335,8 +353,11 @@ get_precision_recall <- function(threshold, df_true, byReplicate = FALSE){
 
     #browser()
 
+
     rates <- data.frame(threshold = threshold, precision = precision,
                         recall = recall,
+                        positives = positives,
+                        negatives = negatives,
                         param = param, rep = rep,
                         perc = perc, code = code,
                         sampler = sampler, mig = mig)
@@ -345,8 +366,11 @@ get_precision_recall <- function(threshold, df_true, byReplicate = FALSE){
 
   if(check_data_cm == "not_ok"){
 
+
     rates <- data.frame(threshold = threshold, precision = precision,
                         recall = recall,
+                        positives = positives,
+                        negatives = negatives,
                         param = param, rep = rep,
                         perc = perc, code = code,
                         sampler = sampler, mig = mig)
@@ -462,12 +486,12 @@ summarize_trans <- function(data){
   if(nrow(transmission) != 0){
     prop_trans <- sum(transmission$ancestry.tree.count)/(sum(transmission$both.exist)/nrow(transmission))
     #pairs were considered linked if prop_trans >= 0.375
-    direction <- ifelse(prop_linked >= 0.5 & prop_trans >= 0.375, "yes", "no")
+    directness <- ifelse(prop_linked >= 0.5 & prop_trans >= 0.375, "yes", "no")
 
 
   } else {
     prop_trans <- 0
-    direction <- "no"
+    directness <- "no"
 
   }
 
@@ -476,7 +500,7 @@ summarize_trans <- function(data){
   pair_information <- tibble(prop_trans = prop_trans,
                              prop_linked = prop_linked,
                              prop_noAncestry = prop_noAncestry,
-                             direction = direction,
+                             directness = directness,
                              linked = linked)
 
   return(pair_information)
@@ -541,56 +565,82 @@ summarize_trans_compl <- function(data){
 #'
 #' @param df1 Dataframe containing information of summarized results obtained
 #'    with phyloscanner after running the function summarize_trans.
-#' @param df2 Dataframe containing information of the true transmissions.
+#' @param tm Dataframe containing information of the transmission matrix.
 #'
 #' @return Dataframe with a new column "trans" with only the individuals that
 #'    represent a true transmission with correct direction of transmission.
 #'    The value for column "trans" will be "true" (for true transmission).
 #' @export
-check_true_transmissions <- function(df1, df2){
+check_true_transmissions <- function(df1, tm){
 
 
-  pairs <- paste(df2$host.1, df2$host.2, sep = ",")
+  #pairs <- paste(df2$host.1, df2$host.2, sep = ",")
 
-  df1$hosts_to_check <- paste(df1$host.1, df1$host.2, sep = ",")
+  #df1$hosts_to_check <- paste(df1$host.1, df1$host.2, sep = ",")
 
+  true_transmissions <- tm[tm$inf == str_split(df1$host.1, "_")[[1]][2] &
+                             tm$sus == str_split(df1$host.2, "_")[[1]][2],]
 
-  true_transmissions <- df1[df1$hosts_to_check %in% pairs,][,1:6]
-  true_transmissions["trans"] <- "true"
+  if(nrow(true_transmissions) == 0){
+    df1["trans"] <- "false"
 
-  return(true_transmissions)
+  }else if(nrow(true_transmissions) == 1){
+    df1["trans"] <- "true"
+
+  }else if(nrow(true_transmissions) > 1) {
+    stop(print(nrow(true_transmissions)))
+  }
+
+  return(df1)
 
 }
 
 
-
-#' Check whether a pair of individuals are linked and represent a direct
-#' transmission.
-#'
+#' Check whether a pair of individuals represent a transmission pair.
 #'
 #' This function will check whether a pair of individuals (host.1 and host.2)
-#' represent a true transmission from host.2 to host.1 independent of phyloscanner
-#' results.
+#' represent a transmission pair from host.1 to host.2 or host.2 to host.1
+#' independent of phyloscanner results.
 #'
-#' @inheritParams check_true_transmissions
+#' @param df1 Dataframe containing information of summarized results obtained
+#'    with phyloscanner after running the function summarize_trans.
+#' @param tm Dataframe containing information of for the transmission matrix.
 #'
-#' @return Dataframe with a new column "trans" with only the individuals that
-#'    represent a "swap" transmission.
-#'    The value for column "trans" will be "swap" (for transmission from
-#'    host.2 to host.1).
+#' @return Dataframe with a new column "real_pair" that take the value "true"
+#'    (for a true transmission pair independent of directness,
+#'    which means host.1 transmitted to host.2 or host.2 transmitted to host.1).
+#'    It will also have another column "time_trans" for the time of transmission
+#'    of a real pair. If a pair is not a real transmission pair, than the value
+#'    for time_trans will be "NA".
 #' @export
-check_swap_transmissions <- function(df1, df2){
+check_true_pair <- function(df1, tm){
 
 
-  pairs <- paste(df2$host.1, df2$host.2, sep = ",")
+  df1["inf"] <- str_split(df1$host.1, "_")[[1]][2]
+  df1["sus"] <- str_split(df1$host.2, "_")[[1]][2]
 
-  df1$hosts_to_check <- paste(df1$host.1, df1$host.2, sep = ",")
+  pairs <- tm[(tm$sus == df1$sus & tm$inf == df1$inf) |
+                (tm$sus == df1$inf & tm$inf == df1$sus),]
 
+  if(nrow(pairs) == 1){
 
-  transmissions <- df1[df1$hosts_to_check %in% pairs,][,1:6]
-  transmissions["trans"] <- "swap"
+    df1["real_pair"] <- "yes"
+    df1["time_trans"] <- pairs$year
 
-  return(transmissions)
+  }else if(nrow(pairs) == 0){
+
+    df1["real_pair"] <- "no"
+    df1["time_trans"] <- NA
+
+  }else{
+    #if more than one row appears in the dataframe pairs
+    #something is wrong and should be further investigated.
+    # This is because in my transmission model I only allowed infection from an
+    #infected individual to a susceptible individual.
+    stop(print(nrow))
+  }
+
+  return(df1[c(1:7,10:11)])
 
 }
 
@@ -721,6 +771,7 @@ summarize_all_data <- function(results_phylo){
   # but it is not
   false_trans_phyloscanner <- subset(results_phylo, (trans != "true" | is.na(trans)) & direction == "yes")
 
+
   #number of pairs that phyloscanner identified as correct direction of transmission
   #but it is a swap
   swap_phyloscanner <- subset(results_phylo, trans == "swap" & direction == "yes")
@@ -739,6 +790,131 @@ summarize_all_data <- function(results_phylo){
   )
 
   return(summary_results)
+
+}
+
+#' Add observed values for phyloscanner results
+#'
+#' @param df1
+#'
+#' @return dataframe with the added observed values
+#' @details   If observed value is TP,(true positives), it means that
+#'    phyloscanner correctly identified the transmission pair. If observed value
+#'    is FP (false positives), phyloscanner incorrectly identify the transmission
+#'    pair. If observed value is FN (false negative) it means it is a true
+#'    transmission pair, but phyloscanner was not able to identify it. If
+#'    observed value is TN (true negative), it means it is not a transmission
+#'    pair and phylosvanner correctly identified as not a transmission pair.
+#' @export
+add_observed_values <- function(df1){
+
+  df1$observed <- ""
+
+  df1$observed[df1$directness == "yes" &
+                 df1$linked == "yes" &
+                 df1$trans == "true"] <- "TP"
+
+  df1$observed[df1$directness == "no" &
+                 df1$linked == "yes" &
+                 df1$trans == "true"] <- "FN"
+
+  df1$observed[df1$directness == "no" &
+                 df1$linked == "no" &
+                 df1$trans == "true"] <- "FN"
+
+  df1$observed[df1$directness == "no" &
+                 df1$linked == "no" &
+                 (is.na(df1$trans) | df1$trans == "swap")] <- "TN"
+
+  df1$observed[df1$directness == "no" &
+                 (df1$linked == "yes" | is.na(df1$linked)) &
+                 (is.na(df1$trans) | df1$trans == "swap")] <- "TN"
+
+  df1$observed[df1$directness == "yes" &
+                 df1$linked == "yes" &
+                 (is.na(df1$trans) | df1$trans == "swap")] <- "FP"
+
+  return(df1)
+
+}
+
+#' Add observed values for phyloscanner results
+#'
+#' @param df1
+#'
+#' @return dataframe with the added observed values
+#' @details If observed value is TP (true positives), it means that
+#'    phyloscanner correctly identified a transmission pair (independent of
+#'    whether A infected B or B infected A). If observed value
+#'    is FP (false positives), phyloscanner incorrectly identify a transmission
+#'    pair. If observed value is FN (false negative), it means it is a true
+#'    transmission pair, but phyloscanner was not able to identify it. If
+#'    observed value is TN (true negative), it means it is not a transmission
+#'    pair and phyloscanner correctly identified it as not a transmission pair.
+#' @export
+add_observed_values_direction <- function(df1){
+
+  df1$observed <- ""
+
+  df1$observed[df1$real_pair == "yes" &
+                 df1$linked == "yes"] <- "TP"
+
+  df1$observed[df1$real_pair == "no" &
+                 df1$linked == "yes"] <- "FP"
+
+  df1$observed[df1$real_pair == "yes" &
+                 df1$linked == "no"] <- "FN"
+
+  df1$observed[df1$real_pair == "no" &
+                 df1$linked == "no"] <- "TN"
+
+
+
+  return(df1)
+
+}
+
+#' Function to add the sampled times for transmission pairs
+#'
+#' @param df1 dataframe containing information of transmission pairs.
+#' @param sampled_times dataframe containing information of sampled times
+#'    for IDs in df1.
+#'
+#' @return dataframe with added information of the sampled times for donor
+#'    (infected individual) and recipient (susceptible individual).
+#' @details This function will adataframe composed of a single row and check
+#'    whether it represents a transmission pair (independent of A transmitted
+#'    to B or B transmitted to A). If it is a transmision pair will add to the
+#'    dataframe the sampled times of infected and susceptible individuals.
+#'    If not a transmission pair, than the value of NA will be added to the
+#'    dataframe.
+#' @export
+add_sampled_times <- function(df1, sampled_times){
+
+  if(df1$trans == "true"){
+
+    #host.1 is the donor
+    df1["st_donor_ID"] <- sampled_times[sampled_times$sampled_ID == str_split(df1$host.1, "_")[[1]][2],]$sampled_time
+    df1["st_recip_ID"] <- sampled_times[sampled_times$sampled_ID == str_split(df1$host.2, "_")[[1]][2],]$sampled_time
+
+
+  } else if(df1$trans == "false" & df1$real_pair == "yes"){
+
+    #host.2 in this case is the donor
+    df1["st_donor_ID"] <- sampled_times[sampled_times$sampled_ID == str_split(df1$host.2, "_")[[1]][2],]$sampled_time
+    df1["st_recip_ID"] <- sampled_times[sampled_times$sampled_ID == str_split(df1$host.1, "_")[[1]][2],]$sampled_time
+
+
+  } else if(df1$real_pair == "no"){
+    df1["st_donor_ID"] <- NA
+    df1["st_recip_ID"] <- NA
+
+  }
+
+
+  return(df1)
+
+
 
 }
 
