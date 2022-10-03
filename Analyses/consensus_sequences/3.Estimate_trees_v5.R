@@ -74,8 +74,8 @@ list_files <- list.files(paste(data_location, "output/vts/alignments", sep = "/"
 list_sampleTimes <- list.files(paste(data_location, "output/vts/W", sep = "/"),
                                pattern = ".RData", full.names = TRUE)
 
-list_sampleTimes <- list.files("output/vts/W",
-                               pattern = ".RData", full.names = TRUE)
+#list_sampleTimes <- list.files("output/vts/W",
+#                               pattern = ".RData", full.names = TRUE)
 
 #make dir to save iqtree
 iqtree_dirname <- paste("output/vts/alignments/iqtree_results_", seq_length, sep = "")

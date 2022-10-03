@@ -15,9 +15,10 @@ init_sim_date <- ymd("1980-01-01")
 
 phyloscanner_results <- data.frame()
 
+#common_dir <- "/Users/user/Desktop/Imperial/newHIVproject-01Aug2020/R_projects/Results_paper/deepseq/W0.01"
 common_dir <- "/Users/user/Desktop/Imperial/newHIVproject-01Aug2020/R_projects/Results_paper/deepseq"
 
-all_dirs <- list.files(list.files(list.files(common_dir, full.names = TRUE),
+all_dirs <- list.files(list.files(list.files(common_dir, full.names = TRUE, pattern = "best_trajectories_*"),
                                   full.names = TRUE),
                        full.names = TRUE)
 
@@ -39,17 +40,39 @@ for(i in 1:length(all_dirs)){
   #print(all_dirs[i])
 
   params <- str_split(phyloscanner_dir, pattern = "/")
-  mig <- str_split(params[[1]][10], pattern = "_")[[1]][3]
-  param <- str_split(params[[1]][11], pattern = "_")[[1]][2]
-  rep <- str_split(params[[1]][12], pattern = "_")[[1]][2]
+
+  if(params[[1]][10] == "W0.01" ){
+    mig <- str_split(params[[1]][11], pattern = "_")[[1]][3]
+    param <- str_split(params[[1]][12], pattern = "_")[[1]][2]
+    rep <- str_split(params[[1]][13], pattern = "_")[[1]][2]
+  } else {
+    mig <- str_split(params[[1]][10], pattern = "_")[[1]][3]
+    param <- str_split(params[[1]][11], pattern = "_")[[1]][2]
+    rep <- str_split(params[[1]][12], pattern = "_")[[1]][2]
+  }
 
   if(!rep %in% reps_not_analysed){
-    print(rep)
-    filename <- "processing_network_results.tar.gz"
+      print(rep)
+      filename <- "processing_network_results.tar.gz"
 
-    #load transmission matrix
-    untar(paste(all_dirs[i], filename, sep = "/"))
+
+    dirs <- str_split(all_dirs[i], pattern = "/")
+
+
+    if(dirs[[1]][10] == "W0.01" ){
+      dir_location <- paste(str_split(all_dirs[i], pattern = "/")[[1]][c(1:9,11:13)], collapse = "/")
+      filename <- paste(dir_location, filename, sep = "/")
+      print(filename)
+
+      #load transmission matrix
+      untar(filename)
+    }else{
+      #load transmission matrix
+      untar(paste(all_dirs[i], filename, sep = "/"))
+    }
+
     load("output_deepseq/vts/merged_trees_sampling_migrant_years_1_simple_0.9.RData")
+
 
     #get all pairs in which W >= 0.80
     #W_80 <- W1[W1$infectorProbability >= threshold,]
@@ -181,9 +204,9 @@ for(i in 1:length(all_dirs)){
 
 #I will use the script below to create a function to sumarize the data
 
+saveRDS(all_phyloscanner_results, "all_phyloscanner_results_test_W80.RDS")
 
-
-all_phyloscanner_results <- readRDS("all_phyloscanner_results_test2.RDS")
+all_phyloscanner_results <- readRDS("all_phyloscanner_results_test3.RDS")
 all_phyloscanner_results["group"] <- paste(all_phyloscanner_results$param,
                                            all_phyloscanner_results$mig,
                                            sep = "_")
@@ -205,9 +228,35 @@ results_all_phylo <- all_phyloscanner_results %>%
          total_TP, total_FP, total_TN, total_FN) %>%
   distinct()
 
+
+
+
 results_all_phylo2 <- all_phyloscanner_results %>%
   group_by(group) %>%
   group_modify(~ summarize_all_data(.x))
+
+
+
+direction_only["group"] <- paste(direction_only$param,
+                                 direction_only$mig,
+                                           sep = "_")
+direction_only["reps_groups"] <- paste(direction_only$mig,
+                                       direction_only$param,
+                                       direction_only$rep,
+                                                 sep = "_")
+
+results_all_phylo <- direction_only %>%
+  group_by(group) %>%
+  mutate(precision = sum(observed == "TP")/(sum(observed == "TP") + sum(observed == "FP")),
+         sensitivity = sum(observed == "TP")/(sum(observed == "TP") + sum(observed == "FN")),
+         specificity = sum(observed == "TN")/(sum(observed == "TN") + sum(observed == "FP")),
+         total_TP = sum(observed == "TP"),
+         total_FP = sum(observed == "FP"),
+         total_TN = sum(observed == "TN"),
+         total_FN = sum(observed == "FN")) %>%
+  select(group, precision, sensitivity, specificity,
+         total_TP, total_FP, total_TN, total_FN) %>%
+  distinct()
 
 
 summarize_all_data(all_phyloscanner_results)
