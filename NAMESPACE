@@ -2,6 +2,7 @@
 
 export(add_observed_values)
 export(add_observed_values_direction)
+export(add_observed_values_directness)
 export(add_root_edge)
 export(add_root_edge2)
 export(add_sampled_times)

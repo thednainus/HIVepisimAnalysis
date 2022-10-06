@@ -755,7 +755,7 @@ summarize_all_data <- function(results_phylo){
   total <- results_phylo %>%
     group_by(reps_groups) %>%
     summarize(total_pairs_analysed = total_pairs_analysed[[1]],
-              true_pairs_all = true_pairs_all[[1]])
+              true_pairs_all = sum(real_pair == "yes"))
 
   total_pairs_analysed <- sum(total$total_pairs_analysed)
   total_true_pairs_all <- sum(total$true_pairs_all)
@@ -838,7 +838,7 @@ add_observed_values <- function(df1){
 
 }
 
-#' Add observed values for phyloscanner results
+#' Add observed values for phyloscanner results for direction
 #'
 #' @param df1
 #'
@@ -867,6 +867,45 @@ add_observed_values_direction <- function(df1){
 
   df1$observed[df1$real_pair == "no" &
                  df1$linked == "no"] <- "TN"
+
+
+
+  return(df1)
+
+}
+
+
+#' Add observed values for phyloscanner results for directness
+#'
+#' @param df1
+#'
+#' @return dataframe with the added observed values
+#' @details If observed value is TP (true positives), it means that
+#'    phyloscanner correctly identified a transmission pair with correct direction
+#'    of transmission(A infected B or B infected A). If observed value
+#'    is FP (false positives), phyloscanner incorrectly identify a transmission
+#'    pair. If observed value is FN (false negative), it means it is a true
+#'    transmission pair (with correct direction of transmission from A to B or
+#'    B to A), but phyloscanner was not able to identify it. If
+#'    observed value is TN (true negative), it means it is not a transmission
+#'    pair and phyloscanner correctly identified it as not a transmission pair
+#'    (with correct direction of transmission from A to B or B to A).
+#' @export
+add_observed_values_directness <- function(df1){
+
+  df1$observed <- ""
+
+  df1$observed[df1$real_pair == "yes" &
+                 df1$directness == "yes"] <- "TP"
+
+  df1$observed[df1$real_pair == "no" &
+                 df1$directness == "yes"] <- "FP"
+
+  df1$observed[df1$real_pair == "yes" &
+                 df1$directness == "no"] <- "FN"
+
+  df1$observed[df1$real_pair == "no" &
+                 df1$directness == "no"] <- "TN"
 
 
 

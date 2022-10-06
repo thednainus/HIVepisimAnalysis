@@ -2,7 +2,7 @@
 % Please edit documentation in R/summary_utils.R
 \name{add_observed_values_direction}
 \alias{add_observed_values_direction}
-\title{Add observed values for phyloscanner results}
+\title{Add observed values for phyloscanner results for direction}
 \usage{
 add_observed_values_direction(df1)
 }
@@ -13,7 +13,7 @@ add_observed_values_direction(df1)
 dataframe with the added observed values
 }
 \description{
-Add observed values for phyloscanner results
+Add observed values for phyloscanner results for direction
 }
 \details{
 If observed value is TP (true positives), it means that

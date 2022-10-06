@@ -24,6 +24,8 @@ line_number <-as.numeric(get_params[1])
 #                   1001:1030, 1101:1130, 1201:1230, 1301:1330, 1401:1430,
 #                   1501:1530, 1601:1630, 1701:1730, 1801:1830, 1901:1930),]
 
+ncpus <- as.numeric(get_params[4])
+
 params <- readRDS(as.character(get_params[5]))
 params <- params[line_number,]
 
@@ -98,7 +100,9 @@ if(is.binary(mltree) == FALSE){
 
 #run treedater
 dated_tree <- dater(tre = mltree, sts = sampleTimes[mltree$tip.label],
-                    s = seqlength, clock = "uncorrelated")
+                    s = seqlength, clock = "uncorrelated",
+                    ncpu = ncpus,
+                    )
 
 
 #drop tips of the tree that are from "global"
@@ -129,7 +133,7 @@ W_estimated <- phylo.source.attribution.hiv.msm( region_only_dated_tree, sampleT
 #Create directory named W_estimated (to save everything related to infector probability)
 # if it does not exist
 if (!dir.exists("output/vts/W_estimated")) {
-  dir.create("output/vts/W_estimated")
+  dir.create("output/vts/W_estimated", recursive = TRUE)
 }
 
 W_filename <- paste("output/vts/W_estimated/", seq_length,

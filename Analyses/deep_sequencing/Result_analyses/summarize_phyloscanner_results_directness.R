@@ -15,8 +15,8 @@ init_sim_date <- ymd("1980-01-01")
 
 phyloscanner_results <- data.frame()
 
-common_dir <- "/Users/user/Desktop/Imperial/newHIVproject-01Aug2020/R_projects/Results_paper/deepseq/W0.01"
-#common_dir <- "/Users/user/Desktop/Imperial/newHIVproject-01Aug2020/R_projects/Results_paper/deepseq"
+#common_dir <- "/Users/user/Desktop/Imperial/newHIVproject-01Aug2020/R_projects/Results_paper/deepseq/W0.01"
+common_dir <- "/Users/user/Desktop/Imperial/newHIVproject-01Aug2020/R_projects/Results_paper/deepseq"
 
 all_dirs <- list.files(list.files(list.files(common_dir, full.names = TRUE, pattern = "best_trajectories_*"),
                                   full.names = TRUE),
@@ -123,7 +123,7 @@ for(i in 1:length(all_dirs)){
     all_trans_type["true_pairs_directness"] <- nrow(pairs_with_dates[pairs_with_dates$trans == "true",])
     all_trans_type["true_pairs_direction"] <- nrow(pairs_with_dates[pairs_with_dates$real_pair == "yes",])
 
-    all_trans_type <- add_observed_values_direction(all_trans_type)
+    all_trans_type <- add_observed_values_directness(all_trans_type)
 
     all_phyloscanner_results <- rbind(all_phyloscanner_results, all_trans_type)
 
@@ -136,11 +136,11 @@ for(i in 1:length(all_dirs)){
 
 #I will use the script below to create a function to sumarize the data
 #these are results for direction only
-saveRDS(all_phyloscanner_results, "all_phyloscanner_results_test_W80.RDS")
-saveRDS(all_phyloscanner_results, "all_phyloscanner_results_test_W0.01.RDS")
+saveRDS(all_phyloscanner_results, "all_phyloscanner_results_test_W80_directness.RDS")
+saveRDS(all_phyloscanner_results, "all_phyloscanner_results_test_W0.01_directness.RDS")
 
 #filtering by W > 0.80
-all_phyloscanner_results_W80 <- readRDS("all_phyloscanner_results_test_W80.RDS")
+all_phyloscanner_results_W80 <- readRDS("all_phyloscanner_results_test_W80_directness.RDS")
 all_phyloscanner_results_W80["group"] <- paste(all_phyloscanner_results_W80$param,
                                                all_phyloscanner_results_W80$mig,
                                            sep = "_")
@@ -173,7 +173,7 @@ total_pairs_W80 <- all_phyloscanner_results_W80 %>%
 
 
 #filtering by W > 0.01
-all_phyloscanner_results_W0.01 <- readRDS("all_phyloscanner_results_test_W0.01.RDS")
+all_phyloscanner_results_W0.01 <- readRDS("all_phyloscanner_results_test_W0.01_directness.RDS")
 all_phyloscanner_results_W0.01["group"] <- paste(all_phyloscanner_results_W0.01$param,
                                                  all_phyloscanner_results_W0.01$mig,
                                                sep = "_")
