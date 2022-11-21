@@ -1,17 +1,20 @@
 #summarize results from phyloscanner
 #based on the whether two pairs are considered linked (independent of directness)
+#In this scrip I will generate a dataframe for:
+#TP = true positive
+#FP = false positive
+#TN = true negative
+#FN = false negative
+
 library(ape)
 library(stringr)
 library(lubridate)
 library(dplyr)
 library(HIVepisimAnalysis)
+library(igraph)
 
 #beginning of simulations
 init_sim_date <- ymd("1980-01-01")
-
-#get all tips that was analysed
-#I used a threshold for W of 0.55
-#threshold <- 0.80
 
 phyloscanner_results <- data.frame()
 
@@ -28,6 +31,8 @@ all_dirs <- list.files(list.files(list.files(common_dir, full.names = TRUE, patt
 phyloscanner_results_dir <- "phyloscanner_results"
 
 all_phyloscanner_results <- tibble()
+all_FP_results <- tibble()
+all_TN_results <- tibble()
 
 reps_not_analysed <- c(31:100)
 
@@ -52,9 +57,8 @@ for(i in 1:length(all_dirs)){
   }
 
   if(!rep %in% reps_not_analysed){
-      print(rep)
-      filename <- "processing_network_results.tar.gz"
-
+    print(rep)
+    filename <- "processing_network_results.tar.gz"
 
     dirs <- str_split(all_dirs[i], pattern = "/")
 
@@ -88,7 +92,7 @@ for(i in 1:length(all_dirs)){
     #a transmission pair independent of the correct direction of transmission
     phylo_pairs <- trans_phy %>%
       group_by(byGroup) %>%
-      group_modify(~check_true_pair_directness(.x, tm))
+      group_modify(~check_true_pair(.x, tm))
 
     # check whether the pair host.1 and host.2 are a transmission pair
     # including the correct direction of transmission
@@ -123,9 +127,31 @@ for(i in 1:length(all_dirs)){
     all_trans_type["true_pairs_directness"] <- nrow(pairs_with_dates[pairs_with_dates$trans == "true",])
     all_trans_type["true_pairs_direction"] <- nrow(pairs_with_dates[pairs_with_dates$real_pair == "yes",])
 
-    all_trans_type <- add_observed_values_directness(all_trans_type)
+    all_trans_type <- add_observed_values_direction(all_trans_type)
 
     all_phyloscanner_results <- rbind(all_phyloscanner_results, all_trans_type)
+
+    TP = subset(all_trans_type, observed == "TP")
+    FP = subset(all_trans_type, observed == "FP")
+    TN = subset(all_trans_type, observed == "TN")
+    FN = subset(all_trans_type, observed == "FN")
+
+    if(nrow(FP) > 0){
+      FP_chains <- FP %>% group_by(byGroup) %>%
+        group_modify(~check_linked_transmissions(.x, tm))
+      all_FP <- cbind(FP_chains, FP[,-1])
+
+      all_FP_results <- rbind(all_FP_results, all_FP)
+    }
+
+    if(nrow(TN) > 0){
+      TN_chains <- TN %>% group_by(byGroup) %>%
+        group_modify(~check_linked_transmissions(.x, tm))
+
+      all_TN <- cbind(TN_chains, TN[,-1])
+
+      all_TN_results <- rbind(all_TN_results, all_TN)
+    }
 
   }
 
@@ -134,13 +160,20 @@ for(i in 1:length(all_dirs)){
 
 }
 
+saveRDS(all_FP_results, "all_FP_results_W0.01_final.RDS")
+saveRDS(all_TN_results, "all_TN_results_W0.01_final.RDS")
+
+saveRDS(all_FP_results, "all_FP_results_W80_final.RDS")
+saveRDS(all_TN_results, "all_TN_results_W80_final.RDS")
+
+
 #I will use the script below to create a function to sumarize the data
 #these are results for direction only
-saveRDS(all_phyloscanner_results, "all_phyloscanner_results_test_W80_directness.RDS")
-saveRDS(all_phyloscanner_results, "all_phyloscanner_results_test_W0.01_directness_final.RDS")
+saveRDS(all_phyloscanner_results, "all_phyloscanner_results_test_W80.RDS")
+saveRDS(all_phyloscanner_results, "all_phyloscanner_results_test_W0.01_final.RDS")
 
 #filtering by W > 0.80
-all_phyloscanner_results_W80 <- readRDS("all_phyloscanner_results_test_W80_directness.RDS")
+all_phyloscanner_results_W80 <- readRDS("all_phyloscanner_results_test_W80_final_TN_TP_sampleObserved.RDS")
 all_phyloscanner_results_W80["group"] <- paste(all_phyloscanner_results_W80$param,
                                                all_phyloscanner_results_W80$mig,
                                            sep = "_")
@@ -173,7 +206,7 @@ total_pairs_W80 <- all_phyloscanner_results_W80 %>%
 
 
 #filtering by W > 0.01
-all_phyloscanner_results_W0.01 <- readRDS("all_phyloscanner_results_test_W0.01_directness_final.RDS")
+all_phyloscanner_results_W0.01 <- readRDS("all_phyloscanner_results_test_W0.01_final.RDS")
 all_phyloscanner_results_W0.01["group"] <- paste(all_phyloscanner_results_W0.01$param,
                                                  all_phyloscanner_results_W0.01$mig,
                                                sep = "_")

@@ -6,7 +6,7 @@ library(HIVepisimAnalysis)
 
 #get arguments
 #arguments <- commandArgs(trailingOnly = TRUE)
-arguments <- "best_trajectories_750migrants"
+arguments <- "best_trajectories_500migrants"
 
 
 
@@ -18,12 +18,12 @@ cluster_dir <- arguments
 dir_name <- paste(cluster, cluster_dir, sep = "/")
 
 #sampler1
-#dirs <- dir(dir(dir(dir_name, full.names = TRUE), full.names = TRUE),
-#            full.names = TRUE, pattern = "perc*")
+dirs <- dir(dir(dir(dir_name, full.names = TRUE), full.names = TRUE),
+            full.names = TRUE, pattern = "perc*")
 
 #sampler2
-dirs <- dir(dir(dir(dir(dir_name, full.names = TRUE), full.names = TRUE),
-            full.names = TRUE, pattern = "sampler2*"), full.names = TRUE, pattern = "perc*")
+#dirs <- dir(dir(dir(dir(dir_name, full.names = TRUE), full.names = TRUE),
+#            full.names = TRUE, pattern = "sampler2*"), full.names = TRUE, pattern = "perc*")
 
 alignment_dir <- paste(dirs, "output/vts/alignments/W_estimated", sep = "/")
 
@@ -51,13 +51,13 @@ for(i in 1:length(alignment_dir)){
     #the list alignment to be used as input file to build tree with iqtree
 
     ali_name <- str_split(alignment_dir[i], "/")
-    #param <- str_split(ali_name[[1]][10], pattern = "_")[[1]][2]
-    #rep <- str_split(ali_name[[1]][11], pattern = "_")[[1]][2]
-    #perc <- str_split(ali_name[[1]][12], pattern = "_")[[1]][2]
-
     param <- str_split(ali_name[[1]][10], pattern = "_")[[1]][2]
     rep <- str_split(ali_name[[1]][11], pattern = "_")[[1]][2]
-    perc <- str_split(ali_name[[1]][13], pattern = "_")[[1]][2]
+    perc <- str_split(ali_name[[1]][12], pattern = "_")[[1]][2]
+
+    #param <- str_split(ali_name[[1]][10], pattern = "_")[[1]][2]
+    #rep <- str_split(ali_name[[1]][11], pattern = "_")[[1]][2]
+    #perc <- str_split(ali_name[[1]][13], pattern = "_")[[1]][2]
 
     params <- data.frame(param = param, perc = perc, rep = rep)
 
@@ -72,13 +72,13 @@ for(i in 1:length(alignment_dir)){
     #the list alignment to be used as input file to build tree with iqtree
 
     ali_name <- str_split(alignment_dir[i], "/")
-    #param <- str_split(ali_name[[1]][10], pattern = "_")[[1]][2]
-    #rep <- str_split(ali_name[[1]][11], pattern = "_")[[1]][2]
-    #perc <- str_split(ali_name[[1]][12], pattern = "_")[[1]][2]
-
     param <- str_split(ali_name[[1]][10], pattern = "_")[[1]][2]
     rep <- str_split(ali_name[[1]][11], pattern = "_")[[1]][2]
-    perc <- str_split(ali_name[[1]][13], pattern = "_")[[1]][2]
+    perc <- str_split(ali_name[[1]][12], pattern = "_")[[1]][2]
+
+    #param <- str_split(ali_name[[1]][10], pattern = "_")[[1]][2]
+    #rep <- str_split(ali_name[[1]][11], pattern = "_")[[1]][2]
+    #perc <- str_split(ali_name[[1]][13], pattern = "_")[[1]][2]
 
     params <- data.frame(param = param, perc = perc, rep = rep)
 

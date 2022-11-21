@@ -1,4 +1,5 @@
-#ROC curves for analyzing infector probabilities
+#summarize data for "true trees" to plot ROC or PRC for consensus sequences
+#to analyze infector probabilities
 #This script will merge all replicates per combination of parameter values
 #per depth of sampling
 
@@ -8,7 +9,7 @@ library(HIVepisimAnalysis)
 library(DescTools)
 library(dplyr)
 
-
+rm(merge_label_data)
 # this function will merge by perc the W (infector probability) calculated to estimate
 # ROC curves
 # first merge all data
@@ -43,11 +44,24 @@ merge_label_data <- function(list_dirs, code, sampler){
     #                       pattern = "W_labels_bst", full.names = TRUE)
     filename <- list.files(list_dirs[i], pattern = "W_labels",
                            full.names = TRUE)
-
+    if(length(filename) >= 2){
+      filename <- filename[1]
+    }
 
     #this is to test whether filename exists as a file or is missing
     if(length(filename) != 0){
       if (file.exists(filename) == TRUE){
+
+        #load tm and W to estimate whether a pair is a true pair
+        #independet of who infected whom
+
+        data_info <- paste(list_dirs[i], "output/vts/W", sep = "/")
+        data_info <- list.files(data_info, pattern = "RData",
+                                full.names = TRUE)
+
+        load(data_info)
+
+
 
         sim_data <- read.csv(filename)
         sim_data$labels <- as.character(sim_data$labels)
@@ -58,8 +72,19 @@ merge_label_data <- function(list_dirs, code, sampler){
         sim_data["perc"] <- str_split(perc, "_")[[1]][2]
         sim_data["code"] <- code
 
+        sim_data["group"] <- rep(1:nrow(sim_data))
 
-        all_data <- rbind(all_data, sim_data)
+        sim_data["linked"] <- ifelse(sim_data$infectorProbability >= 0.80, "yes", "no")
+
+        trans_pairs <- sim_data %>% group_by(group) %>%
+          group_modify(~check_true_pair(.x, tm))
+
+        all_trans <- trans_pairs %>% group_by(group) %>%
+          group_modify(~check_true_transmissions(.x, tm))
+
+
+        #all_data <- rbind(all_data, sim_data)
+        all_data <- rbind(all_data, all_trans)
       }
     }
 
@@ -77,54 +102,62 @@ merge_label_data <- function(list_dirs, code, sampler){
 #get replicates per parameters value
 
 #250 migrants
+rm(replicates)
 replicates <- dir(dir(dir("/Users/user/Desktop/Imperial/newHIVproject-01Aug2020/R_projects/Results_paper/best_trajectories_250migrants",
                   full.names = TRUE),
                   full.names = TRUE),
                   full.names = TRUE, pattern = "perc")
 
-all_roc_data_s1_250mig <- merge_label_data(replicates,
-                                          code = "True trees",
-                                          sampler = "1")
-all_roc_data_s1_250mig["param_perc"] <- paste(all_roc_data_s1_250mig$param,
-                                             all_roc_data_s1_250mig$perc,
-                                             sep = "_")
+#all_data to build ROC or PCR curves
+all_data_s1_250mig <- merge_label_data(replicates,
+                                       code = "True trees",
+                                       sampler = "1")
+all_data_s1_250mig["param_perc"] <- paste(all_data_s1_250mig$param,
+                                          all_data_s1_250mig$perc,
+                                          sep = "_")
 
-saveRDS(all_roc_data_s1_250mig, "all_roc_data_s1_250mig.RDS")
+saveRDS(all_data_s1_250mig, "all_data_s1_250mig.RDS")
+
 
 
 
 #500 migrants
+rm(replicates)
 replicates <- dir(dir(dir("/Users/user/Desktop/Imperial/newHIVproject-01Aug2020/R_projects/Results_paper/best_trajectories_500migrants",
                           full.names = TRUE),
                       full.names = TRUE),
                   full.names = TRUE, pattern = "perc")
 
-all_roc_data_s1_500mig <- merge_label_data(replicates,
-                                           code = "True trees",
-                                           sampler = "1")
-all_roc_data_s1_500mig["param_perc"] <- paste(all_roc_data_s1_500mig$param,
-                                              all_roc_data_s1_500mig$perc,
-                                              sep = "_")
 
-saveRDS(all_roc_data_s1_500mig, "all_roc_data_s1_500mig.RDS")
+all_data_s1_500mig <- merge_label_data(replicates,
+                                       code = "True trees",
+                                       sampler = "1")
+all_data_s1_500mig["param_perc"] <- paste(all_data_s1_500mig$param,
+                                          all_data_s1_500mig$perc,
+                                          sep = "-")
+
+saveRDS(all_data_s1_500mig, "all_data_s1_500mig.RDS")
+
 
 
 
 
 #750 migrants
+rm(replicates)
 replicates <- dir(dir(dir("/Users/user/Desktop/Imperial/newHIVproject-01Aug2020/R_projects/Results_paper/best_trajectories_750migrants",
                           full.names = TRUE),
                       full.names = TRUE),
                   full.names = TRUE, pattern = "perc")
 
-all_roc_data_s1_750mig <- merge_label_data(replicates,
-                                           code = "True trees",
-                                           sampler = "1")
-all_roc_data_s1_750mig["param_perc"] <- paste(all_roc_data_s1_750mig$param,
-                                              all_roc_data_s1_750mig$perc,
-                                              sep = "_")
+all_data_s1_750mig <- merge_label_data(replicates,
+                                       code = "True trees",
+                                       sampler = "1")
+all_data_s1_750mig["param_perc"] <- paste(all_data_s1_750mig$param,
+                                          all_data_s1_750mig$perc,
+                                          sep = "_")
 
-saveRDS(all_roc_data_s1_750mig, "all_roc_data_s1_750mig.RDS")
+saveRDS(all_data_s1_750mig, "all_data_s1_750mig.RDS")
+
 
 
 
@@ -134,20 +167,23 @@ saveRDS(all_roc_data_s1_750mig, "all_roc_data_s1_750mig.RDS")
 #get replicates per parameters value
 
 #250 migrants
+rm(replicates)
 replicates <- dir(dir(dir(dir("/Users/user/Desktop/Imperial/newHIVproject-01Aug2020/R_projects/Results_paper/best_trajectories_250migrants",
                           full.names = TRUE),
                       full.names = TRUE),
                   full.names = TRUE, pattern = "sampler2"),
                   full.names = TRUE, pattern = "perc")
 
-all_roc_data_s2_250mig <- merge_label_data(replicates,
-                                           code = "True trees",
-                                           sampler = "2")
-all_roc_data_s2_250mig["param_perc"] <- paste(all_roc_data_s2_250mig$param,
-                                              all_roc_data_s2_250mig$perc,
-                                              sep = "_")
+all_data_s2_250mig <- merge_label_data(replicates,
+                                      code = "True trees",
+                                      sampler = "2")
+all_data_s2_250mig["param_perc"] <- paste(all_data_s2_250mig$param,
+                                          all_data_s2_250mig$perc,
+                                          sep = "_")
 
-saveRDS(all_roc_data_s2_250mig, "all_roc_data_s2_250mig.RDS")
+saveRDS(all_data_s2_250mig, "all_data_s2_250mig.RDS")
+
+
 
 
 
@@ -159,14 +195,15 @@ replicates <- dir(dir(dir(dir("/Users/user/Desktop/Imperial/newHIVproject-01Aug2
                   full.names = TRUE, pattern = "sampler2"),
                   full.names = TRUE, pattern = "perc")
 
-all_roc_data_s2_500mig <- merge_label_data(replicates,
-                                           code = "True trees",
-                                           sampler = "2")
-all_roc_data_s2_500mig["param_perc"] <- paste(all_roc_data_s2_500mig$param,
-                                              all_roc_data_s2_500mig$perc,
-                                              sep = "_")
+all_data_s2_500mig <- merge_label_data(replicates,
+                                       code = "True trees",
+                                       sampler = "2")
+all_data_s2_500mig["param_perc"] <- paste(all_data_s2_500mig$param,
+                                          all_data_s2_500mig$perc,
+                                          sep = "_")
 
-saveRDS(all_roc_data_s2_500mig, "all_roc_data_s2_500mig.RDS")
+saveRDS(all_data_s2_500mig, "all_data_s2_500mig.RDS")
+
 
 
 
@@ -180,14 +217,15 @@ replicates <- dir(dir(dir(dir("/Users/user/Desktop/Imperial/newHIVproject-01Aug2
                   full.names = TRUE, pattern = "perc")
 
 
-all_roc_data_s2_750mig <- merge_label_data(replicates,
-                                           code = "True trees",
-                                           sampler = "2")
-all_roc_data_s2_750mig["param_perc"] <- paste(all_roc_data_s2_750mig$param,
-                                              all_roc_data_s2_750mig$perc,
-                                              sep = "_")
+all_data_s2_750mig <- merge_label_data(replicates,
+                                       code = "True trees",
+                                       sampler = "2")
+all_data_s2_750mig["param_perc"] <- paste(all_data_s2_750mig$param,
+                                          all_data_s2_750mig$perc,
+                                          sep = "_")
 
-saveRDS(all_roc_data_s2_750mig, "all_roc_data_s2_750mig.RDS")
+saveRDS(all_data_s2_750mig, "all_data_s2_750mig.RDS")
+
 
 
 

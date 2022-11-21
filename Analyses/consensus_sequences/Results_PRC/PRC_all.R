@@ -1,26 +1,26 @@
 #plot results from PRC (precision recall curve)
 library(DescTools)
 library(caret)
-
+library(DescTools)
 
 #true trees
-true_tree_s1 <- readRDS("prc_trueTrees_s1.RDS")
+true_tree_s1 <- readRDS("Analyses/consensus_sequences/Results_PRC/results/prc_trueTrees_s1.RDS")
 true_tree_s1 <- do.call(rbind, true_tree_s1)
-true_tree_s2 <- readRDS("prc_trueTrees_s2.RDS")
+true_tree_s2 <- readRDS("Analyses/consensus_sequences/Results_PRC/results/prc_trueTrees_s2.RDS")
 true_tree_s2 <- do.call(rbind, true_tree_s2)
 
 #ML tree: 1000bp
-ml1000bp_s1 <- readRDS("~/Box Sync/HIV_SanDiego/data_simulations/PRC_data_myScript/merged_replicate_data/prc_ML1000bp_s1.RDS")
+ml1000bp_s1 <- readRDS("Analyses/consensus_sequences/Results_PRC/results/prc_ML1000bp_s1.RDS")
 ml1000bp_s1 <- do.call(rbind, ml1000bp_s1)
 
-ml1000bp_s2 <- readRDS("~/Box Sync/HIV_SanDiego/data_simulations/PRC_data_myScript/merged_replicate_data/prc_ML1000bp_s2.RDS")
+ml1000bp_s2 <- readRDS("Analyses/consensus_sequences/Results_PRC/results/prc_ML1000bp_s2.RDS")
 ml1000bp_s2 <- do.call(rbind, ml1000bp_s2)
 
 #ML tree: 10000bp
-ml10000bp_s1 <- readRDS("~/Box Sync/HIV_SanDiego/data_simulations/PRC_data_myScript/merged_replicate_data/prc_ML10000bp_s1.RDS")
+ml10000bp_s1 <- readRDS("Analyses/consensus_sequences/Results_PRC/results/prc_ML10000bp_s1.RDS")
 ml10000bp_s1 <- do.call(rbind, ml10000bp_s1)
 
-ml10000bp_s2 <- readRDS("~/Box Sync/HIV_SanDiego/data_simulations/PRC_data_myScript/merged_replicate_data/prc_ML10000bp_s2.RDS")
+ml10000bp_s2 <- readRDS("Analyses/consensus_sequences/Results_PRC/results/prc_ML10000bp_s2.RDS")
 ml10000bp_s2 <- do.call(rbind, ml10000bp_s2)
 
 
@@ -78,7 +78,7 @@ sampler1["param_mig_code_perc"] <- paste(sampler1$param,
 auc_sampler1 <- sampler1 %>%
   group_by(param, param_mig_code, mig, code, perc, param_mig_code_perc) %>%
   group_modify(~ {
-    AUC(.x$recall, .x$precision) %>%
+    AUC(.x$recall, .x$precision, na.rm = TRUE) %>%
       tibble::enframe(name = NULL, value = "AUC")
   })
 

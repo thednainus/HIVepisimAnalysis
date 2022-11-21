@@ -6,6 +6,8 @@ library(lubridate)
 library(dplyr)
 library(HIVepisimAnalysis)
 
+# here is using all true positives and true negatives from the sampled simulations
+
 #beginning of simulations
 init_sim_date <- ymd("1980-01-01")
 
@@ -15,8 +17,8 @@ init_sim_date <- ymd("1980-01-01")
 
 phyloscanner_results <- data.frame()
 
-common_dir <- "/Users/user/Desktop/Imperial/newHIVproject-01Aug2020/R_projects/Results_paper/deepseq/W0.01"
-#common_dir <- "/Users/user/Desktop/Imperial/newHIVproject-01Aug2020/R_projects/Results_paper/deepseq"
+#common_dir <- "/Users/user/Desktop/Imperial/newHIVproject-01Aug2020/R_projects/Results_paper/deepseq/W0.01"
+common_dir <- "/Users/user/Desktop/Imperial/newHIVproject-01Aug2020/R_projects/Results_paper/deepseq"
 
 all_dirs <- list.files(list.files(list.files(common_dir, full.names = TRUE, pattern = "best_trajectories_*"),
                                   full.names = TRUE),
@@ -56,7 +58,7 @@ for(i in 1:length(all_dirs)){
       filename <- "processing_network_results.tar.gz"
 
 
-    dirs <- str_split(all_dirs[i], pattern = "/")
+      dirs <- str_split(all_dirs[i], pattern = "/")
 
 
     if(dirs[[1]][10] == "W0.01" ){
@@ -75,6 +77,23 @@ for(i in 1:length(all_dirs)){
 
     #rep 1 , params 1067 (example for 1 replicate only)
     results <- read.csv(paste(phyloscanner_dir, "results_hostRelationshipSummary.csv", sep = "/"))
+
+
+    #here I will add the true positives and true negatives in my simulated sample
+    W2 <- W1
+
+
+    W2["group"] <- rep(1:nrow(W2))
+
+    trans_pairs_true <- W2 %>% group_by(group) %>%
+      group_modify(~check_true_pair(.x, tm))
+
+    all_trans_true <- trans_pairs_true %>% group_by(group) %>%
+      group_modify(~check_true_transmissions(.x, tm))
+
+    all_trans_true["True_observed_values"] <- 0
+    all_trans_true$True_observed_values[all_trans_true$real_pair == "yes"] <- "TP"
+    all_trans_true$True_observed_values[all_trans_true$real_pair == "no"] <- "TN"
 
     #transmission phyloscanner
     trans_phy <- results %>%
@@ -124,8 +143,11 @@ for(i in 1:length(all_dirs)){
     all_trans_type["true_pairs_direction"] <- nrow(pairs_with_dates[pairs_with_dates$real_pair == "yes",])
 
     all_trans_type <- add_observed_values_direction(all_trans_type)
+    all_trans_type["TN_totalSample_observed"] <- sum(all_trans_true$True_observed_values == "TN")
+    all_trans_type["TP_totalSample_observed"] <- sum(all_trans_true$True_observed_values == "TP")
 
     all_phyloscanner_results <- rbind(all_phyloscanner_results, all_trans_type)
+
 
   }
 
@@ -136,11 +158,11 @@ for(i in 1:length(all_dirs)){
 
 #I will use the script below to create a function to sumarize the data
 #these are results for direction only
-saveRDS(all_phyloscanner_results, "all_phyloscanner_results_test_W80.RDS")
-saveRDS(all_phyloscanner_results, "all_phyloscanner_results_test_W0.01.RDS")
+saveRDS(all_phyloscanner_results, "all_phyloscanner_results_test_W80_final_TN_TP_sampleObserved.RDS")
+saveRDS(all_phyloscanner_results, "all_phyloscanner_results_test_W0.01_final_TN_TP_sampleObserved.RDS")
 
 #filtering by W > 0.80
-all_phyloscanner_results_W80 <- readRDS("all_phyloscanner_results_test_W80.RDS")
+all_phyloscanner_results_W80 <- readRDS("all_phyloscanner_results_test_W80_final_TN_TP_sampleObserved.RDS")
 all_phyloscanner_results_W80["group"] <- paste(all_phyloscanner_results_W80$param,
                                                all_phyloscanner_results_W80$mig,
                                            sep = "_")
@@ -149,31 +171,41 @@ all_phyloscanner_results_W80["reps_groups"] <- paste(all_phyloscanner_results_W8
                                                  all_phyloscanner_results_W80$rep,
                                                  sep = "_")
 
-results_all_phylo_W80 <- all_phyloscanner_results_W80 %>%
-  group_by(group) %>%
-  mutate(precision = sum(observed == "TP")/(sum(observed == "TP") + sum(observed == "FP")),
-         sensitivity = sum(observed == "TP")/(sum(observed == "TP") + sum(observed == "FN")),
-         specificity = sum(observed == "TN")/(sum(observed == "TN") + sum(observed == "FP")),
-         total_TP = sum(observed == "TP"),
-         total_FP = sum(observed == "FP"),
-         total_TN = sum(observed == "TN"),
-         total_FN = sum(observed == "FN")) %>%
-  select(group, precision, sensitivity, specificity,
-         total_TP, total_FP, total_TN, total_FN) %>%
-  distinct()
 
 total_pairs_W80 <- all_phyloscanner_results_W80 %>%
   group_by(reps_groups, group) %>%
-  distinct(total_pairs_analysed) %>%
+  distinct(TN_totalSample_observed, TP_totalSample_observed) %>%
   group_by(group) %>%
-  mutate(total_pairs = sum(total_pairs_analysed)) %>%
-  select(group, total_pairs) %>%
+  mutate(TN_totalSample = sum(TN_totalSample_observed),
+         TP_totalSample = sum(TP_totalSample_observed)) %>%
+  select(group, TN_totalSample, TP_totalSample) %>%
   distinct()
+
+
+
+results_all_phylo_W80 <- all_phyloscanner_results_W80 %>%
+  group_by(group) %>%
+  mutate(TP_phyloscanner = sum(observed == "TP"),
+         FP_phyloscanner = sum(observed == "FP")) %>%
+  select(group, TP_phyloscanner, FP_phyloscanner) %>%
+  distinct()
+
+
+#merge both tables
+
+results_all_W80 <- cbind(results_all_phylo_W80, total_pairs_W80[,c(2:3)])
+results_all_W80["TN"] <- results_all_W80$TN_totalSample - results_all_W80$FP_phyloscanner
+results_all_W80["FN"] <- results_all_W80$TP_totalSample - results_all_W80$TP_phyloscanner
+
+results_all_W80["sensitivity"] <- results_all_W80$TP_phyloscanner/(results_all_W80$TP_phyloscanner + results_all_W80$FN)
+results_all_W80["specificity"] <- results_all_W80$TN/(results_all_W80$TN + results_all_W80$FP_phyloscanner)
+results_all_W80["precision"] <- results_all_W80$TP_phyloscanner/(results_all_W80$TP_phyloscanner + results_all_W80$FP_phyloscanner)
+
 
 
 
 #filtering by W > 0.01
-all_phyloscanner_results_W0.01 <- readRDS("all_phyloscanner_results_test_W0.01.RDS")
+all_phyloscanner_results_W0.01 <- readRDS("all_phyloscanner_results_test_W0.01_final_TN_TP_sampleObserved.RDS")
 all_phyloscanner_results_W0.01["group"] <- paste(all_phyloscanner_results_W0.01$param,
                                                  all_phyloscanner_results_W0.01$mig,
                                                sep = "_")
@@ -182,28 +214,35 @@ all_phyloscanner_results_W0.01["reps_groups"] <- paste(all_phyloscanner_results_
                                                        all_phyloscanner_results_W0.01$rep,
                                                      sep = "_")
 
-results_all_phylo_W0.01 <- all_phyloscanner_results_W0.01 %>%
-  group_by(group) %>%
-  mutate(precision = sum(observed == "TP")/(sum(observed == "TP") + sum(observed == "FP")),
-         sensitivity = sum(observed == "TP")/(sum(observed == "TP") + sum(observed == "FN")),
-         specificity = sum(observed == "TN")/(sum(observed == "TN") + sum(observed == "FP")),
-         total_TP = sum(observed == "TP"),
-         total_FP = sum(observed == "FP"),
-         total_TN = sum(observed == "TN"),
-         total_FN = sum(observed == "FN")) %>%
-  select(group, precision, sensitivity, specificity,
-         total_TP, total_FP, total_TN, total_FN) %>%
-  distinct()
-
-
 
 total_pairs_W0.01 <- all_phyloscanner_results_W0.01 %>%
   group_by(reps_groups, group) %>%
-  distinct(total_pairs_analysed) %>%
+  distinct(TN_totalSample_observed, TP_totalSample_observed) %>%
   group_by(group) %>%
-  mutate(total_pairs = sum(total_pairs_analysed)) %>%
-  select(group, total_pairs) %>%
+  mutate(TN_totalSample = sum(TN_totalSample_observed),
+         TP_totalSample = sum(TP_totalSample_observed)) %>%
+  select(group, TN_totalSample, TP_totalSample) %>%
   distinct()
+
+
+
+results_all_phylo_W0.01 <- all_phyloscanner_results_W0.01 %>%
+  group_by(group) %>%
+  mutate(TP_phyloscanner = sum(observed == "TP"),
+         FP_phyloscanner = sum(observed == "FP")) %>%
+  select(group, TP_phyloscanner, FP_phyloscanner) %>%
+  distinct()
+
+
+#merge both tables
+
+results_all_W0.01 <- cbind(results_all_phylo_W0.01, total_pairs_W0.01[,c(2:3)])
+results_all_W0.01["TN"] <- results_all_W0.01$TN_totalSample - results_all_W0.01$FP_phyloscanner
+results_all_W0.01["FN"] <- results_all_W0.01$TP_totalSample - results_all_W0.01$TP_phyloscanner
+
+results_all_W0.01["sensitivity"] <- results_all_W0.01$TP_phyloscanner/(results_all_W0.01$TP_phyloscanner + results_all_W0.01$FN)
+results_all_W0.01["specificity"] <- results_all_W0.01$TN/(results_all_W0.01$TN + results_all_W0.01$FP_phyloscanner)
+results_all_W0.01["precision"] <- results_all_W0.01$TP_phyloscanner/(results_all_W0.01$TP_phyloscanner + results_all_W0.01$FP_phyloscanner)
 
 
 

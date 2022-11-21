@@ -1,26 +1,26 @@
-#plot results from prc curves
+#plot results from roc curves
 library(DescTools)
 library(caret)
 
 
 #true trees
-true_tree_s1 <- readRDS("Analyses/consensus_sequences/Results_PRC/results/prc_trueTrees_s1.RDS")
+true_tree_s1 <- readRDS("results_roc_simulations/roc_trueTrees_s1.RDS")
 true_tree_s1 <- do.call(rbind, true_tree_s1)
-true_tree_s2 <- readRDS("Analyses/consensus_sequences/Results_PRC/results/prc_trueTrees_s2.RDS")
+true_tree_s2 <- readRDS("results_roc_simulations/roc_trueTrees_s2.RDS")
 true_tree_s2 <- do.call(rbind, true_tree_s2)
 
 #ML tree: 1000bp
-ml1000bp_s1 <- readRDS("Analyses/consensus_sequences/Results_PRC/results/prc_ML1000bp_s1.RDS")
+ml1000bp_s1 <- readRDS("results_roc_simulations/roc_ML1000bp_s1.RDS")
 ml1000bp_s1 <- do.call(rbind, ml1000bp_s1)
 
-ml1000bp_s2 <- readRDS("Analyses/consensus_sequences/Results_PRC/results/prc_ML1000bp_s2.RDS")
+ml1000bp_s2 <- readRDS("results_roc_simulations/roc_ML1000bp_s2.RDS")
 ml1000bp_s2 <- do.call(rbind, ml1000bp_s2)
 
 #ML tree: 10000bp
-ml10000bp_s1 <- readRDS("Analyses/consensus_sequences/Results_PRC/results/prc_ML10000bp_s1.RDS")
+ml10000bp_s1 <- readRDS("results_roc_simulations/roc_ML10000bp_s1.RDS")
 ml10000bp_s1 <- do.call(rbind, ml10000bp_s1)
 
-ml10000bp_s2 <- readRDS("Analyses/consensus_sequences/Results_PRC/results/prc_ML10000bp_s2.RDS")
+ml10000bp_s2 <- readRDS("results_roc_simulations/roc_ML10000bp_s2.RDS")
 ml10000bp_s2 <- do.call(rbind, ml10000bp_s2)
 
 
@@ -30,8 +30,12 @@ sampler1["param_mig_code"] <- paste(sampler1$param,
                                     sampler1$mig,
                                     sampler1$code,
                                     sep = "_")
-sampler1_1067 <- subset(sampler1, param == "1067")
-sampler1_2348 <- subset(sampler1, param == "2348")
+sampler1_1067 <- subset(sampler1, param == "1067" &
+                          (perc == "0.05" | perc == "0.3" |
+                             perc == "0.6" | perc == "0.9"))
+sampler1_2348 <- subset(sampler1, param == "2348" &
+                          (perc == "0.05" | perc == "0.3" |
+                             perc == "0.6" | perc == "0.9"))
 
 
 
@@ -52,8 +56,12 @@ sampler2["param_mig_code"] <- paste(sampler2$param,
                                     sampler2$mig,
                                     sampler2$code,
                                     sep = "_")
-sampler2_1067 <- subset(sampler2, param == "1067")
-sampler2_2348 <- subset(sampler2, param == "2348")
+sampler2_1067 <- subset(sampler2, param == "1067" &
+                          (perc == "0.05" | perc == "0.3" |
+                             perc == "0.6" | perc == "0.9"))
+sampler2_2348 <- subset(sampler2, param == "2348" &
+                          (perc == "0.05" | perc == "0.3" |
+                             perc == "0.6" | perc == "0.9"))
 
 sampler2_1067_250mig <- subset(sampler2_1067, mig == "250")
 sampler2_1067_500mig <- subset(sampler2_1067, mig == "500")
@@ -65,17 +73,18 @@ sampler2_2348_750mig <- subset(sampler2_2348, mig == "750")
 
 
 
+
+#plot sampler 1, param 1067, 500mig ----
 quartz()
 sampler1_1067_500mig %>%
   group_by(code, sampler, param, perc, mig, param_mig_code) %>%
-  ggplot(aes(x = recall, y = precision)) +
-  geom_hline(aes(yintercept = positives/(positives + negatives),
-                 color = param_mig_code), linetype = 4) +
-  geom_line(aes(color = param_mig_code), size = 0.8) +
-  facet_wrap(~ perc, scales = "free", ncol = 5) +
+  ggplot(aes(x = FPR, y = TPR)) +
+  geom_abline(slope = 1, intercept= 0, linetype = 4) +
+  geom_step(aes(color = param_mig_code), size = 0.8) +
+  facet_wrap(~ perc, scales = "free", ncol = 2) +
   theme_bw() +
-  ggtitle("PRC curves for Parameters 1 (sampler 1 and 1/1.37 ind. per day)") +
-  labs(y = 'Precision', x = 'Recall') +
+  ggtitle("ROC curves for Parameters 1 (sampler 1 and 500 migrants)") +
+  labs(y = 'True positive rate', x = 'False positive rate') +
   theme(text = element_text(size = 20), legend.position = "bottom") +
   scale_colour_manual(values = c('#ad0075', '#9fc439', '#0187d3'),
                       name = 'Tree type',
@@ -83,20 +92,17 @@ sampler1_1067_500mig %>%
                                  '1067_500_10000bp'),
                       labels = c('True trees', 'ML 1,000bp', 'ML 10,000bp'))
 
-
-
 #plot sampler 1, param 2348, 500mig ----
 quartz()
 sampler1_2348_500mig %>%
   group_by(code, sampler, param, perc, mig, param_mig_code) %>%
-  ggplot(aes(x = recall, y = precision)) +
-  geom_hline(aes(yintercept = positives/(positives + negatives),
-                 color = param_mig_code), linetype = 4) +
-  geom_line(aes(color = param_mig_code), size = 0.8) +
-  facet_wrap(~ perc, scales = "free", ncol = 5) +
+  ggplot(aes(x = FPR, y = TPR)) +
+  geom_abline(slope = 1, intercept= 0, linetype = 4) +
+  geom_step(aes(color = param_mig_code), size = 0.8) +
+  facet_wrap(~ perc, scales = "free", ncol = 2) +
   theme_bw() +
-  ggtitle("PRC curves for Parameters 2 (sampler 1 and 1/1.37 ind. per day)") +
-  labs(y = 'Precision', x = 'Recall') +
+  ggtitle("ROC curves for Parameters 2 (sampler 1 and 500 migrants)") +
+  labs(y = 'True positive rate', x = 'False positive rate') +
   theme(text = element_text(size = 20), legend.position = "bottom") +
   scale_colour_manual(values = c('#ad0075', '#9fc439', '#0187d3'),
                       name = 'Tree type',
@@ -110,14 +116,13 @@ sampler1_2348_500mig %>%
 quartz()
 sampler1_1067_250mig %>%
   group_by(code, sampler, param, perc, mig, param_mig_code) %>%
-  ggplot(aes(x = recall, y = precision)) +
-  geom_hline(aes(yintercept = positives/(positives + negatives),
-                 color = param_mig_code), linetype = 4) +
+  ggplot(aes(x = FPR, y = TPR)) +
+  geom_abline(slope = 1, intercept= 0, linetype = 4) +
   geom_step(aes(color = param_mig_code), size = 0.8) +
-  facet_wrap(~ perc, scales = "free", ncol = 5) +
+  facet_wrap(~ perc, scales = "free", ncol = 2) +
   theme_bw() +
-  ggtitle("PRC curves for Parameters 1 (sampler 1 and 1/0.68 ind. per day)") +
-  labs(y = 'Precision', x = 'Recall') +
+  ggtitle("ROC curves for Parameters 1 (sampler 1 and 250 migrants)") +
+  labs(y = 'True positive rate', x = 'False positive rate') +
   theme(text = element_text(size = 20), legend.position = "bottom") +
   scale_colour_manual(values = c('#ad0075', '#9fc439', '#0187d3'),
                       name = 'Tree type',
@@ -129,14 +134,13 @@ sampler1_1067_250mig %>%
 quartz()
 sampler1_2348_250mig %>%
   group_by(code, sampler, param, perc, mig, param_mig_code) %>%
-  ggplot(aes(x = recall, y = precision)) +
-  geom_hline(aes(yintercept = positives/(positives + negatives),
-                 color = param_mig_code), linetype = 4) +
+  ggplot(aes(x = FPR, y = TPR)) +
+  geom_abline(slope = 1, intercept= 0, linetype = 4) +
   geom_step(aes(color = param_mig_code), size = 0.8) +
-  facet_wrap(~ perc, scales = "free", ncol = 5) +
+  facet_wrap(~ perc, scales = "free", ncol = 2) +
   theme_bw() +
-  ggtitle("PRC curves for Parameters 2 (sampler 1 and 1/0.68 ind. per day)") +
-  labs(y = 'Precision', x = 'Recall') +
+  ggtitle("ROC curves for Parameters 2 (sampler 1 and 250 migrants)") +
+  labs(y = 'True positive rate', x = 'False positive rate') +
   theme(text = element_text(size = 20), legend.position = "bottom") +
   scale_colour_manual(values = c('#ad0075', '#9fc439', '#0187d3'),
                       name = 'Tree type',
@@ -149,14 +153,13 @@ sampler1_2348_250mig %>%
 quartz()
 sampler1_1067_750mig %>%
   group_by(code, sampler, param, perc, mig, param_mig_code) %>%
-  ggplot(aes(x = recall, y = precision)) +
-  geom_hline(aes(yintercept = positives/(positives + negatives),
-                 color = param_mig_code), linetype = 4) +
+  ggplot(aes(x = FPR, y = TPR)) +
+  geom_abline(slope = 1, intercept= 0, linetype = 4) +
   geom_step(aes(color = param_mig_code), size = 0.8) +
-  facet_wrap(~ perc, scales = "free", ncol = 5) +
+  facet_wrap(~ perc, scales = "free", ncol = 2) +
   theme_bw() +
-  ggtitle("PRC curves for Parameters 1 (sampler 1 and 1/2.05 ind. per day)") +
-  labs(y = 'Precision', x = 'Recall') +
+  ggtitle("ROC curves for Parameters 1 (sampler 1 and 750 migrants)") +
+  labs(y = 'True positive rate', x = 'False positive rate') +
   theme(text = element_text(size = 20), legend.position = "bottom") +
   scale_colour_manual(values = c('#ad0075', '#9fc439', '#0187d3'),
                       name = 'Tree type',
@@ -168,14 +171,13 @@ sampler1_1067_750mig %>%
 quartz()
 sampler1_2348_750mig %>%
   group_by(code, sampler, param, perc, mig, param_mig_code) %>%
-  ggplot(aes(x = recall, y = precision)) +
-  geom_hline(aes(yintercept = positives/(positives + negatives),
-                 color = param_mig_code), linetype = 4) +
+  ggplot(aes(x = FPR, y = TPR)) +
+  geom_abline(slope = 1, intercept= 0, linetype = 4) +
   geom_step(aes(color = param_mig_code), size = 0.8) +
-  facet_wrap(~ perc, scales = "free", ncol = 5) +
+  facet_wrap(~ perc, scales = "free", ncol = 2) +
   theme_bw() +
-  ggtitle("PRC curves for Parameters 2 (sampler 1 and 1/2.05 ind. per day)") +
-  labs(y = 'Precision', x = 'Recall') +
+  ggtitle("ROC curves for Parameters 2 (sampler 1 and 750 migrants)") +
+  labs(y = 'True positive rate', x = 'False positive rate') +
   theme(text = element_text(size = 20), legend.position = "bottom") +
   scale_colour_manual(values = c('#ad0075', '#9fc439', '#0187d3'),
                       name = 'Tree type',
@@ -190,14 +192,13 @@ sampler1_2348_750mig %>%
 quartz()
 sampler2_1067_500mig %>%
   group_by(code, sampler, param, perc, mig, param_mig_code) %>%
-  ggplot(aes(x = recall, y = precision)) +
-  geom_hline(aes(yintercept = positives/(positives + negatives),
-                 color = param_mig_code), linetype = 4) +
+  ggplot(aes(x = FPR, y = TPR)) +
+  geom_abline(slope = 1, intercept= 0, linetype = 4) +
   geom_step(aes(color = param_mig_code), size = 0.8) +
-  facet_wrap(~ perc, scales = "free", ncol = 5) +
+  facet_wrap(~ perc, scales = "free", ncol = 2) +
   theme_bw() +
-  ggtitle("PRC curves for Parameters 1 (sampler 2 and 1/1.37 ind. per day)") +
-  labs(y = 'Precision', x = 'Recall') +
+  ggtitle("ROC curves for Parameters 1 (sampler 2 and 500 migrants)") +
+  labs(y = 'True positive rate', x = 'False positive rate') +
   theme(text = element_text(size = 20), legend.position = "bottom") +
   scale_colour_manual(values = c('#ad0075', '#9fc439', '#0187d3'),
                       name = 'Tree type',
@@ -209,14 +210,13 @@ sampler2_1067_500mig %>%
 quartz()
 sampler2_2348_500mig %>%
   group_by(code, sampler, param, perc, mig, param_mig_code) %>%
-  ggplot(aes(x = recall, y = precision)) +
-  geom_hline(aes(yintercept = positives/(positives + negatives),
-                 color = param_mig_code), linetype = 4) +
+  ggplot(aes(x = FPR, y = TPR)) +
+  geom_abline(slope = 1, intercept= 0, linetype = 4) +
   geom_step(aes(color = param_mig_code), size = 0.8) +
-  facet_wrap(~ perc, scales = "free", ncol = 5) +
+  facet_wrap(~ perc, scales = "free", ncol = 2) +
   theme_bw() +
-  ggtitle("PRC curves for Parameters 2 (sampler 2 and 1/1.37 ind. per day)") +
-  labs(y = 'Precision', x = 'Recall') +
+  ggtitle("ROC curves for Parameters 2 (sampler 2 and 500 migrants)") +
+  labs(y = 'True positive rate', x = 'False positive rate') +
   theme(text = element_text(size = 20), legend.position = "bottom") +
   scale_colour_manual(values = c('#ad0075', '#9fc439', '#0187d3'),
                       name = 'Tree type',
@@ -226,19 +226,17 @@ sampler2_2348_500mig %>%
 
 
 
-
 #plot sampler 2, param 1067, 250mig ----
 quartz()
 sampler2_1067_250mig %>%
   group_by(code, sampler, param, perc, mig, param_mig_code) %>%
-  ggplot(aes(x = recall, y = precision)) +
-  geom_hline(aes(yintercept = positives/(positives + negatives),
-                 color = param_mig_code), linetype = 4) +
+  ggplot(aes(x = FPR, y = TPR)) +
+  geom_abline(slope = 1, intercept= 0, linetype = 4) +
   geom_step(aes(color = param_mig_code), size = 0.8) +
-  facet_wrap(~ perc, scales = "free", ncol = 5) +
+  facet_wrap(~ perc, scales = "free", ncol = 2) +
   theme_bw() +
-  ggtitle("PRC curves for Parameters 1 (sampler 2 and 1/0.68 ind. per day)") +
-  labs(y = 'Precision', x = 'Recall') +
+  ggtitle("ROC curves for Parameters 1 (sampler 2 and 250 migrants)") +
+  labs(y = 'True positive rate', x = 'False positive rate') +
   theme(text = element_text(size = 20), legend.position = "bottom") +
   scale_colour_manual(values = c('#ad0075', '#9fc439', '#0187d3'),
                       name = 'Tree type',
@@ -250,14 +248,13 @@ sampler2_1067_250mig %>%
 quartz()
 sampler2_2348_250mig %>%
   group_by(code, sampler, param, perc, mig, param_mig_code) %>%
-  ggplot(aes(x = recall, y = precision)) +
-  geom_hline(aes(yintercept = positives/(positives + negatives),
-                 color = param_mig_code), linetype = 4) +
+  ggplot(aes(x = FPR, y = TPR)) +
+  geom_abline(slope = 1, intercept= 0, linetype = 4) +
   geom_step(aes(color = param_mig_code), size = 0.8) +
-  facet_wrap(~ perc, scales = "free", ncol = 5) +
+  facet_wrap(~ perc, scales = "free", ncol = 2) +
   theme_bw() +
-  ggtitle("PRC curves for Parameters 2 (sampler 2 and 1/0.68 ind. per day)") +
-  labs(y = 'Precision', x = 'Recall') +
+  ggtitle("ROC curves for Parameters 2 (sampler 2 and 250 migrants)") +
+  labs(y = 'True positive rate', x = 'False positive rate') +
   theme(text = element_text(size = 20), legend.position = "bottom") +
   scale_colour_manual(values = c('#ad0075', '#9fc439', '#0187d3'),
                       name = 'Tree type',
@@ -270,14 +267,13 @@ sampler2_2348_250mig %>%
 quartz()
 sampler2_1067_750mig %>%
   group_by(code, sampler, param, perc, mig, param_mig_code) %>%
-  ggplot(aes(x = recall, y = precision)) +
-  geom_hline(aes(yintercept = positives/(positives + negatives),
-                 color = param_mig_code), linetype = 4) +
+  ggplot(aes(x = FPR, y = TPR)) +
+  geom_abline(slope = 1, intercept= 0, linetype = 4) +
   geom_step(aes(color = param_mig_code), size = 0.8) +
-  facet_wrap(~ perc, scales = "free", ncol = 5) +
+  facet_wrap(~ perc, scales = "free", ncol = 2) +
   theme_bw() +
-  ggtitle("PRC curves for Parameters 1 (sampler 2 and 1/2.05 ind. per day)") +
-  labs(y = 'Precision', x = 'Recall') +
+  ggtitle("ROC curves for Parameters 1 (sampler 2 and 750 migrants)") +
+  labs(y = 'True positive rate', x = 'False positive rate') +
   theme(text = element_text(size = 20), legend.position = "bottom") +
   scale_colour_manual(values = c('#ad0075', '#9fc439', '#0187d3'),
                       name = 'Tree type',
@@ -289,14 +285,13 @@ sampler2_1067_750mig %>%
 quartz()
 sampler2_2348_750mig %>%
   group_by(code, sampler, param, perc, mig, param_mig_code) %>%
-  ggplot(aes(x = recall, y = precision)) +
-  geom_hline(aes(yintercept = positives/(positives + negatives),
-                 color = param_mig_code), linetype = 4) +
+  ggplot(aes(x = FPR, y = TPR)) +
+  geom_abline(slope = 1, intercept= 0, linetype = 4) +
   geom_step(aes(color = param_mig_code), size = 0.8) +
-  facet_wrap(~ perc, scales = "free", ncol = 5) +
+  facet_wrap(~ perc, scales = "free", ncol = 2) +
   theme_bw() +
-  ggtitle("PRC curves for Parameters 2 (sampler 2 and 1/2.05 ind. per day)") +
-  labs(y = 'Precision', x = 'Recall') +
+  ggtitle("ROC curves for Parameters 2 (sampler 2 and 750 migrants)") +
+  labs(y = 'True positive rate', x = 'False positive rate') +
   theme(text = element_text(size = 20), legend.position = "bottom") +
   scale_colour_manual(values = c('#ad0075', '#9fc439', '#0187d3'),
                       name = 'Tree type',
@@ -314,8 +309,8 @@ sampler1["param_mig_code_perc"] <- paste(sampler1$param,
                                          sep = "_")
 
 sampler1_AUC <- sampler1
-sampler1_AUC["FPR"] <- 1 - sampler1_AUC$specificity
-sampler1_AUC["TPR"] <- sampler1_AUC$sensitivity
+#sampler1_AUC["FPR"] <- 1 - sampler1_AUC$specificity
+#sampler1_AUC["TPR"] <- sampler1_AUC$sensitivity
 
 auc_sampler1 <- sampler1_AUC %>%
   group_by(param, param_mig_code, mig, code, perc, param_mig_code_perc) %>%
@@ -335,8 +330,8 @@ sampler2["param_mig_code_perc"] <- paste(sampler2$param,
                                          sep = "_")
 
 sampler2_AUC <- sampler2
-sampler2_AUC["FPR"] <- 1 - sampler2_AUC$specificity
-sampler2_AUC["TPR"] <- sampler2_AUC$sensitivity
+#sampler2_AUC["FPR"] <- 1 - sampler2_AUC$specificity
+#sampler2_AUC["TPR"] <- sampler2_AUC$sensitivity
 
 auc_sampler2 <- sampler2_AUC %>%
   group_by(param, param_mig_code, mig, code, perc, param_mig_code_perc) %>%

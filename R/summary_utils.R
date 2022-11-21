@@ -574,12 +574,17 @@ summarize_trans_compl <- function(data){
 check_true_transmissions <- function(df1, tm){
 
 
-  #pairs <- paste(df2$host.1, df2$host.2, sep = ",")
+  if("donor_ID" %in% names(df1)){
 
-  #df1$hosts_to_check <- paste(df1$host.1, df1$host.2, sep = ",")
+    true_transmissions <- tm[tm$inf == df1$donor_ID &
+                               tm$sus == df1$recip_ID,]
 
-  true_transmissions <- tm[tm$inf == str_split(df1$host.1, "_")[[1]][2] &
-                             tm$sus == str_split(df1$host.2, "_")[[1]][2],]
+  }else{
+    true_transmissions <- tm[tm$inf == str_split(df1$host.1, "_")[[1]][2] &
+                               tm$sus == str_split(df1$host.2, "_")[[1]][2],]
+  }
+
+
 
   if(nrow(true_transmissions) == 0){
     df1["trans"] <- "false"
@@ -616,11 +621,74 @@ check_true_transmissions <- function(df1, tm){
 check_true_pair <- function(df1, tm){
 
 
-  df1["inf"] <- str_split(df1$host.1, "_")[[1]][2]
-  df1["sus"] <- str_split(df1$host.2, "_")[[1]][2]
+  #this line was added to allow to sumarize data for consensus sequences
+  if("donor_ID" %in% names(df1)){
+
+    df1["inf"] <- df1$donor_ID
+    df1["sus"] <- df1$recip_ID
+
+  }else{
+    df1["inf"] <- str_split(df1$host.1, "_")[[1]][2]
+    df1["sus"] <- str_split(df1$host.2, "_")[[1]][2]
+  }
+
 
   pairs <- tm[(tm$sus == df1$sus & tm$inf == df1$inf) |
                 (tm$sus == df1$inf & tm$inf == df1$sus),]
+
+  if(nrow(pairs) == 1){
+
+    df1["real_pair"] <- "yes"
+    df1["time_trans"] <- pairs$year
+
+  }else if(nrow(pairs) == 0){
+
+    df1["real_pair"] <- "no"
+    df1["time_trans"] <- NA
+
+  }else{
+    #if more than one row appears in the dataframe pairs
+    #something is wrong and should be further investigated.
+    # This is because in my transmission model I only allowed infection from an
+    #infected individual to a susceptible individual.
+    stop(print(nrow))
+  }
+
+  if("donor_ID" %in% names(df1)){
+    allpairs <- df1
+  }else{
+    allpairs <- df1[c(1:7,10:11)]
+  }
+
+  return(allpairs)
+
+}
+
+
+#' Check whether a pair of individuals represent a transmission pair.
+#'
+#' This function will check whether a pair of individuals (host.1 and host.2)
+#' represent a transmission pair from host.1 to host.2 or host.2 to host.1
+#' independent of phyloscanner results.
+#'
+#' @param df1 Dataframe containing information of summarized results obtained
+#'    with phyloscanner after running the function summarize_trans.
+#' @param tm Dataframe containing information of for the transmission matrix.
+#'
+#' @return Dataframe with a new column "real_pair" that take the value "true"
+#'    (for a true transmission pair independent of directness,
+#'    which means host.1 transmitted to host.2 or host.2 transmitted to host.1).
+#'    It will also have another column "time_trans" for the time of transmission
+#'    of a real pair. If a pair is not a real transmission pair, than the value
+#'    for time_trans will be "NA".
+#' @export
+check_true_pair_directness <- function(df1, tm){
+
+
+  df1["inf"] <- str_split(df1$host.1, "_")[[1]][2]
+  df1["sus"] <- str_split(df1$host.2, "_")[[1]][2]
+
+  pairs <- tm[(tm$sus == df1$sus & tm$inf == df1$inf),]
 
   if(nrow(pairs) == 1){
 
@@ -662,57 +730,123 @@ check_true_pair <- function(df1, tm){
 #' @export
 check_linked_transmissions <- function(df1, tm){
 
-
-  tips_init <- c(df1$host.1, df1$host.2)
-  tips_tm_init <- unlist(lapply(tips_init, function(x) str_split(x, pattern = "_")[[1]][2]))
-
-  tm_subset_list <- get_subset_tips(tips_tm_init, tm)
-
-  linked <- "unknown"
-
-  while(linked == "unknown"){
-
-    #tm_subset_list <- lapply(tips_tm, function(x) tm[tm$sus == x | tm$inf == x ,])
+  #browser()
 
 
-    if(any(tm_subset_list[[1]]$inf %in% tm_subset_list[[2]]$inf) == TRUE |
-       any(tm_subset_list[[1]]$inf %in% tm_subset_list[[2]]$sus) == TRUE) {
+  df1["inf"] <- str_split(df1$host.1, "_")[[1]][2]
+  df1["sus"] <- str_split(df1$host.2, "_")[[1]][2]
 
-      df1["trans"] <- "linked"
-      linked <- "yes"
-
-    } else if (any(tm_subset_list[[2]]$inf %in% tm_subset_list[[1]]$inf) == TRUE |
-               any(tm_subset_list[[2]]$inf %in% tm_subset_list[[1]]$sus) == TRUE) {
-
-      df1["trans"] <- "linked"
-
-      linked <- "yes"
-    }
-
-    else {
+  print(df1$sus)
+  print(df1$inf)
 
 
-      subset_tm <- do.call(rbind, tm_subset_list)
-      tips <- c(subset_tm$sus, subset_tm$inf)
-      tips <- tips[!tips %in% tips_tm]
+  #tips_init <- unique(c(df1$host.1, df1$host.2))
+  #tips_tm_init <- unlist(lapply(tips_init, function(x) str_split(x, pattern = "_")[[1]][2]))
 
-      tm_subset_list <- get_subset_tips(tips, tm)
+  #tm_subset_list <- get_subset_tips(tips_tm_init, tm)
+
+  transmissions <- get_chain(df1, tm)
+
+  transmissions["inf"] <- df1$inf
+  transmissions["sus"] <- df1$sus
 
 
 
-      df1["trans"] <- "not_linked"
 
-      linked <- "no"
+  return(transmissions)
+
+}
+
+#' Get transmission chains
+#'
+#' @inheritParams  check_linked_transmissions
+#' @param all_trans List of dataframes containing the transmission chains for
+#'    each ID.
+#' @param tm Transmission matrix containing the information of who transmitted
+#'    whom.
+#'
+#' @details This function will go over each transmission to create a "transmission
+#' chain from ID1 to ID5, for example. This will help indentify in which
+#' circunstances phyloscanner indetified two IDs as a transmission pair,
+#' when they were not one.
+#' @return A dataframe with the transmission chain and the time of transmissions
+#' @export
+get_chain <- function(df1, tm){
+
+  #convert dataframe to a graph using igraph
+  df.g <- graph_from_data_frame(tm[,c(2:3,20)], directed = FALSE)
+
+  #get shortest path between two nodes
+  paths <- all_simple_paths(df.g, from = df1$inf, to = df1$sus)
+
+  #get id names
+  if(length(paths) == 1){
+    chain <- as.vector(t(sapply(paths, as_ids)))
+
+    #get years
+    for(i in 1:(length(chain) - 1)){
+
+      if(i == 1){
+        year_trans <- tm[(tm$inf == chain[i] & tm$sus == chain[i+1]),]$year
+        order <- paste(i, i+1, sep = "-")
+
+        if(length(year_trans) == 0){
+          year_trans <- tm[(tm$inf == chain[i+1] & tm$sus == chain[i]),]$year
+          order <- paste(i+1, i, sep = "-")
+        }
+      } else{
+        years <- tm[(tm$inf == chain[i] & tm$sus == chain[i+1]),]$year
+        order2 <- paste(i, i+1, sep = "-")
+
+        if(length(years) == 0){
+          years <- tm[(tm$inf == chain[i+1] & tm$sus == chain[i]),]$year
+          order2 <- paste(i+1, i, sep = "-")
+        }
+
+        year_trans <- c(year_trans, years)
+        order <- c(order, order2)
+
+      }
 
     }
 
   }
 
+  if(length(paths) > 1){
+
+    browser()
+
+    print(paths)
 
 
-  return(df1)
+  }
+
+  if(length(paths) == 0){
+
+    browser()
+
+
+  }
+
+  chain <- paste(chain, collapse = '-')
+  year_trans <- paste(year_trans, collapse = '-')
+  order <- paste(order, collapse = '_')
+
+
+  chain_yearTrans <- data.frame(chain = chain, year_trans = year_trans,
+                                order = order)
+
+  return(chain_yearTrans)
+
+
+
+
+
+  return(chain)
+
 
 }
+
 
 
 #' Get subset of susceptibles and infected individuals
@@ -732,6 +866,52 @@ get_subset_tips <- function(tips, tm){
   return(tm_subset_list)
 }
 
+#' Remove duplicated rows and order by date of transmission
+#'
+#' @param tm_subset_list List of dataframe of subset of transmission matrix
+#'
+#' @return Dataframe in which duplicated rows are removed and ordered by
+#'    transmission date
+#' @export
+order_IDs_byDate <- function(tm_subset_list){
+
+
+  #remove duplicated rows
+  index <- NULL
+  for(i in 1:length(tm_subset_list)){
+
+    if(i < length(tm_subset_list) - 1){
+      if(nrow(tm_subset_list[[i + 1]]) == 1){
+        if(do.call(paste0, tm_subset_list[[i + 1]]) %in% do.call(paste0, tm_subset_list[[1]])){
+          index <- c(index, i+1)
+        }
+        if(do.call(paste0, tm_subset_list[[i + 1]]) %in% do.call(paste0, tm_subset_list[[2]])){
+          index <- c(index, i+1)
+        }
+      }
+    }
+  }
+  index <- sort(unique(index))
+
+  #remove elements from list
+
+  if(!is.null(index)){
+    tm_subset_final <- tm_subset_list[-index]
+  }else{
+    tm_subset_final <- tm_subset_list
+  }
+
+  # merge all into dataframe
+  tm_subset_df <- do.call(rbind, tm_subset_final)
+  #sort rows by year of transmission
+
+  tm_subset_df <- tm_subset_df[order(tm_subset_df$sus, tm_subset_df$inf, tm_subset_df$year),]
+
+  #remove duplicated rows
+  tm_noDups <- tm_subset_df[!duplicated(tm_subset_df),]
+
+  return(tm_noDups)
+}
 
 
 #' Summarize all results obtained with phyloscanner
@@ -945,14 +1125,49 @@ add_sampled_times <- function(df1, sampled_times){
 
 
   } else if(df1$real_pair == "no"){
-    df1["st_donor_ID"] <- NA
-    df1["st_recip_ID"] <- NA
+    #even if it is not a real pair, there is a sampled time associated to the IDs.
+    #But because it is not a real pair, we won't have a time of transmission.
+    df1["st_donor_ID"] <- sampled_times[sampled_times$sampled_ID == str_split(df1$host.1, "_")[[1]][2],]$sampled_time
+    df1["st_recip_ID"] <- sampled_times[sampled_times$sampled_ID == str_split(df1$host.2, "_")[[1]][2],]$sampled_time
 
   }
 
 
   return(df1)
 
+
+
+}
+
+
+#' Who infected whom
+#'
+#' @param df1 dataframe containing information of the pairs that a TP (true positives),
+#'    and the correct direction of transmission.
+#'
+#' @details This function will return the absolute numbers for the total number
+#'    of pairs that are TP and from those pairs the total number in which
+#'    phyloscanner also correctly estimated who infected whom.
+#'
+#' @return dataframe containg the absolute number of the total pairs that are
+#'    TP and from those the total number of pairs in which phyloscanner correctly
+#'    estimated who infected whom.
+#' @export
+wiw <- function(df1){
+
+  #browser()
+
+  TP <- subset(df1, observed == "TP")
+
+  correct_direction <- subset(TP, real_pair == "yes" & directness == "yes")
+
+  total_correct <- nrow(correct_direction)
+  total_pairs <- nrow(TP)
+
+  absolute_numbers <- data.frame(total_TP = total_pairs,
+                                 total_correct = total_correct)
+
+  return(absolute_numbers)
 
 
 }
