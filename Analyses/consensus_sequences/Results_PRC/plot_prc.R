@@ -1,11 +1,13 @@
 #plot results from prc curves
 library(DescTools)
 library(caret)
+library(dplyr)
 
 
 #true trees
 true_tree_s1 <- readRDS("Analyses/consensus_sequences/Results_PRC/results/prc_trueTrees_s1.RDS")
 true_tree_s1 <- do.call(rbind, true_tree_s1)
+
 true_tree_s2 <- readRDS("Analyses/consensus_sequences/Results_PRC/results/prc_trueTrees_s2.RDS")
 true_tree_s2 <- do.call(rbind, true_tree_s2)
 
@@ -30,6 +32,11 @@ sampler1["param_mig_code"] <- paste(sampler1$param,
                                     sampler1$mig,
                                     sampler1$code,
                                     sep = "_")
+
+sampler1$perc <- factor(sampler1$perc,
+                        levels = c("0.05", "0.1", "0.2","0.3","0.4","0.5","0.6", "0.7", "0.8", "0.9"),
+                  labels = c("5%", "10%", "20%", "30%", "40%", "50%", "60%", "70%", "80%", "90%"))
+
 sampler1_1067 <- subset(sampler1, param == "1067")
 sampler1_2348 <- subset(sampler1, param == "2348")
 
@@ -52,6 +59,12 @@ sampler2["param_mig_code"] <- paste(sampler2$param,
                                     sampler2$mig,
                                     sampler2$code,
                                     sep = "_")
+
+sampler2$perc <- factor(sampler2$perc,
+                        levels = c("0.05", "0.1", "0.2","0.3","0.4","0.5","0.6", "0.7", "0.8", "0.9"),
+                        labels = c("5%", "10%", "20%", "30%", "40%", "50%", "60%", "70%", "80%", "90%"))
+
+
 sampler2_1067 <- subset(sampler2, param == "1067")
 sampler2_2348 <- subset(sampler2, param == "2348")
 
@@ -313,9 +326,15 @@ sampler1["param_mig_code_perc"] <- paste(sampler1$param,
                                          sampler1$perc,
                                          sep = "_")
 
+sampler1["param_mig_code_perc"] <- paste(sampler1$param,
+                                         sampler1$mig,
+                                         sampler1$code,
+                                         sampler1$perc,
+                                         sep = "_")
+
 sampler1_AUC <- sampler1
-sampler1_AUC["FPR"] <- 1 - sampler1_AUC$specificity
-sampler1_AUC["TPR"] <- sampler1_AUC$sensitivity
+#sampler1_AUC["FPR"] <- 1 - sampler1_AUC$specificity
+#sampler1_AUC["TPR"] <- sampler1_AUC$sensitivity
 
 auc_sampler1 <- sampler1_AUC %>%
   group_by(param, param_mig_code, mig, code, perc, param_mig_code_perc) %>%
@@ -335,8 +354,8 @@ sampler2["param_mig_code_perc"] <- paste(sampler2$param,
                                          sep = "_")
 
 sampler2_AUC <- sampler2
-sampler2_AUC["FPR"] <- 1 - sampler2_AUC$specificity
-sampler2_AUC["TPR"] <- sampler2_AUC$sensitivity
+#sampler2_AUC["FPR"] <- 1 - sampler2_AUC$specificity
+#sampler2_AUC["TPR"] <- sampler2_AUC$sensitivity
 
 auc_sampler2 <- sampler2_AUC %>%
   group_by(param, param_mig_code, mig, code, perc, param_mig_code_perc) %>%

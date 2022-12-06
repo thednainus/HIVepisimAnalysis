@@ -44,6 +44,11 @@ trueTrees_df <- data.frame(infectorProbability = true_trees$infectorProbability,
                                        true_trees$mig,
                                        sep = "_"))
 
+total_pairs_trueTrees <- trueTrees_df %>% group_by(tag) %>%
+  mutate(total = n()) %>%
+  select(code, sampler, param, perc, mig, param_mig, tag, total) %>%
+  distinct()
+
 
 prc_true_trees <- trueTrees_df %>%
   group_by(tag) %>%
@@ -134,6 +139,11 @@ ml_1000bp_df <- data.frame(infectorProbability = ml_1000bp$infectorProbability,
                                        ml_1000bp$mig,
                                        sep = "_"))
 
+total_pairs_1000bp <- ml_1000bp_df %>% group_by(tag) %>%
+  mutate(total = n()) %>%
+  select(code, sampler, param, perc, mig, param_mig, tag, total) %>%
+  distinct()
+
 prc_Ml1000bp <- ml_1000bp_df %>%
   group_by(tag) %>%
   group_map(~ {
@@ -177,6 +187,11 @@ ml_10000bp_df <- data.frame(infectorProbability = ml_10000bp$infectorProbability
                                         ml_10000bp$perc,
                                         ml_10000bp$mig,
                                         sep = "_"))
+
+total_pairs_10000bp <- ml_10000bp_df %>% group_by(tag) %>%
+  mutate(total = n()) %>%
+  select(code, sampler, param, perc, mig, param_mig, tag, total) %>%
+  distinct()
 
 prc_Ml10000bp <- ml_10000bp_df %>%
   group_by(tag) %>%

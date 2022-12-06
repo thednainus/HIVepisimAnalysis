@@ -74,7 +74,7 @@ merge_label_data <- function(list_dirs, code, sampler){
 
         sim_data["group"] <- rep(1:nrow(sim_data))
 
-        sim_data["linked"] <- ifelse(sim_data$infectorProbability >= 0.80, "yes", "no")
+        sim_data["linked"] <- ifelse(sim_data$infectorProbability >= 0.90, "yes", "no")
 
         trans_pairs <- sim_data %>% group_by(group) %>%
           group_modify(~check_true_pair(.x, tm))
@@ -116,7 +116,7 @@ all_data_s1_250mig["param_perc"] <- paste(all_data_s1_250mig$param,
                                           all_data_s1_250mig$perc,
                                           sep = "_")
 
-saveRDS(all_data_s1_250mig, "all_data_s1_250mig.RDS")
+saveRDS(all_data_s1_250mig, "all_data_s1_250mig_threshold0.90.RDS")
 
 
 
@@ -136,7 +136,7 @@ all_data_s1_500mig["param_perc"] <- paste(all_data_s1_500mig$param,
                                           all_data_s1_500mig$perc,
                                           sep = "-")
 
-saveRDS(all_data_s1_500mig, "all_data_s1_500mig.RDS")
+saveRDS(all_data_s1_500mig, "all_data_s1_500mig_threshold0.90.RDS")
 
 
 
@@ -156,7 +156,7 @@ all_data_s1_750mig["param_perc"] <- paste(all_data_s1_750mig$param,
                                           all_data_s1_750mig$perc,
                                           sep = "_")
 
-saveRDS(all_data_s1_750mig, "all_data_s1_750mig.RDS")
+saveRDS(all_data_s1_750mig, "all_data_s1_750mig_threshold0.90.RDS")
 
 
 
@@ -181,7 +181,7 @@ all_data_s2_250mig["param_perc"] <- paste(all_data_s2_250mig$param,
                                           all_data_s2_250mig$perc,
                                           sep = "_")
 
-saveRDS(all_data_s2_250mig, "all_data_s2_250mig.RDS")
+saveRDS(all_data_s2_250mig, "all_data_s2_250mig_threshold0.90.RDS")
 
 
 
@@ -202,7 +202,7 @@ all_data_s2_500mig["param_perc"] <- paste(all_data_s2_500mig$param,
                                           all_data_s2_500mig$perc,
                                           sep = "_")
 
-saveRDS(all_data_s2_500mig, "all_data_s2_500mig.RDS")
+saveRDS(all_data_s2_500mig, "all_data_s2_500mig_threshold0.90.RDS")
 
 
 
@@ -224,7 +224,7 @@ all_data_s2_750mig["param_perc"] <- paste(all_data_s2_750mig$param,
                                           all_data_s2_750mig$perc,
                                           sep = "_")
 
-saveRDS(all_data_s2_750mig, "all_data_s2_750mig.RDS")
+saveRDS(all_data_s2_750mig, "all_data_s2_750mig_threshold0.90.RDS")
 
 
 

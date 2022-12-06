@@ -1,26 +1,22 @@
-#summarize data for maximum likelihood trees reconstructed with 10,000bp
-#to plot ROC or PRC for consensus sequences
-#to analyze infector probabilities
-#This script will merge all replicates per combination of parameter values
-#per depth of sampling
+#get total tip number in the phylogenetic trees
 
 library(stringr)
-library(caret)
 library(HIVepisimAnalysis)
 library(DescTools)
 library(dplyr)
 
-rm(merge_label_data)
+
+
 # this function will merge by perc the W (infector probability) calculated to estimate
 # ROC curves
 # first merge all data
 #then estimate FPR and TPR per perc and param value
-merge_label_data <- function(list_dirs, code, sampler){
+get_total_tips <- function(list_dirs, code, sampler){
 
   #common_dir <- "output/vts/W"
 
   #empty initial dataframe
-  all_data <- data.frame()
+  all_data_info <- data.frame()
 
   for(i in 1:length(list_dirs)){
 
@@ -36,18 +32,15 @@ merge_label_data <- function(list_dirs, code, sampler){
     }
 
 
-
     print(i)
     print(paste(params, rep, perc, sep = "."))
 
     #read simulated data
     #filename <- list.files(paste(list_dirs[i], common_dir, sep = "/"),
     #                       pattern = "W_labels_bst", full.names = TRUE)
-    #filename <- list.files(list_dirs[i], pattern = paste(code, "W_labels", sep = "_"),
-    #                       full.names = TRUE)
 
     filename <- list.files(paste(list_dirs[i], "output/vts/alignments/W_estimated", sep = "/"),
-                           pattern = paste(code, "W_labels", sep = "_"),
+                           pattern = paste(code, "migrant_years_1_simple_estimated.RData", sep = "_"),
                            full.names = TRUE)
 
 
@@ -56,70 +49,48 @@ merge_label_data <- function(list_dirs, code, sampler){
       if (file.exists(filename) == TRUE)
         if(file.size(filename) != 0){
 
-          data_info <- paste(list_dirs[i], "output/vts/W", sep = "/")
-          data_info <- list.files(data_info, pattern = "RData",
-                                  full.names = TRUE)
-
-          load(data_info)
-
-          sim_data <- read.csv(filename)
-          sim_data$labels <- as.character(sim_data$labels)
-          sim_data$labels <- as.factor(sim_data$labels)
-          sim_data["sampler"] <- sampler
-          sim_data["param"] <- str_split(params, "_")[[1]][2]
-          sim_data["rep"] <- str_split(rep, "_")[[1]][2]
-          sim_data["perc"] <- str_split(perc, "_")[[1]][2]
-          sim_data["code"] <- code
-
-          sim_data["group"] <- rep(1:nrow(sim_data))
-
-          sim_data["linked"] <- ifelse(sim_data$infectorProbability >= 0.90, "yes", "no")
-
-          trans_pairs <- sim_data %>% group_by(group) %>%
-            group_modify(~check_true_pair(.x, tm))
-
-          all_trans <- trans_pairs %>% group_by(group) %>%
-            group_modify(~check_true_transmissions(.x, tm))
+          load(filename)
+          tree_size_region <- length(region_only_dated_tree$tip.label)
 
 
-          #all_data <- rbind(all_data, sim_data)
-          all_data <- rbind(all_data, all_trans)
+          all_data <- data.frame(sampler = sampler, param = str_split(params, "_")[[1]][2],
+                                 rep =str_split(rep, "_")[[1]][2], perc = str_split(perc, "_")[[1]][2],
+                                 code = code)
 
+          all_data["tree_size_region"] <- tree_size_region
 
-          #all_data <- rbind(all_data, sim_data)
-      }
+          all_data_info <- rbind(all_data_info, all_data)
+
+        }
+
     }
+
 
   }
 
-  return(all_data)
+
+
+  return(all_data_info)
 
 }
 
 
+# ML trees sampler 1: 1000 bp----
 
-# ML trees sampler 1: 10000 bp----
-
-#list directories  for sampler 1
-#get replicates per parameters value
 
 #250 migrants
-rm(replicates)
 replicates <- dir(dir(dir("/Users/user/Desktop/Imperial/newHIVproject-01Aug2020/R_projects/Results_paper/best_trajectories_250migrants",
-                  full.names = TRUE),
-                  full.names = TRUE),
+                          full.names = TRUE),
+                      full.names = TRUE),
                   full.names = TRUE, pattern = "perc")
-#replicates <- paste(replicates, "output/vts/alignments/W_estimated", sep = "/")
-
-all_data_s1_250mig <- merge_label_data(replicates,
-                                       code = "10000bp",
+all_data_s1_250mig <- get_total_tips(replicates,
+                                       code = "1000bp",
                                        sampler = "1")
 all_data_s1_250mig["param_perc"] <- paste(all_data_s1_250mig$param,
                                           all_data_s1_250mig$perc,
                                           sep = "_")
 
-saveRDS(all_data_s1_250mig, "all_data_s1_10000bp_250mig_threshold0.90.RDS")
-
+saveRDS(all_data_s1_250mig, "all_data_s1_1000bp_250mig_tips.RDS")
 
 
 #500 migrants
@@ -130,15 +101,14 @@ replicates <- dir(dir(dir("/Users/user/Desktop/Imperial/newHIVproject-01Aug2020/
                   full.names = TRUE, pattern = "perc")
 #replicates <- paste(replicates, "output/vts/alignments/W_estimated", sep = "/")
 
-all_data_s1_500mig <- merge_label_data(replicates,
-                                       code = "10000bp",
+all_data_s1_500mig <- get_total_tips(replicates,
+                                       code = "1000bp",
                                        sampler = "1")
 all_data_s1_500mig["param_perc"] <- paste(all_data_s1_500mig$param,
                                           all_data_s1_500mig$perc,
                                           sep = "_")
 
-saveRDS(all_data_s1_500mig, "all_data_s1_10000bp_500mig_threshold0.90.RDS")
-
+saveRDS(all_data_s1_500mig, "all_data_s1_1000bp_500mig_tips.RDS")
 
 
 
@@ -150,19 +120,19 @@ replicates <- dir(dir(dir("/Users/user/Desktop/Imperial/newHIVproject-01Aug2020/
                   full.names = TRUE, pattern = "perc")
 #replicates <- paste(replicates, "output/vts/alignments/W_estimated", sep = "/")
 
-all_data_s1_750mig <- merge_label_data(replicates,
-                                       code = "10000bp",
+all_data_s1_750mig <- get_total_tips(replicates,
+                                       code = "1000bp",
                                        sampler = "1")
 all_data_s1_750mig["param_perc"] <- paste(all_data_s1_750mig$param,
                                           all_data_s1_750mig$perc,
                                           sep = "_")
 
-saveRDS(all_data_s1_750mig, "all_data_s1_10000bp_750mig_threshold0.90.RDS")
+saveRDS(all_data_s1_750mig, "all_data_s1_1000bp_750mig_tips.RDS")
 
 
 
 
-# ML trees sampler 2: 10000 bp----
+# ML trees sampler 2: 1000 bp----
 
 #list directories  for sampler 1
 #get replicates per parameters value
@@ -170,40 +140,40 @@ saveRDS(all_data_s1_750mig, "all_data_s1_10000bp_750mig_threshold0.90.RDS")
 #250 migrants
 rm(replicates)
 replicates <- dir(dir(dir(dir("/Users/user/Desktop/Imperial/newHIVproject-01Aug2020/R_projects/Results_paper/best_trajectories_250migrants",
+                              full.names = TRUE),
                           full.names = TRUE),
-                      full.names = TRUE),
-                  full.names = TRUE, pattern = "sampler2"),
+                      full.names = TRUE, pattern = "sampler2"),
                   full.names = TRUE, pattern = "perc")
 #replicates <- paste(replicates, "output/vts/alignments/W_estimated", sep = "/")
 
-all_data_s2_250mig <- merge_label_data(replicates,
-                                       code = "10000bp",
+all_data_s2_250mig <- get_total_tips(replicates,
+                                       code = "1000bp",
                                        sampler = "2")
 all_data_s2_250mig["param_perc"] <- paste(all_data_s2_250mig$param,
                                           all_data_s2_250mig$perc,
                                           sep = "_")
 
-saveRDS(all_data_s2_250mig, "all_data_s2_10000bp_250mig_threshold0.90.RDS")
+saveRDS(all_data_s2_250mig, "all_data_s2_1000bp_250mig_tips.RDS")
 
 
 
 #500 migrants
 rm(replicates)
 replicates <- dir(dir(dir(dir("/Users/user/Desktop/Imperial/newHIVproject-01Aug2020/R_projects/Results_paper/best_trajectories_500migrants",
+                              full.names = TRUE),
                           full.names = TRUE),
-                      full.names = TRUE),
-                  full.names = TRUE, pattern = "sampler2"),
+                      full.names = TRUE, pattern = "sampler2"),
                   full.names = TRUE, pattern = "perc")
 #replicates <- paste(replicates, "output/vts/alignments/W_estimated", sep = "/")
 
-all_data_s2_500mig <- merge_label_data(replicates,
-                                       code = "10000bp",
+all_data_s2_500mig <- get_total_tips(replicates,
+                                       code = "1000bp",
                                        sampler = "2")
 all_data_s2_500mig["param_perc"] <- paste(all_data_s2_500mig$param,
                                           all_data_s2_500mig$perc,
                                           sep = "_")
 
-saveRDS(all_data_s2_500mig, "all_data_s2_10000bp_500mig_threshold0.90.RDS")
+saveRDS(all_data_s2_500mig, "all_data_s2_1000bp_500mig_tips.RDS")
 
 
 
@@ -211,19 +181,17 @@ saveRDS(all_data_s2_500mig, "all_data_s2_10000bp_500mig_threshold0.90.RDS")
 #750 migrants
 rm(replicates)
 replicates <- dir(dir(dir(dir("/Users/user/Desktop/Imperial/newHIVproject-01Aug2020/R_projects/Results_paper/best_trajectories_750migrants",
+                              full.names = TRUE),
                           full.names = TRUE),
-                      full.names = TRUE),
-                  full.names = TRUE, pattern = "sampler2"),
+                      full.names = TRUE, pattern = "sampler2"),
                   full.names = TRUE, pattern = "perc")
 #replicates <- paste(replicates, "output/vts/alignments/W_estimated", sep = "/")
 
-all_data_s2_750mig <- merge_label_data(replicates,
-                                       code = "10000bp",
+all_data_s2_750mig <- get_total_tips(replicates,
+                                       code = "1000bp",
                                        sampler = "2")
 all_data_s2_750mig["param_perc"] <- paste(all_data_s2_750mig$param,
                                           all_data_s2_750mig$perc,
                                           sep = "_")
 
-saveRDS(all_data_s2_750mig, "all_data_s2_10000bp_750mig_threshold0.90.RDS")
-
-
+saveRDS(all_data_s2_750mig, "all_data_s2_1000bp_750mig_tips.RDS")
