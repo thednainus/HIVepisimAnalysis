@@ -8,7 +8,7 @@ library(xtable)
 
 # Sampler 1----
 #for true trees
-mig250_true <- readRDS("Analyses/consensus_sequences/Results/sampler1/all_data_s1_250mig.RDS")
+mig250_true <- readRDS("Analyses/consensus_sequences/Results/teste2/all_data_s1_250mig.RDS")
 mig250_true["mig"] <- "1/0.68"
 mig250_true["perc"] <- as.factor(as.numeric(mig250_true$perc) * 100)
 mig250_true["param"] <- ifelse(mig250_true$param == "1067",
