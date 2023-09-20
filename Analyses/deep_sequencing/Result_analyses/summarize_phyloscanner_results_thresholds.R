@@ -27,7 +27,7 @@ get_prc_deepseq <- function(threshold, df_true, byReplicate = FALSE){
   #perc = unique(df_true$perc)
   #code = unique(df_true$code)
   #sampler = unique(df_true$sampler)
-  mig = unique(df_true$mig)
+  #mig = unique(df_true$mig)
 
   if(byReplicate == FALSE){
     rep = "merged"
