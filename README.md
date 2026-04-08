@@ -1,6 +1,6 @@
 # Analyses of transmission network data
 
-This repository contains the research compendium organized as an R package for Nascimento _et al_. (In preparation). Here you can find all scripts used in our paper.
+This repository contains the research compendium organized as an R package for [Nascimento _et al_. 2024](https://journals.lww.com/aidsonline/fulltext/2024/05010/assessing_transmission_attribution_risk_from.9.aspx). Here you can find all scripts used in our paper.
 
 
 For details of analyses carried out on our manuscript, check the [wiki](https://github.com/thednainus/HIVepisimAnalysis/wiki).
