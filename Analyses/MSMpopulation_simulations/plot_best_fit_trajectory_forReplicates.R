@@ -9,11 +9,11 @@ library(reshape2)
 #plot only the data in which migration rate was set to 500 migrants per year
 
 
-param_1067_500 <- readRDS("Results_paper/all_diag_m_and_q_1067_500migrants.RDS")
+param_1067_500 <- readRDS("all_diag_m_and_q_1067_500migrants.RDS")
 param_1067_500["param"] <- "1067"
 param_1067_500["migrant"] <- "500"
 
-param_2348_500 <- readRDS("Results_paper/all_diag_m_and_q_2348_500migrants.RDS")
+param_2348_500 <- readRDS("all_diag_m_and_q_2348_500migrants.RDS")
 param_2348_500["param"] <- "2348"
 param_2348_500["migrant"] <- "500"
 
