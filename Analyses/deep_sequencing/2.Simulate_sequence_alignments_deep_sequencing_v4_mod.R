@@ -1,6 +1,7 @@
 #the change I made in this script is to rerun only the pairs that are missing from
 #my previous analysis using a W threshold of 0.80
-#my new threshold will be 0.01
+#in here I have both thresholds of W = 0.80 and W = 0.01
+#W is the infector probability
 
 # Simulate sequence alignments
 # Seq-Gen MUST be installed in your computer
@@ -18,7 +19,7 @@ library(ape)
 library(seqinr)
 
 #thrshold value for W (infector probability)
-#for the time being this threshold will be 0.6
+#for the time being this threshold will be 0.8
 threshold1 <- 0.8
 threshold2 <- 0.01
 

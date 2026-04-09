@@ -1,5 +1,5 @@
 # Simulate Illumina reads based on ART
-# it requres ART installed in your computer
+# it requires ART installed in your computer
 # https://www.niehs.nih.gov/research/resources/software/biostatistics/art/index.cfm
 
 #start of script
